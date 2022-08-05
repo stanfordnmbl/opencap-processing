@@ -1,0 +1,6 @@
+scipy
+pandas
+matplotlib
+ipython
+numpy
+python-decouple
