@@ -406,7 +406,8 @@ def filterDataFrame(dataFrame, cutoff_frequency=6, order=4):
     fc = cutoff_frequency # Cut-off frequency of the filter
     w = fc / (fs / 2) # Normalize the frequency
     if w>=0.999:
-        print('You tried to filter {}Hz signal with cutoff freq of {}Hz, which is above the Nyquist Frequency. Will filter at {}Hz instead.'.format(fs, fc, fs/2))
+        if fc != fs/2:
+            print('You tried to filter {}Hz signal with cutoff freq of {}Hz, which is above the Nyquist Frequency. Will filter at {}Hz instead.'.format(fs, fc, fs/2))
         w=0.999
     b, a = signal.butter(order/2, w, 'low')  
     output = signal.filtfilt(

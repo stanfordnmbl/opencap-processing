@@ -23,8 +23,7 @@ sys.path.append(opensimADDir)
 # sys.path.append(jrDir)
 
 from utils import download_kinematics, storage_to_numpy, import_metadata
-from utilsProcessing import segmentSquats, segmentSTS
-from utilsDynamicSimulations import adjustMuscleWrapping, generateModelWithContacts
+from utilsProcessing import segmentSquats, segmentSTS, adjustMuscleWrapping, generateModelWithContacts
 from utilsOpenSimAD import generateExternalFunction, plotResultsDC
 from settingsOpenSimAD import get_default_setup, get_trial_setup
 from mainOpenSimAD import run_tracking
@@ -83,9 +82,10 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 '''
 
 # Examples.
-# Overground session
+###############################################################################
+# Overground session - uncomment below to run.
 session_id = "ef516897-f0b2-493e-9927-3022db2d2ac3"
-trial_name = 'Squats' # Examples include 'Gait', 'Squats', 'DJ', 'STS'.
+trial_name = 'DJ' # Examples include 'Gait', 'Squats', 'DJ', 'STS'.
 if trial_name == 'Gait': # Walking example
     motion_type = 'walking'
     time_window = [2.5, 4.0]
@@ -98,20 +98,23 @@ elif trial_name == 'DJ': # Drop jump example
 elif trial_name == 'STS': # Sit-to-stand example
     motion_type = 'sts'
     repetition = 0
-# Treadmill session
+###############################################################################
+# Treadmill session - uncomment below to run.
 # session_id = "2174d76b-2646-4099-b11e-6ccdc96d82bf"
 # trial_name = 'running_natural_backwards1'
 # if trial_name == 'running_natural_backwards1': # Running example
 #     motion_type = 'running'
 #     time_window = [6.6, 7.2]
 #     treadmill_speed = 2.67
+###############################################################################
+
 case = '0'
 
 # Set compiler/build system generator.
 compiler = "Visual Studio 15 2017 Win64"
 
 # Set to True to solve the optimal control problem.
-solveProblem = False
+solveProblem = True
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
@@ -130,7 +133,7 @@ if not 'treadmill_speed' in locals():
 else:
     treadmill = True
 # Download kinematics and model.
-# _ = download_kinematics(session_id, folder=sessionFolder, trialNames=[trial_name])
+_ = download_kinematics(session_id, folder=sessionFolder, trialNames=[trial_name])
 
 # Prepare inputs for dynamic simulations.
 # Adjust muscle wrapping.
