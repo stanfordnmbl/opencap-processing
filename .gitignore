@@ -2,3 +2,7 @@ __pycache__
 .env
 *.log
 Data/*
+
+UtilsDynamicSimulations/OpenSimAD/build-ExpressionGraphF/*
+UtilsDynamicSimulations/OpenSimAD/build-ExternalFunctionF/*
+UtilsDynamicSimulations/OpenSimAD/install-ExternalFunctionF/*
