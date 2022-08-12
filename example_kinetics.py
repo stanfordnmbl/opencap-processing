@@ -5,7 +5,7 @@ Install requirements:
         Visual studio: https://visualstudio.microsoft.com/downloads/
             - Make sure you install C++ support
             - This code was tested with Visual Studio Community 2017
-        CasASi: https://web.casadi.org/get/
+        CasADi: https://web.casadi.org/get/
             - You can just 'pip install casadi' with Anaconda
             
 Please contact us for any questions: https://www.opencap.ai/#contact
@@ -76,7 +76,7 @@ Please provide:
     
 See example inputs below for different activities. Please note that we did not
 verify the biomechanical validity of the results; we only made sure the
-simulations converge to kinematic solutions that were visualizze meaningful.
+simulations converge to kinematic solutions that were visually reasonable.
 
 Please contact us for any questions: https://www.opencap.ai/#contact
 '''
