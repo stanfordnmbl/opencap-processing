@@ -52,7 +52,7 @@ for trial_name in trial_names:
     
     # Get muscle-tendon lengths and moment arms.
     muscle_tendon_lengths[trial_name] = kinematics[trial_name].get_muscle_tendon_lengths()
-    moment_arms[trial_name] = kinematics[trial_name].get_moment_arms()
+    # moment_arms[trial_name] = kinematics[trial_name].get_moment_arms()
     
     # Get center of mass values, speeds, and accelerations.
     center_of_mass['values'][trial_name] = kinematics[trial_name].get_center_of_mass_values(lowpass_cutoff_frequency=10)
@@ -97,6 +97,7 @@ plot_dataframe(dataframes = [coordinates['accelerations'][trial_names[0]],
 plot_dataframe(dataframes = [center_of_mass['accelerations'][trial_names[0]], 
                              center_of_mass['accelerations'][trial_names[1]]],
                xlabel = 'Time (s)',
+               title = 'Center of mass accelerations',
                labels = [trial_names[0], trial_names[1]])
 
 # Plot muscle-tendon lengths against time.
@@ -104,4 +105,5 @@ plot_dataframe(dataframes = [muscle_tendon_lengths[trial_names[0]],
                              muscle_tendon_lengths[trial_names[1]]],
                y = ['bflh_r', 'gasmed_r', 'recfem_r'],
                xlabel = 'Time (s)',
+               title = 'Muscle-tendon lengths',
                labels = [trial_names[0], trial_names[1]])
