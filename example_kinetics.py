@@ -85,7 +85,7 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 ###############################################################################
 # Overground session - uncomment below to run.
 session_id = "ef516897-f0b2-493e-9927-3022db2d2ac3"
-trial_name = 'DJ' # Examples include 'Gait', 'Squats', 'DJ', 'STS'.
+trial_name = 'Gait' # Examples include 'Gait', 'Squats', 'DJ', 'STS'.
 if trial_name == 'Gait': # Walking example
     motion_type = 'walking'
     time_window = [2.5, 4.0]
@@ -108,13 +108,13 @@ elif trial_name == 'STS': # Sit-to-stand example
 #     treadmill_speed = 2.67
 ###############################################################################
 
-case = '0'
+case = '1'
 
 # Set compiler/build system generator.
 compiler = "Visual Studio 15 2017 Win64"
 
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
