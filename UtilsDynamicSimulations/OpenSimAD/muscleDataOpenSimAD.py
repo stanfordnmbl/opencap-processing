@@ -156,7 +156,6 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
         path_data4PolynomialFitting = os.path.join(
             pathModelFolder, 'data4PolynomialFitting_{}.npy'.format(modelName))
         # Generate polynomial data
-        overwritedata4PolynomialFitting=True
         if (not os.path.exists(path_data4PolynomialFitting) or 
             overwritedata4PolynomialFitting):
             import opensim
@@ -165,7 +164,7 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
             # Get training data from motion file
             table = opensim.TimeSeriesTable(pathMotionFile4Polynomials)
             coordinates_table = list(table.getColumnLabels()) # w/ jointset/...
-            data = table.getMatrix().to_numpy() # data in degrees w/o time        
+            data = table.getMatrix().to_numpy() # data in degrees w/o time
             pathModel = os.path.join(pathModelFolder, modelName + '.osim')
             # Set number of threads
             if nThreads == None:
@@ -176,7 +175,7 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
                 nThreads = multiprocessing.cpu_count()                
             # Generate muscle tendon lengths and moment arms (in parallel)
             slice_size = int(np.floor(data.shape[0]/nThreads))
-            rest = data.shape[0] % nThreads            
+            rest = data.shape[0] % nThreads
             outputs = Parallel(n_jobs=nThreads)(
                 delayed(get_mtu_length_and_moment_arm)(
                     pathModel, data[i*slice_size:(i+1)*slice_size,:], 
