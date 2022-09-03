@@ -753,7 +753,7 @@ def run_tracking(
             pathModelFolder, model_full_name + '_polynomial_l_' + 
             nameMA +'.npy'))):
         loadPolynomialData = False
-    
+        
     from muscleDataOpenSimAD import getPolynomialData
     polynomialData = {}
     polynomialData['r'] = getPolynomialData(
