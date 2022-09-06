@@ -30,63 +30,111 @@ def getMTParameters(pathModel, muscles, loadMTParameters,
 # %% Extract muscle-tendon lenghts and moment arms.
 # We extract data from varying limb postures, such as to later fit polynomials
 # to approximate muscle tendon lenghts and moment arms.
-def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table,
-                                  lumbarMuscles=[], lumbarCoordinates=[]):
+def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table, idxSlice):
     import opensim
     
+    # Create temporary motion file.
+    from utils import numpy_to_storage  
+    labels = ['time'] + coordinates_table      
+    time = np.linspace(0, data.shape[0]/100-0.01, data.shape[0])    
+    c_data = np.concatenate((np.expand_dims(time, axis=1), data),axis=1)
+    modelDir = os.path.dirname(pathModel)
+    motionPath = os.path.join(modelDir, 'motion4MA_{}.mot'.format(idxSlice))  
+    numpy_to_storage(labels, c_data, motionPath, datatype='IK')
+    
+    # Model.
     opensim.Logger.setLevelString('error')
-    model = opensim.Model(pathModel)  
-    state = model.initSystem()    
-    # muscles as ordered in model
+    model = opensim.Model(pathModel)
+    model.initSystem()
+    
+    # Create time-series table with coordinate values. 
+    table = opensim.TimeSeriesTable(motionPath)
+    tableProcessor = opensim.TableProcessor(table)
+    tableProcessor.append(opensim.TabOpUseAbsoluteStateNames())
+    time = np.asarray(table.getIndependentColumn())
+    table = tableProcessor.processAndConvertToRadians(model)
+    
+    # Append missing states to table.
+    stateVariableNames = model.getStateVariableNames()
+    stateVariableNamesStr = [
+        stateVariableNames.get(i) for i in range(
+            stateVariableNames.getSize())]
+    existingLabels = table.getColumnLabels()
+    for stateVariableNameStr in stateVariableNamesStr:
+        if not stateVariableNameStr in existingLabels:
+            # Hack for the patella, need to provide the same value as for the
+            # knee.
+            if 'knee_angle_r_beta/value' in stateVariableNameStr:
+                vec_0 = opensim.Vector(data[:, coordinates_table.index('/jointset/walker_knee_r/knee_angle_r/value')] * np.pi/180 )         
+            elif 'knee_angle_l_beta/value' in stateVariableNameStr:
+                vec_0 = opensim.Vector(data[:, coordinates_table.index('/jointset/walker_knee_l/knee_angle_l/value')] * np.pi/180 )
+            else:
+                vec_0 = opensim.Vector([0] * table.getNumRows())            
+            table.appendColumn(stateVariableNameStr, vec_0)
+    stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(model, table)
+    
+    # Number of muscles.
     muscles = []
     forceSet = model.getForceSet()
     for i in range(forceSet.getSize()):        
         c_force_elt = forceSet.get(i)  
-        if (c_force_elt.getConcreteClassName() == 
-            "Millard2012EquilibriumMuscle"):
+        if 'Muscle' in c_force_elt.getConcreteClassName():
             muscles.append(c_force_elt.getName())
+    nMuscles = len(muscles)
     
-    # coordinates as ordered in model
+    # Coordinates.
     coordinateSet = model.getCoordinateSet()
-    coordinates = [coordinateSet.get(i).getName() 
-                   for i in range(coordinateSet.getSize())]
+    nCoordinates = coordinateSet.getSize()
+    coordinates = [coordinateSet.get(i).getName() for i in range(nCoordinates)]
+    
+    # TODO: hard coded
+    rootCoordinates = [
+        'pelvis_tilt', 'pelvis_list', 'pelvis_rotation',
+        'pelvis_tx', 'pelvis_ty', 'pelvis_tz']
+    lumbarCoordinates = ['lumbar_extension', 'lumbar_bending', 
+                         'lumbar_rotation']    
+    armCoordinates = ['arm_flex_r', 'arm_add_r', 'arm_rot_r', 
+                      'elbow_flex_r', 'pro_sup_r', 
+                      'arm_flex_l', 'arm_add_l', 'arm_rot_l', 
+                      'elbow_flex_l', 'pro_sup_l']    
     coordinates_table_short = [
         label.split('/')[-2] for label in coordinates_table] # w/o /jointset/..
-
-    lMT = np.zeros((data.shape[0], len(muscles)))
-    dM =  np.zeros((data.shape[0], len(muscles), len(coordinates_table_short)))
+    
+    # Compute muscle-tendon lengths and moment arms.
+    lMT = np.zeros((data.shape[0], nMuscles))
+    dM =  np.zeros((data.shape[0], nMuscles, len(coordinates_table_short)))
     for i in range(data.shape[0]):
-        for coordinate in coordinates_table:
-            value_q = data[i, coordinates_table.index(coordinate)] * np.pi/180
-            model.setStateVariableValue(state, coordinate, value_q)
-        state = model.updWorkingState()
-        model.realizePosition(state)        
+        model.realizePosition(stateTrajectory[i])
+        count = 0
         for m in range(forceSet.getSize()):        
-            c_force_elt = forceSet.get(m)  
-            if (c_force_elt.getConcreteClassName() == 
-                "Millard2012EquilibriumMuscle"):
+            c_force_elt = forceSet.get(m)
+            if i == 0:
+                muscleNames = [] 
+            if 'Muscle' in c_force_elt.getConcreteClassName():
                 muscleName = c_force_elt.getName()
-                cObj = opensim.Millard2012EquilibriumMuscle.safeDownCast(c_force_elt)            
-                lMT[i,m] = cObj.getLength(state)            
+                cObj = opensim.Muscle.safeDownCast(c_force_elt)            
+                lMT[i,count] = cObj.getLength(stateTrajectory[i])
+                if i == 0:
+                    muscleNames.append(muscleName)                    
                 for c, coord in enumerate(coordinates_table_short):
                     # We do not want to compute moment arms that are not
                     # relevant, eg for a muscle of the left side wrt a
                     # coordinate of the right side, or for a leg muscle with
                     # respect to a lumbar coordinate.
                     if muscleName[-2:] == '_l' and coord[-2:] == '_r':
-                        dM[i, m, c] = 0
+                        dM[i, count, c] = 0
                     elif muscleName[-2:] == '_r' and coord[-2:] == '_l':
-                        dM[i, m, c] = 0
-                    elif (muscleName[:-2] in lumbarMuscles and 
-                          not coord in lumbarCoordinates):
-                        dM[i, m, c] = 0
-                    elif (not muscleName[:-2] in lumbarMuscles and 
-                          coord in lumbarCoordinates):
-                        dM[i, m, c] = 0
+                        dM[i, count, c] = 0
+                    elif (coord in rootCoordinates or 
+                          coord in lumbarCoordinates or 
+                          coord in armCoordinates):
+                        dM[i, count, c] = 0
                     else:
                         coordinate = coordinateSet.get(
                             coordinates.index(coord))
-                        dM[i, m, c] = cObj.computeMomentArm(state, coordinate)
+                        dM[i, count, c] = cObj.computeMomentArm(
+                            stateTrajectory[i], coordinate)
+                count += 1
                         
     return [lMT, dM]
 
@@ -116,7 +164,7 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
             # Get training data from motion file
             table = opensim.TimeSeriesTable(pathMotionFile4Polynomials)
             coordinates_table = list(table.getColumnLabels()) # w/ jointset/...
-            data = table.getMatrix().to_numpy() # data in degrees w/o time        
+            data = table.getMatrix().to_numpy() # data in degrees w/o time
             pathModel = os.path.join(pathModelFolder, modelName + '.osim')
             # Set number of threads
             if nThreads == None:
@@ -127,14 +175,18 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
                 nThreads = multiprocessing.cpu_count()                
             # Generate muscle tendon lengths and moment arms (in parallel)
             slice_size = int(np.floor(data.shape[0]/nThreads))
-            rest = data.shape[0] % nThreads 
+            rest = data.shape[0] % nThreads
             outputs = Parallel(n_jobs=nThreads)(
                 delayed(get_mtu_length_and_moment_arm)(
                     pathModel, data[i*slice_size:(i+1)*slice_size,:], 
-                    coordinates_table) for i in range(nThreads))
+                    coordinates_table, i) for i in range(nThreads))
             if rest != 0:
                 output_last = get_mtu_length_and_moment_arm(
-                    pathModel, data[-rest:,:], coordinates_table)                
+                    pathModel, data[-rest:,:], coordinates_table, 99)  
+            # Delete temporary motion files.
+            for file in os.listdir(pathModelFolder):
+                if 'motion4MA_' in file:
+                    os.remove(os.path.join(pathModelFolder, file))                
             # Gather data
             lMT = np.zeros((data.shape[0], outputs[0][1].shape[1]))
             dM =  np.zeros((data.shape[0], outputs[0][1].shape[1], 
