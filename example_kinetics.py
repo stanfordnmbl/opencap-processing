@@ -85,7 +85,7 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 ###############################################################################
 # Overground session - uncomment below to run.
 session_id = "ef516897-f0b2-493e-9927-3022db2d2ac3"
-trial_name = 'DJ' # Examples include 'Gait', 'Squats', 'DJ', 'STS'.
+trial_name = 'Squats' # Examples include 'Gait', 'Squats', 'DJ', 'STS'.
 if trial_name == 'Gait': # Walking example
     motion_type = 'walking'
     time_window = [2.5, 4.0]
@@ -133,7 +133,7 @@ if not 'treadmill_speed' in locals():
 else:
     treadmill = True
 # Download kinematics and model.
-_ = download_kinematics(session_id, folder=sessionFolder, trialNames=[trial_name])
+# _ = download_kinematics(session_id, folder=sessionFolder, trialNames=[trial_name])
 
 # Prepare inputs for dynamic simulations.
 # Adjust muscle wrapping.
