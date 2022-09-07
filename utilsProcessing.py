@@ -223,7 +223,7 @@ def adjustMuscleWrapping(
     #                                OpenSimModel + '_scaled_adjusted.osim')
     pathModelFolder = os.path.join(osDir, 'Model')
     pathUnscaledModel = os.path.join(baseDir, 'OpenSimPipeline', 'Models',
-                                      OpenSimModel + '.osim')
+                                     OpenSimModel + '.osim')
     pathScaledModel = os.path.join(pathModelFolder,
                                    OpenSimModel + '_scaled.osim')
     pathOutputModel = os.path.join(pathModelFolder,
