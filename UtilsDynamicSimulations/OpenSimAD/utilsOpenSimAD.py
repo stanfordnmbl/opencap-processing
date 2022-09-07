@@ -1532,7 +1532,6 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
     os_system = platform.system()
     
     if os_system == 'Windows':
-        pathBuildExpressionGraphOS = os.path.join(pathBuildExpressionGraph, 'windows') 
         OpenSimADOS_DIR = os.path.join(OpenSimAD_DIR, 'windows')        
         BIN_DIR = os.path.join(OpenSimADOS_DIR, 'bin')
         SDK_DIR = os.path.join(OpenSimADOS_DIR, 'sdk')
@@ -1544,11 +1543,10 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             with zipfile.ZipFile('windows.zip', 'r') as zip_ref:
                 zip_ref.extractall(OpenSimAD_DIR)
             os.remove('windows.zip')
-        cmd1 = 'cmake "' + pathBuildExpressionGraphOS + '" -G "' + compiler + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + SDK_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
+        cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -G "' + compiler + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + SDK_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
         cmd2 = "cmake --build . --config RelWithDebInfo"
         
     elif os_system == 'Linux':
-        pathBuildExpressionGraphOS = os.path.join(pathBuildExpressionGraph, 'linux')
         OpenSimADOS_DIR = os.path.join(OpenSimAD_DIR, 'linux')
         # Download libraries if not existing locally.
         if not os.path.exists(os.path.join(OpenSimAD_DIR, 'linux', 'lib')):
@@ -1558,12 +1556,11 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             cmd_tar = 'tar -xf linux.tar.gz -C {}'.format(OpenSimAD_DIR)
             os.system(cmd_tar)
             os.remove('linux.tar.gz')
-        cmd1 = 'cmake "' + pathBuildExpressionGraphOS + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '" -DCMAKE_INSTALL_PREFIX= "' + OpenSimADOS_DIR + '"'
+        cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '" -DCMAKE_INSTALL_PREFIX= "' + OpenSimADOS_DIR + '"'
         cmd2 = "make"
         BIN_DIR = pathBuild
         
     elif os_system == 'Darwin':
-        pathBuildExpressionGraphOS = os.path.join(pathBuildExpressionGraph, 'macOS')
         OpenSimADOS_DIR = os.path.join(OpenSimAD_DIR, 'macOS')
         # Download libraries if not existing locally.
         if not os.path.exists(os.path.join(OpenSimAD_DIR, 'macOS', 'lib')):
@@ -1573,7 +1570,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             cmd_tar = 'tar -xf macOS.tgz -C {}'.format(OpenSimAD_DIR)
             os.system(cmd_tar)
             os.remove('macOS.tgz')
-        cmd1 = 'cmake "' + pathBuildExpressionGraphOS + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '" -DCMAKE_INSTALL_PREFIX= "' + OpenSimADOS_DIR + '"'
+        cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '" -DCMAKE_INSTALL_PREFIX= "' + OpenSimADOS_DIR + '"'
         cmd2 = "make"
         BIN_DIR = pathBuild
     
