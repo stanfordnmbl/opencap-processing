@@ -108,13 +108,13 @@ elif trial_name == 'STS': # Sit-to-stand example
 #     treadmill_speed = 2.67
 ###############################################################################
 
-case = '1'
+case = '0'
 
 # Set compiler/build system generator.
 compiler = "Visual Studio 15 2017 Win64"
 
 # Set to True to solve the optimal control problem.
-solveProblem = False
+solveProblem = True
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
@@ -133,7 +133,7 @@ if not 'treadmill_speed' in locals():
 else:
     treadmill = True
 # Download kinematics and model.
-# _ = download_kinematics(session_id, folder=sessionFolder, trialNames=[trial_name])
+_ = download_kinematics(session_id, folder=sessionFolder, trialNames=[trial_name])
 
 # Prepare inputs for dynamic simulations.
 # Adjust muscle wrapping.

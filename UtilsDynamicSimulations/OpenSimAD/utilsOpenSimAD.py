@@ -1524,10 +1524,10 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
     
     # %% Part 1: build expression graph (i.e., generate foo.py).
     pathMain = os.getcwd()
-    pathBuildExpressionGraph = os.path.join(pathMain, 'buildExpressionGraph')
-    pathBuild = os.path.join(pathMain, 'build-ExpressionGraph' + filename)
+    pathBuildExpressionGraph = os.path.join(pathDCAD, 'buildExpressionGraph')
+    pathBuild = os.path.join(pathDCAD, 'build-ExpressionGraph' + filename)
     os.makedirs(pathBuild, exist_ok=True)
-    OpenSimAD_DIR = os.path.join(pathMain, 'opensimAD-install')
+    OpenSimAD_DIR = os.path.join(pathDCAD, 'opensimAD-install')
     os.makedirs(OpenSimAD_DIR, exist_ok=True)
     os_system = platform.system()
     
@@ -1588,10 +1588,10 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
     
     # %% Part 2: build external function (i.e., build .dll).
     fooName = "foo.py"
-    pathBuildExternalFunction = os.path.join(pathMain, 'buildExternalFunction')
+    pathBuildExternalFunction = os.path.join(pathDCAD, 'buildExternalFunction')
     path_external_filename_foo = os.path.join(BIN_DIR, fooName)
-    path_external_functions_filename_build = os.path.join(pathMain, 'build-ExternalFunction' + filename)
-    path_external_functions_filename_install = os.path.join(pathMain, 'install-ExternalFunction' + filename)
+    path_external_functions_filename_build = os.path.join(pathDCAD, 'build-ExternalFunction' + filename)
+    path_external_functions_filename_install = os.path.join(pathDCAD, 'install-ExternalFunction' + filename)
     os.makedirs(path_external_functions_filename_build, exist_ok=True) 
     os.makedirs(path_external_functions_filename_install, exist_ok=True)
     shutil.copy2(path_external_filename_foo, pathBuildExternalFunction)
