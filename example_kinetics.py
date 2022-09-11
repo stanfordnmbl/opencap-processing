@@ -84,28 +84,28 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 # Examples.
 ###############################################################################
 # Overground session - uncomment below to run.
-session_id = "ef516897-f0b2-493e-9927-3022db2d2ac3"
-trial_name = 'Gait' # Examples include 'Gait', 'Squats', 'DJ', 'STS'.
-if trial_name == 'Gait': # Walking example
-    motion_type = 'walking'
-    time_window = [2.5, 4.0]
-elif trial_name == 'Squats': # Squat example
-    motion_type = 'squats'
-    repetition = 1
-elif trial_name == 'DJ': # Drop jump example
-    motion_type = 'drop_jump'
-    time_window = [1.55, 2.35]
-elif trial_name == 'STS': # Sit-to-stand example
-    motion_type = 'sts'
-    repetition = 0
+# session_id = "ef516897-f0b2-493e-9927-3022db2d2ac3"
+# trial_name = 'Gait' # Examples include 'Gait', 'Squats', 'DJ', 'STS'.
+# if trial_name == 'Gait': # Walking example
+#     motion_type = 'walking'
+#     time_window = [2.5, 4.0]
+# elif trial_name == 'Squats': # Squat example
+#     motion_type = 'squats'
+#     repetition = 1
+# elif trial_name == 'DJ': # Drop jump example
+#     motion_type = 'drop_jump'
+#     time_window = [1.55, 2.35]
+# elif trial_name == 'STS': # Sit-to-stand example
+#     motion_type = 'sts'
+#     repetition = 0
 ###############################################################################
 # Treadmill session - uncomment below to run.
-# session_id = "2174d76b-2646-4099-b11e-6ccdc96d82bf"
-# trial_name = 'running_natural_backwards1'
-# if trial_name == 'running_natural_backwards1': # Running example
-#     motion_type = 'running'
-#     time_window = [6.6, 7.2]
-#     treadmill_speed = 2.67
+session_id = "2174d76b-2646-4099-b11e-6ccdc96d82bf"
+trial_name = 'running_natural_backwards1'
+if trial_name == 'running_natural_backwards1': # Running example
+    motion_type = 'running'
+    time_window = [6.6, 7.2]
+    treadmill_speed = 2.67
 ###############################################################################
 
 case = '0'

@@ -1596,7 +1596,10 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
     sys.path.append(pathBuildExternalFunction)
     os.chdir(pathBuildExternalFunction)
     
-    generateF(nInputs)
+    if treadmill:
+        generateF(nInputs+1)
+    else:
+        generateF(nInputs)
     
     if os_system == 'Windows':
         cmd3 = 'cmake "' + pathBuildExternalFunction + '" -G "' + compiler + '" -DTARGET_NAME:STRING="' + filename + '" -DINSTALL_DIR:PATH="' + path_external_functions_filename_install + '"'
