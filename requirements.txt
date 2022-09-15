@@ -4,3 +4,4 @@ matplotlib
 ipython
 numpy
 python-decouple
+maskpass==0.3.6
