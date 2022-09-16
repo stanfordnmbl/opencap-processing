@@ -38,13 +38,14 @@ def get_token():
             try:
                 # If spyder, use maskpass
                 isSpyder = 'SPY_PYTHONPATH' in os.environ
+                print('Login with credentials used at app.opencap.ai.\nVisit the website to make an account if you do not have one.\n')
                 
                 if isSpyder:
-                    un = maskpass.advpass(prompt="Enter Username\n")
-                    pw = maskpass.advpass(prompt="Enter Password\n")
+                    un = maskpass.advpass(prompt="Enter Username:\n")
+                    pw = maskpass.advpass(prompt="Enter Password:\n")
                 else:
-                    un = getpass.getpass(prompt='Username: ', stream=None)
-                    pw = getpass.getpass(prompt='Password: ', stream=None)
+                    un = getpass.getpass(prompt='Enter Username: ', stream=None)
+                    pw = getpass.getpass(prompt='Enter Password: ', stream=None)
                 
                 data = {"username":un,"password":pw}
                 resp = requests.post(API_URL + 'login/',data=data).json()
