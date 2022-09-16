@@ -25,7 +25,7 @@ from utilsPlotting import plot_dataframe
 
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
-session_id = "6fc75175-7a66-4fe0-819d-c5f2ee8672dc"
+session_id = "cf3bcb9a-78be-4e25-9761-d04e900167a5"
 
 # Specify trial names in a list; use None to process all trials in a session.
 specific_trial_names = None
@@ -68,42 +68,37 @@ coordinates['speeds'][trial_names[0]].to_csv(output_csv_path)
 
 # %% Plot: examples.
 # Plot all coordinate values against time.
-plot_dataframe(dataframes = [coordinates['values'][trial_names[0]], 
-                             coordinates['values'][trial_names[1]]],
+plot_dataframe(dataframes = [coordinates['values'][trial_names[0]]],
                xlabel = 'Time (s)',
                ylabel = 'Pos (m or deg)',
                title = 'Coordinate values',
-               labels = [trial_names[0], trial_names[1]])
+               labels = [trial_names[0]])
 
 # Plot selected coordinate speeds against time.
-plot_dataframe(dataframes = [coordinates['speeds'][trial_names[0]], 
-                             coordinates['speeds'][trial_names[1]]],
+plot_dataframe(dataframes = [coordinates['speeds'][trial_names[0]]],
                y = ['hip_flexion_l', 'knee_angle_l'],
                xlabel = 'Time (s)',
                ylabel = 'Vel (deg/s)',
                title = 'Coordinate speeds',
-               labels = [trial_names[0], trial_names[1]])
+               labels = [trial_names[0]])
 
 # Plot knee flexion accelerations against hip flexion accelerations.
-plot_dataframe(dataframes = [coordinates['accelerations'][trial_names[0]], 
-                             coordinates['accelerations'][trial_names[1]]],
+plot_dataframe(dataframes = [coordinates['accelerations'][trial_names[0]]],
                x = 'knee_angle_l',
                y = ['hip_flexion_l'],
                xlabel = 'Knee angle acceleration (deg/s^2)',
                ylabel = 'Hip flexion acceleration (deg/s^2)',
-               labels = [trial_names[0], trial_names[1]])
+               labels = [trial_names[0]])
 
 # Plot center of mass values.
-plot_dataframe(dataframes = [center_of_mass['accelerations'][trial_names[0]], 
-                             center_of_mass['accelerations'][trial_names[1]]],
+plot_dataframe(dataframes = [center_of_mass['accelerations'][trial_names[0]]],
                xlabel = 'Time (s)',
                title = 'Center of mass accelerations',
-               labels = [trial_names[0], trial_names[1]])
+               labels = [trial_names[0]])
 
 # Plot muscle-tendon lengths against time.
-plot_dataframe(dataframes = [muscle_tendon_lengths[trial_names[0]], 
-                             muscle_tendon_lengths[trial_names[1]]],
+plot_dataframe(dataframes = [muscle_tendon_lengths[trial_names[0]]],
                y = ['bflh_r', 'gasmed_r', 'recfem_r'],
                xlabel = 'Time (s)',
                title = 'Muscle-tendon lengths',
-               labels = [trial_names[0], trial_names[1]])
+               labels = [trial_names[0]])
