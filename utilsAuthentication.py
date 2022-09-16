@@ -27,7 +27,7 @@ from utilsAPI import get_api_url
 
 API_URL = get_api_url()
 
-def get_token():
+def get_token(saveEnvPath=None):
            
     if 'API_TOKEN' not in globals():
     
@@ -53,6 +53,14 @@ def get_token():
                 
                 print('Login successful.')
                 
+                if saveEnvPath is not None:
+                    envPath = os.path.join(saveEnvPath,'.env')
+        
+                    f = open(envPath, "w")
+                    f.write('API_TOKEN="' + token + '"')
+                    f.close()
+                    print('Authentication token saved to '+ envPath + '. DO NOT CHANGE THIS FILE NAME. If you do, your authentication token will get pushed to github. Restart your terminal for env file to load.')
+
             except:
                 raise Exception('Login failed.')
         
