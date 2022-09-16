@@ -24,7 +24,8 @@
 # to github with a commit, and anyone could get access to your data.
 # We recommend only saving this .env file on your own encrypted machine
 # and not while running on google collab.
-import utilsAuthentication as ua
+
+from utilsAuthentication import get_token
 import os
 
-ua.get_token(saveEnvPath=os.getcwd())
+get_token(saveEnvPath=os.getcwd())
