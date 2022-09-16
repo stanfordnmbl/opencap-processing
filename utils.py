@@ -37,9 +37,16 @@ def download_file(url, file_name):
         shutil.copyfileobj(response, out_file)
 
 def get_session_json(session_id):
-    sessionJson = requests.get(
+    resp = requests.get(
         API_URL + "sessions/{}/".format(session_id),
-        headers = {"Authorization": "Token {}".format(API_TOKEN)}).json()
+        headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    
+    if resp.status_code == 500:
+        raise Exception('No server response. Likely not a valid session id.')
+        
+    sessionJson = resp.json()
+    if 'trials' not in sessionJson.keys():
+        raise Exception('This session is not in your username, nor is it public. You do not have access.')
     
     # Sort trials by time recorded.
     def get_created_at(trial):
@@ -159,7 +166,6 @@ def import_metadata(filePath):
 def download_kinematics(session_id, folder=None, trialNames=None):
     
     # Login to access opencap data from server. 
-    get_token()
     
     # Create folder.
     if folder is None:
@@ -187,11 +193,8 @@ def download_kinematics(session_id, folder=None, trialNames=None):
         get_motion_data(trial_id,folder)
         loadedTrialNames.append(trialDict['name'])
         
-    # Remove 'calibration' and 'neutral' from loadedTrialNames.
-    if 'calibration' in loadedTrialNames:
-        loadedTrialNames.remove('calibration')
-    if 'neutral' in loadedTrialNames:
-        loadedTrialNames.remove('neutral')
+    # Remove 'calibration' and 'neutral' from loadedTrialNames.    
+    loadedTrialNames = [i for i in loadedTrialNames if i!='neutral' and i!='calibration']
         
     # Geometries.
     get_geometries(folder)

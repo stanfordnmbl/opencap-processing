@@ -21,26 +21,43 @@
 import requests
 from decouple import config
 import getpass
+import os
+import maskpass
 from utilsAPI import get_api_url
 
 API_URL = get_api_url()
 
-def get_token():           
-    if 'API_TOKEN' not in globals():    
+def get_token():
+           
+    if 'API_TOKEN' not in globals():
+    
         try: # look in environment file
-            token = config("API_TOKEN")
+            token = config("API_TOKEN")              
+            
         except:
             try:
-                un = getpass.getpass(prompt='Username: ', stream=None)
-                pw = getpass.getpass(prompt='Password: ', stream=None)                
+                # If spyder, use maskpass
+                isSpyder = 'SPY_PYTHONPATH' in os.environ
+                
+                if isSpyder:
+                    un = maskpass.advpass(prompt="Enter Username\n")
+                    pw = maskpass.advpass(prompt="Enter Password\n")
+                else:
+                    un = getpass.getpass(prompt='Enter Username: ', stream=None)
+                    pw = getpass.getpass(prompt='Enter Password: ', stream=None)
+                
                 data = {"username":un,"password":pw}
-                resp = requests.post(API_URL+' login/',data=data).json()
-                token = resp['token']                
-                print('Login successful.')                
+                resp = requests.post(API_URL + 'login/',data=data).json()
+                token = resp['token']
+                
+                print('Login successful.')
+                
             except:
-                raise Exception('Login failed.')        
+                raise Exception('Login failed.')
+        
         global API_TOKEN
         API_TOKEN = token
     else:
-        token = API_TOKEN    
+        token = API_TOKEN
+    
     return token
