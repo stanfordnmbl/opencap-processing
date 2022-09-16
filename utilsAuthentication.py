@@ -43,8 +43,8 @@ def get_token():
                     un = maskpass.advpass(prompt="Enter Username\n")
                     pw = maskpass.advpass(prompt="Enter Password\n")
                 else:
-                    un = getpass.getpass(prompt='Username: ', stream=None)
-                    pw = getpass.getpass(prompt='Password: ', stream=None)
+                    un = getpass.getpass(prompt='Enter Username: ', stream=None)
+                    pw = getpass.getpass(prompt='Enter Password: ', stream=None)
                 
                 data = {"username":un,"password":pw}
                 resp = requests.post(API_URL + 'login/',data=data).json()
