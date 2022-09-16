@@ -35,13 +35,12 @@ Please provide:
                     all your sessions at https://app.opencap.ai/sessions.
     trial_name:     This is the name of the trial you want to simulate. You can
                     find all trial names after loading a session.
-    motion_type:    Options are 'running', 'walking', 'drop_jump', 'sts', 
-                    'squats', and 'other'. This is the type of activity you 
-                    want to simulate. We provide settings/formulations that 
-                    worked well for different types of activities. We have 
-                    pre-defined settings for running, walking, drop_jump, sts, 
-                    and squats. If your activity is different, please select
-                    'other'.
+    motion_type:    This is the type of activity you want to simulate. Options
+                    are 'running', 'walking', 'drop_jump', 'sit-to-stand', 
+                    'squats', and 'other'. We provide pre-defined settings that
+                    worked well for this set of activities. If your activity is
+                    different, please select 'other' or set your own settings
+                    in settingsOpenSimAD.
     time_window:    This is the time interval you want to simulate. It is
                     recommended to simulate trials shorter than 2s. Set to []
                     to simulate full trial. For squats or sit-to-stands, we
@@ -49,8 +48,9 @@ Please provide:
                     such case, instead of providing the time_window, you can
                     provide the index of the repetition (0 is first) and the
                     time_window will be automatically computed.
-    repetition:     Only for motion_type='sts' and motion_type='squats'. This
-                    is the index of the repetition you want to simulate.
+    repetition:     Only if motion_type is 'sit_to_stand' or 'squats'. This
+                    is the index of the repetition you want to simulate (0 is 
+                    first). There is no need to set the time_window. 
     case:           This is a string that will be appended to the file names
                     of the results. Dynamic simulations are optimization
                     problems, and it is common to have to play with some
@@ -59,10 +59,15 @@ Please provide:
                     solutions correspond to what settings and this is what this
                     variable is doing. You can then easily compare results
                     generated from different sets of settings.
-    compiler:       This is the name of the compiler/build system generator
-                    you want to use. Our framework involves building/compiling
-                    libraries and you will need to have a compiler for that.
-                    On windows, we use Visual Studio Generators. You can find
+    compiler:       Only for Windows. This is the name of the compiler/build
+                    system generator you want to use. Our framework involves
+                    building/compiling libraries and you will need to have a
+                    compiler for that. On macOS and linux, the default
+                    compilers will work well. On Windows, you will need to
+                    install a compiler. We recommend installing Visual Studio
+                    with support for C++; the installation will come with a
+                    compiler.
+                    ou can find
                     a list of generators here: https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html.
                     TODO: Win64 or x64. 
                     With Visual Studio 2017 64 bits, the generator name is:
@@ -96,7 +101,7 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #     motion_type = 'drop_jump'
 #     time_window = [1.55, 2.35]
 # elif trial_name == 'STS': # Sit-to-stand example
-#     motion_type = 'sts'
+#     motion_type = 'sit_to_stand'
 #     repetition = 0
 ###############################################################################
 # Treadmill session - uncomment below to run.
@@ -142,7 +147,7 @@ adjustMuscleWrapping(baseDir, dataFolder, session_id, overwrite=False)
 generateModelWithContacts(dataFolder, session_id, overwrite=False)
 # Generate external function.
 generateExternalFunction(baseDir, dataFolder, session_id, compiler=compiler,
-                         overwrite=False, treadmill=treadmill)
+                         overwrite=True, treadmill=treadmill)
 
 # Get settings.
 default_settings = get_default_setup(motion_type)
@@ -155,7 +160,7 @@ if not 'repetition' in locals():
 if not 'time_window' in locals(): 
     if motion_type == 'squats':
         times_window = segmentSquats(pathMotionFile, visualize=True)
-    elif motion_type == 'sts':
+    elif motion_type == 'sit_to_stand':
         _, _, times_window = segmentSTS(pathMotionFile, visualize=True)
     time_window = times_window[repetition]
 else:

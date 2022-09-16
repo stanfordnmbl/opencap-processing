@@ -153,7 +153,7 @@ def get_default_setup(motion_type):
             'pelvis_tz': {"env_bound": 0.02}},
         'ignorePassiveFiberForce': True}
     
-    # setups['sts'] = {
+    # setups['sit_to_stand'] = {
     #     'weights': {
     #         'positionTrackingTerm': 50,
     #         'velocityTrackingTerm': 10,
@@ -207,7 +207,7 @@ def get_default_setup(motion_type):
     #         'hip_rotation_l': 30, 'hip_rotation_r': 30},
     #     'ignorePassiveFiberForce': True}
     
-    setups['sts'] = {
+    setups['sit_to_stand'] = {
         'weights': {
             'positionTrackingTerm': 50,
             'velocityTrackingTerm': 10,
@@ -412,7 +412,7 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['meshDensity'] = 100
         
-    elif motion_type == 'sts':  
+    elif motion_type == 'sit_to_stand':  
         settings['trials'], settings['trials'][trialName] = {}, {}
         settings['trials'][trialName]['filter_coordinates_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_coord'] = 4
