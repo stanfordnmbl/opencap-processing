@@ -122,68 +122,66 @@ class quasiRandomGuess:
     
     # Collocation points   
     def getGuessActivationCol(self):            
-        guessActivationCol = pd.DataFrame(columns=self.muscles)          
+        temp = []
         for k in range(self.N):
-            for c in range(self.d):          
-                guessActivationCol = guessActivationCol.append(
-                        self.guessActivation.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessActivation.iloc[k])
+        guessActivationCol = pd.DataFrame.from_records(temp)
             
         return guessActivationCol
     
     def getGuessForceCol(self):
-        guessForceCol = pd.DataFrame(columns=self.muscles)          
+        temp = []
         for k in range(self.N):
             for c in range(self.d):          
-                guessForceCol = guessForceCol.append(
-                        self.guessForce.iloc[k], ignore_index=True)
+                temp.append(self.guessForce.iloc[k])
+        guessForceCol = pd.DataFrame.from_records(temp)
             
         return guessForceCol
     
     def getGuessForceDerivativeCol(self):
-        guessForceDerivativeCol = pd.DataFrame(columns=self.muscles)          
+        temp = []         
         for k in range(self.N):
-            for c in range(self.d):          
-                guessForceDerivativeCol = guessForceDerivativeCol.append(
-                        self.guessForceDerivative.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessForceDerivative.iloc[k])
+        guessForceDerivativeCol = pd.DataFrame.from_records(temp)
             
         return guessForceDerivativeCol
     
     def getGuessTorqueActuatorActivationCol(self, torqueActuatorJoints):
-        guessTorqueActuatorActivationCol = (
-                pd.DataFrame(columns=torqueActuatorJoints))         
+        temp = []
         for k in range(self.N):
-            for c in range(self.d):          
-                guessTorqueActuatorActivationCol = (
-                        guessTorqueActuatorActivationCol.append(
-                        self.guessTorqueActuatorActivation.iloc[k], 
-                        ignore_index=True))
+            for c in range(self.d):
+                temp.append(self.guessTorqueActuatorActivation.iloc[k])
+        guessTorqueActuatorActivationCol = pd.DataFrame.from_records(temp)
             
         return guessTorqueActuatorActivationCol        
     
     def getGuessPositionCol(self):
-        guessPositionCol = pd.DataFrame(columns=self.joints)          
+        temp = []
         for k in range(self.N):
-            for c in range(self.d):          
-                guessPositionCol = guessPositionCol.append(
-                        self.guessPosition.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessPosition.iloc[k])
+        guessPositionCol = pd.DataFrame.from_records(temp)
         
         return guessPositionCol
     
     def getGuessVelocityCol(self):
-        guessVelocityCol = pd.DataFrame(columns=self.joints)       
+        temp = []      
         for k in range(self.N):
-            for c in range(self.d):          
-                guessVelocityCol = guessVelocityCol.append(
-                        self.guessVelocity.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessVelocity.iloc[k])
+        guessVelocityCol = pd.DataFrame.from_records(temp)
         
         return guessVelocityCol
     
     def getGuessAccelerationCol(self):
+        temp = []
         guessAccelerationCol = pd.DataFrame(columns=self.joints)  
         for k in range(self.N):
-            for c in range(self.d):          
-                guessAccelerationCol = guessAccelerationCol.append(
-                        self.guessAcceleration.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessAcceleration.iloc[k])
+        guessAccelerationCol = pd.DataFrame.from_records(temp)
                 
         return guessAccelerationCol
     
@@ -453,68 +451,66 @@ class dataDrivenGuess_tracking:
     
     # Collocation points   
     def getGuessActivationCol(self):            
-        guessActivationCol = pd.DataFrame(columns=self.muscles)          
+        temp = []
         for k in range(self.N):
-            for c in range(self.d):          
-                guessActivationCol = guessActivationCol.append(
-                        self.guessActivation.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessActivation.iloc[k])
+        guessActivationCol = pd.DataFrame.from_records(temp)
             
         return guessActivationCol
     
     def getGuessForceCol(self):
-        guessForceCol = pd.DataFrame(columns=self.muscles)          
+        temp = []
         for k in range(self.N):
             for c in range(self.d):          
-                guessForceCol = guessForceCol.append(
-                        self.guessForce.iloc[k], ignore_index=True)
+                temp.append(self.guessForce.iloc[k])
+        guessForceCol = pd.DataFrame.from_records(temp)
             
         return guessForceCol
     
     def getGuessForceDerivativeCol(self):
-        guessForceDerivativeCol = pd.DataFrame(columns=self.muscles)          
+        temp = []         
         for k in range(self.N):
-            for c in range(self.d):          
-                guessForceDerivativeCol = guessForceDerivativeCol.append(
-                        self.guessForceDerivative.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessForceDerivative.iloc[k])
+        guessForceDerivativeCol = pd.DataFrame.from_records(temp)
             
         return guessForceDerivativeCol
     
     def getGuessTorqueActuatorActivationCol(self, torqueActuatorJoints):
-        guessTorqueActuatorActivationCol = (
-                pd.DataFrame(columns=torqueActuatorJoints))         
+        temp = []
         for k in range(self.N):
-            for c in range(self.d):          
-                guessTorqueActuatorActivationCol = (
-                        guessTorqueActuatorActivationCol.append(
-                        self.guessTorqueActuatorActivation.iloc[k], 
-                        ignore_index=True))
+            for c in range(self.d):
+                temp.append(self.guessTorqueActuatorActivation.iloc[k])
+        guessTorqueActuatorActivationCol = pd.DataFrame.from_records(temp)
             
         return guessTorqueActuatorActivationCol        
     
     def getGuessPositionCol(self):
-        guessPositionCol = pd.DataFrame(columns=self.joints)          
+        temp = []
         for k in range(self.N):
-            for c in range(self.d):          
-                guessPositionCol = guessPositionCol.append(
-                        self.guessPosition.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessPosition.iloc[k])
+        guessPositionCol = pd.DataFrame.from_records(temp)
         
         return guessPositionCol
     
     def getGuessVelocityCol(self):
-        guessVelocityCol = pd.DataFrame(columns=self.joints)       
+        temp = []      
         for k in range(self.N):
-            for c in range(self.d):          
-                guessVelocityCol = guessVelocityCol.append(
-                        self.guessVelocity.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessVelocity.iloc[k])
+        guessVelocityCol = pd.DataFrame.from_records(temp)
         
         return guessVelocityCol
     
     def getGuessAccelerationCol(self):
+        temp = []
         guessAccelerationCol = pd.DataFrame(columns=self.joints)  
         for k in range(self.N):
-            for c in range(self.d):          
-                guessAccelerationCol = guessAccelerationCol.append(
-                        self.guessAcceleration.iloc[k], ignore_index=True)
+            for c in range(self.d):
+                temp.append(self.guessAcceleration.iloc[k])
+        guessAccelerationCol = pd.DataFrame.from_records(temp)
                 
         return guessAccelerationCol
     

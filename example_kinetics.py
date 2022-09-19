@@ -4,10 +4,7 @@ Install requirements:
         CMake: https://cmake.org/download/
         Visual studio: https://visualstudio.microsoft.com/downloads/
             - Make sure you install C++ support
-            - This code was tested with Visual Studio Community 2017
-        CasADi: https://web.casadi.org/get/
-            - You can just 'pip install casadi' with Anaconda
-            
+            - This code was tested with Visual Studio Community 2017-201-2022            
 Please contact us for any questions: https://www.opencap.ai/#contact
 '''
 
@@ -59,19 +56,6 @@ Please provide:
                     solutions correspond to what settings and this is what this
                     variable is doing. You can then easily compare results
                     generated from different sets of settings.
-    compiler:       Only for Windows. This is the name of the compiler/build
-                    system generator you want to use. Our framework involves
-                    building/compiling libraries and you will need to have a
-                    compiler for that. On macOS and linux, the default
-                    compilers will work well. On Windows, you will need to
-                    install a compiler. We recommend installing Visual Studio
-                    with support for C++; the installation will come with a
-                    compiler.
-                    ou can find
-                    a list of generators here: https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html.
-                    TODO: Win64 or x64. 
-                    With Visual Studio 2017 64 bits, the generator name is:
-                    'Visual Studio 15 2017 Win64'.
     (optional)
     treadmill_speed:This an optional parameter that indicates the speed of
                     the treadmill in m/s. A positive value indicates that the
@@ -115,9 +99,6 @@ if trial_name == 'running_natural_backwards1': # Running example
 
 case = '0'
 
-# Set compiler/build system generator.
-compiler = "Visual Studio 15 2017 Win64"
-
 # Set to True to solve the optimal control problem.
 solveProblem = True
 # Set to True to analyze the results of the optimal control problem. If you
@@ -146,8 +127,8 @@ adjustMuscleWrapping(baseDir, dataFolder, session_id, overwrite=False)
 # Add foot-ground contacts to musculoskeletal model.
 generateModelWithContacts(dataFolder, session_id, overwrite=False)
 # Generate external function.
-generateExternalFunction(baseDir, dataFolder, session_id, compiler=compiler,
-                         overwrite=True, treadmill=treadmill)
+generateExternalFunction(baseDir, dataFolder, session_id, 
+                         overwrite=False, treadmill=treadmill)
 
 # Get settings.
 default_settings = get_default_setup(motion_type)

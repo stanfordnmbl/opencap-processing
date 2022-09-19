@@ -473,16 +473,13 @@ def getIndices(mylist, items):
 
 # %% Generate external function.
 def generateExternalFunction(
-        baseDir, dataDir, subject, poseDetector='DefaultPD', 
-        cameraSetup='DefaultModel',
+        baseDir, dataDir, subject, 
         OpenSimModel="LaiArnoldModified2017_poly_withArms_weldHand",
-        treadmill=False,                              
-        build_externalFunction=True, compiler="Visual Studio 15 2017 Win64",
-        verifyID=True, externalFunctionName='F', overwrite=False):
+        treadmill=False, build_externalFunction=True, verifyID=True, 
+        externalFunctionName='F', overwrite=False):
 
     # %% Process settings.
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
-    # pathModelFolder = os.path.join(osDir, poseDetector, cameraSetup, 'Model')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
     suffix_model = '_contacts'
@@ -495,8 +492,16 @@ def generateExternalFunction(
                                   externalFunctionName + ".cpp")
     pathOutputMap = os.path.join(pathOutputExternalFunctionFolder, 
                                  externalFunctionName + "_map.npy")
+    if platform.system() == 'Windows':
+        ext_F = '.dll'
+    elif platform.system() == 'Darwin':
+        ext_F = '.dylib'
+    elif platform.system() == 'Linux':
+        ext_F = '.so'
+    else:
+        raise ValueError("Platform not supported.")
     pathOutputDll = os.path.join(pathOutputExternalFunctionFolder, 
-                                 externalFunctionName + ".dll")
+                                 externalFunctionName + ext_F)
     
     if (overwrite is False and os.path.exists(pathOutputFile) and 
         os.path.exists(pathOutputMap) and os.path.exists(pathOutputDll)):
@@ -1422,7 +1427,7 @@ def generateExternalFunction(
         pathDCAD = os.path.join(baseDir, 'UtilsDynamicSimulations', 'OpenSimAD') 
         buildExternalFunction(
             externalFunctionName, pathDCAD, pathOutputExternalFunctionFolder,
-            3*nCoordinates, compiler=compiler, treadmill=treadmill)
+            3*nCoordinates, treadmill=treadmill)
         
     # %% Verification.
     # TODO: use API instead of ID tool.
@@ -1518,9 +1523,7 @@ def generateF(dim):
     cg.generate()
 
 # %% Compile external function.
-def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
-                          treadmill=False,
-                          compiler="Visual Studio 15 2017 Win64"):       
+def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs, treadmill=False):       
     
     # %% Part 1: build expression graph (i.e., generate foo.py).
     pathMain = os.getcwd()
@@ -1543,7 +1546,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             with zipfile.ZipFile('windows.zip', 'r') as zip_ref:
                 zip_ref.extractall(OpenSimAD_DIR)
             os.remove('windows.zip')
-        cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -G "' + compiler + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + SDK_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
+        cmd1 = 'cmake "' + pathBuildExpressionGraph + '"  -A x64 -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + SDK_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
         cmd2 = "cmake --build . --config RelWithDebInfo"
         
     elif os_system == 'Linux':
@@ -1602,7 +1605,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
         generateF(nInputs)
     
     if os_system == 'Windows':
-        cmd3 = 'cmake "' + pathBuildExternalFunction + '" -G "' + compiler + '" -DTARGET_NAME:STRING="' + filename + '" -DINSTALL_DIR:PATH="' + path_external_functions_filename_install + '"'
+        cmd3 = 'cmake "' + pathBuildExternalFunction + '" -A x64 -DTARGET_NAME:STRING="' + filename + '" -DINSTALL_DIR:PATH="' + path_external_functions_filename_install + '"'
         cmd4 = "cmake --build . --config RelWithDebInfo --target install"
     elif os_system == 'Linux':
         cmd3 = 'cmake "' + pathBuildExternalFunction + '" -DTARGET_NAME:STRING="' + filename + '" -DINSTALL_DIR:PATH="' + path_external_functions_filename_install + '"'
@@ -1639,45 +1642,20 @@ def download_file(url, file_name):
     
 # %% Plot results simulations.
 # TODO: simplify and clean up.
-def plotResultsDC(dataDir, subject, motion_filename,
-                  poseDetector='DefaultPD',
-                  cameraSetup='DefaultModel',
-                  augmenter='',
-                  OpenSimModel="LaiArnoldModified2017_poly_withArms_weldHand",
-                  cases=['default'], collection_type='default',
+def plotResultsDC(dataDir, subject, motion_filename, cases=['default'],
                   mainPlots=False, rep=None):
-
+    
     # %% Load optimal trajectories
+    pathOSData = os.path.join(dataDir, subject, 'OpenSimData')        
+    suff_path = ''
+    if not rep is None:
+        suff_path = '_rep' + str(rep)
+    c_pathResults = os.path.join(pathOSData, 'Dynamics', 
+                                 motion_filename + suff_path)    
+    c_tr = np.load(os.path.join(c_pathResults, 'optimalTrajectories.npy'),
+                   allow_pickle=True).item()    
     optimaltrajectories = {}
-    for case in cases:        
-        osDir = os.path.join(dataDir, subject, 'OpenSimData')
-        if collection_type == 'bigData':
-            pathOSData = os.path.join(osDir, poseDetector, 
-                                  cameraSetup, OpenSimModel)
-        elif collection_type == 'default_opencap':
-            pathOSData = os.path.join(osDir, poseDetector, cameraSetup)
-        elif collection_type == 'default':
-            pathOSData = osDir
-        else:
-            pathOSData = os.path.join(osDir, 'Video', poseDetector, 
-                                  cameraSetup, augmenter)
-        suff_path = ''
-        if not rep is None:
-            suff_path = '_rep' + str(rep)            
-        if collection_type == 'bigData' or collection_type == 'default_opencap':
-            c_pathResults = os.path.join(pathOSData, 'DC', 
-                                         motion_filename + suff_path)
-        elif collection_type == 'default':
-            c_pathResults = os.path.join(pathOSData, 'Dynamics', 
-                                         motion_filename + suff_path)
-        else:
-            c_pathResults = os.path.join(pathOSData, 'DC', OpenSimModel, 
-                                         motion_filename + suff_path)
-        
-        c_tr = np.load(os.path.join(c_pathResults,
-                                    'optimalTrajectories.npy'),
-                       allow_pickle=True).item()
-        
+    for case in cases:
         optimaltrajectories[case] = c_tr[case]
     
     # %% Joint coordinates.
