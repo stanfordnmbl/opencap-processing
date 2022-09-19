@@ -4,10 +4,7 @@ Install requirements:
         CMake: https://cmake.org/download/
         Visual studio: https://visualstudio.microsoft.com/downloads/
             - Make sure you install C++ support
-            - This code was tested with Visual Studio Community 2017 TODO
-        CasADi: https://web.casadi.org/get/
-            - You can just 'pip install casadi' with Anaconda
-            
+            - This code was tested with Visual Studio Community 2017-201-2022            
 Please contact us for any questions: https://www.opencap.ai/#contact
 '''
 
