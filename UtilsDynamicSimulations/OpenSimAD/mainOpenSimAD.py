@@ -14,6 +14,7 @@ import numpy as np
 # sys.path.append("../../opensimPipeline/JointReaction") # utilities in child directory
 import yaml
 import scipy.interpolate as interpolate
+import platform
 
 # %% Settings.
 plotPolynomials = False
@@ -647,14 +648,22 @@ def run_tracking(
     #             pathExternalFunctionFolder, 'nominal_c2_pp.dll'))
     #     F1_ref = ca.external('F', os.path.join(
     #         pathExternalFunctionFolder, 'nominal_pp.dll'))         
-            
-        F, F_map = {}, {}
-        for trial in trials:
-            F[trial] = ca.external(
-                'F', os.path.join(pathExternalFunctionFolder, 'F.dll'))
-            F_map[trial] = np.load(
-                os.path.join(pathExternalFunctionFolder, 'F_map.npy'), 
-                allow_pickle=True).item()
+    if platform.system() == 'Windows':
+        ext_F = '.dll'
+    elif platform.system() == 'Darwin':
+        ext_F = '.dylib'
+    elif platform.system() == 'Linux':
+        ext_F = '.so'
+    else:
+        raise ValueError("Platform not supported.")       
+    
+    F, F_map = {}, {}
+    for trial in trials:
+        F[trial] = ca.external(
+            'F', os.path.join(pathExternalFunctionFolder, 'F' + ext_F))
+        F_map[trial] = np.load(
+            os.path.join(pathExternalFunctionFolder, 'F_map.npy'), 
+            allow_pickle=True).item()
 
     # Example of how to call F with numerical values.
     # vec1 = np.ones((nJoints*2, 1))
