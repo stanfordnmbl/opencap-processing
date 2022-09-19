@@ -25,13 +25,13 @@ dimensions = ['x', 'y', 'z']
 nContactSpheres = 6
 
 def run_tracking(
-        baseDir, dataDir, subject, settings, subject_demo, case='default', 
+        baseDir, dataDir, subject, settings, case='default', 
         data_type='Video', poseDetector='mmpose_0.8', cameraSetup='2-cameras',
         augmenter='separateLowerUpperBody_OpenPose', solveProblem=True, 
         analyzeResults=True, writeGUI=True, visualizeTracking=False, 
         visualizeResultsAgainstBounds=False, printModel=False, computeKAM=False,
-        computeMCF=False, rep=None, processResults=False,
-        collection_type='default', treadmill_speed=0):
+        computeMCF=False, processResults=False,
+        collection_type='default'):
     import copy
     
     # Cost function weights.
@@ -209,7 +209,7 @@ def run_tracking(
             splineQds[trial] = trials[trial]['splineQds']
             
         treadmill[trial] = False
-        if treadmill_speed != 0:
+        if trials[trial]['treadmill_speed'] != 0:
             treadmill[trial] = True           
     
     # Filter info.          
@@ -351,16 +351,16 @@ def run_tracking(
     listToStr = '_'.join([str(elem) for elem in trials_list])
     if collection_type == 'bigData' or collection_type == 'default_OpenCap':
         pathResults = os.path.join(pathOSData, 'DC', listToStr)
-        if not rep is None:
-            pathResults = os.path.join(pathOSData, 'DC', listToStr + '_rep' + str(rep))
+        if 'repetition' in settings:
+            pathResults = os.path.join(pathOSData, 'DC', listToStr + '_rep' + str(settings['repetition']))
     elif collection_type == 'default':
         pathResults = os.path.join(pathOSData, 'Dynamics', listToStr)
-        if not rep is None:
-            pathResults = os.path.join(pathOSData, 'Dynamics', listToStr + '_rep' + str(rep)) 
+        if 'repetition' in settings:
+            pathResults = os.path.join(pathOSData, 'Dynamics', listToStr + '_rep' + str(settings['repetition'])) 
     else:
         pathResults = os.path.join(pathOSData, 'DC', OpenSimModel, listToStr)
-        if not rep is None:
-            pathResults = os.path.join(pathOSData, 'DC', OpenSimModel, listToStr + '_rep' + str(rep))        
+        if 'repetition' in settings:
+            pathResults = os.path.join(pathOSData, 'DC', OpenSimModel, listToStr + '_rep' + str(settings['repetition']))        
     os.makedirs(pathResults, exist_ok=True)
     pathSettings = os.path.join(pathResults, 'Setup_{}.yaml'.format(case))
     if not processResults:
@@ -2268,7 +2268,7 @@ def run_tracking(
                         Tk = F[trial](ca.vertcat(
                             ca.vertcat(QsQdskj_nsc[:, 0],
                                        Qddsk_nsc[idxJoints4F]),
-                            -treadmill_speed))
+                            -trials[trial]['treadmill_speed']))
                     else:
                         Tk = F[trial](ca.vertcat(QsQdskj_nsc[:, 0], 
                                                  Qddsk_nsc[idxJoints4F]))
@@ -2772,7 +2772,7 @@ def run_tracking(
             if treadmill[trial]:
                 Tj_temp = F[trial](ca.vertcat(
                     ca.vertcat(QsQds_opt_nsc[trial][:, 0], 
-                               Qdds_opt_nsc[trial][:, 0]), -treadmill_speed))
+                               Qdds_opt_nsc[trial][:, 0]), -trials[trial]['treadmill_speed']))
             else:
                 Tj_temp = F[trial](ca.vertcat(QsQds_opt_nsc[trial][:, 0], 
                                               Qdds_opt_nsc[trial][:, 0]))          
@@ -2852,7 +2852,7 @@ def run_tracking(
                         Tk = F[trial](ca.vertcat(
                             ca.vertcat(QsQds_opt_nsc[trial][:, k],
                                        Qdds_opt_nsc[trial][:, k]), 
-                            -treadmill_speed))
+                            -trials[trial]['treadmill_speed']))
                     else:
                         Tk = F[trial](ca.vertcat(QsQds_opt_nsc[trial][:, k],
                                        Qdds_opt_nsc[trial][:, k]))
@@ -3757,8 +3757,8 @@ def run_tracking(
                 
         # %% Express in %BW (GRF) and %BW*height (torques)
         gravity = 9.80665
-        BW = subject_demo['mass_kg'] * gravity
-        BW_ht = BW * subject_demo['height_m']
+        BW = settings['mass_kg'] * gravity
+        BW_ht = BW * settings['height_m']
         
         GRF_BW_all_opt, GRF_BW_all_opt_filt, GRM_BWht_all_opt = {}, {}, {}
         GRF_BW_all_opt['all'], GRM_BWht_all_opt['all'] = {}, {}        

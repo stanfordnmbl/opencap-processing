@@ -9,7 +9,9 @@ import importlib
 from scipy import signal
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-from utils import storage_to_numpy, storage_to_dataframe
+from utils import storage_to_numpy, storage_to_dataframe, download_kinematics, import_metadata
+from utilsProcessing import segmentSquats, segmentSTS, adjustMuscleWrapping, generateModelWithContacts
+from settingsOpenSimAD import get_default_setup, get_trial_setup
 import platform
 import urllib.request
 import zipfile
@@ -1872,3 +1874,54 @@ def plotResultsDC(dataDir, subject, motion_filename, cases=['default'],
         plt.setp(axs[:, 0], ylabel='(Nm)')
         fig.align_ylabels()
     plt.show()
+    
+    
+# %% Process inputs for optimal control problem.   
+def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
+                           motion_type, time_window=[], repetition=None,
+                           treadmill_speed=0):
+        
+    # Path session folder.
+    sessionFolder =  os.path.join(dataFolder, session_id)
+    
+    # Download kinematics and model.
+    _ = download_kinematics(session_id, sessionFolder, trialNames=[trial_name])
+    
+    # Prepare inputs for dynamic simulations.
+    # Adjust muscle wrapping.
+    adjustMuscleWrapping(baseDir, dataFolder, session_id, overwrite=False)
+    # Add foot-ground contacts to musculoskeletal model.
+    generateModelWithContacts(dataFolder, session_id, overwrite=False)
+    # Generate external function.
+    generateExternalFunction(baseDir, dataFolder, session_id, 
+                             overwrite=False, treadmill=bool(treadmill_speed))
+    
+    # Get settings.
+    default_settings = get_default_setup(motion_type)
+    settings = get_trial_setup(default_settings, motion_type, trial_name)
+    # # Add time to settings if not specified.
+    pathMotionFile = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics',
+                                  trial_name + '.mot')
+    if (repetition is not None and 
+        (motion_type == 'squats' or motion_type == 'sit_to_stand')): 
+        if motion_type == 'squats':
+            times_window = segmentSquats(pathMotionFile, visualize=True)
+        elif motion_type == 'sit_to_stand':
+            _, _, times_window = segmentSTS(pathMotionFile, visualize=True)
+        time_window = times_window[repetition]
+        settings['repetition'] = repetition
+    else:
+        if not time_window:
+            motion_file = storage_to_numpy(pathMotionFile)
+            time_window = [motion_file['time'][0], motion_file['time'][-1]]
+    settings['trials'][trial_name]['timeInterval'] = time_window
+    
+    # Get demographics.
+    metadata = import_metadata(os.path.join(sessionFolder, 'sessionMetadata.yaml'))
+    settings['mass_kg'] = metadata['mass_kg']
+    settings['height_m'] = metadata['height_m']
+    
+    # Treadmill speed.
+    settings['trials'][trial_name]['treadmill_speed'] = treadmill_speed
+    
+    return settings
