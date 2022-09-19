@@ -128,7 +128,7 @@ adjustMuscleWrapping(baseDir, dataFolder, session_id, overwrite=False)
 generateModelWithContacts(dataFolder, session_id, overwrite=False)
 # Generate external function.
 generateExternalFunction(baseDir, dataFolder, session_id, 
-                         overwrite=True, treadmill=treadmill)
+                         overwrite=False, treadmill=treadmill)
 
 # Get settings.
 default_settings = get_default_setup(motion_type)

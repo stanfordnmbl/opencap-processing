@@ -65,10 +65,10 @@ class bounds_tracking:
                 upperBoundsPosition[joint] = [0.52359878000000004]
                 lowerBoundsPosition[joint] = [-0.7853981633974483]
                 
-            # Scaling                       
-            s = pd.concat([abs(upperBoundsPosition[joint]), 
-                           abs(lowerBoundsPosition[joint])]).max(level=0)
-            scalingPosition.insert(count, joint, s)
+            # Scaling
+            s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
+                                 abs(lowerBoundsPosition[joint])[0]]))
+            scalingPosition.insert(count, joint, [s])
             lowerBoundsPosition[joint] /= scalingPosition[joint]
             upperBoundsPosition[joint] /= scalingPosition[joint]
                 
@@ -182,10 +182,10 @@ class bounds_tracking:
                 upperBoundsPosition[joint] = [5 * np.pi / 180]
                 lowerBoundsPosition[joint] = [-45 * np.pi / 180]
                 
-            # Scaling                       
-            s = pd.concat([abs(upperBoundsPosition[joint]), 
-                           abs(lowerBoundsPosition[joint])]).max(level=0)
-            scalingPosition.insert(count, joint, s)
+            # Scaling
+            s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
+                                 abs(lowerBoundsPosition[joint])[0]]))
+            scalingPosition.insert(count, joint, [s])
             lowerBoundsPosition[joint] /= scalingPosition[joint]
             upperBoundsPosition[joint] /= scalingPosition[joint]
                 
@@ -299,10 +299,10 @@ class bounds_tracking:
                 upperBoundsPosition[joint] = [5 * np.pi / 180]
                 lowerBoundsPosition[joint] = [-45 * np.pi / 180]
                 
-            # Scaling                       
-            s = pd.concat([abs(upperBoundsPosition[joint]), 
-                           abs(lowerBoundsPosition[joint])]).max(level=0)
-            scalingPosition.insert(count, joint, s)
+            # Scaling            
+            s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
+                                 abs(lowerBoundsPosition[joint])[0]]))
+            scalingPosition.insert(count, joint, [s])
             lowerBoundsPosition[joint] /= scalingPosition[joint]
             upperBoundsPosition[joint] /= scalingPosition[joint]
                 
@@ -414,9 +414,9 @@ class bounds_tracking:
                 lowerBoundsPosition[joint] = [-45 * np.pi / 180]
                 
             # Scaling                       
-            s = pd.concat([abs(upperBoundsPosition[joint]), 
-                           abs(lowerBoundsPosition[joint])]).max(level=0)
-            scalingPosition.insert(count, joint, s)
+            s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
+                                 abs(lowerBoundsPosition[joint])[0]]))
+            scalingPosition.insert(count, joint, [s])
             lowerBoundsPosition[joint] /= scalingPosition[joint]
             upperBoundsPosition[joint] /= scalingPosition[joint]
                 
@@ -447,9 +447,9 @@ class bounds_tracking:
                 lowerBoundsVelocity[joint] = [-50]
 
             # Scaling                       
-            s = pd.concat([abs(upperBoundsVelocity[joint]), 
-                           abs(lowerBoundsVelocity[joint])]).max(level=0)
-            scalingVelocity.insert(count, joint, s)
+            s = np.max(np.array([abs(upperBoundsVelocity[joint])[0],
+                                 abs(lowerBoundsVelocity[joint])[0]]))
+            scalingVelocity.insert(count, joint, [s])
             upperBoundsVelocity[joint] /= scalingVelocity[joint]
             lowerBoundsVelocity[joint] /= scalingVelocity[joint]
 
@@ -480,9 +480,9 @@ class bounds_tracking:
                 lowerBoundsAcceleration[joint] = [-1000]
         
             # Scaling                       
-            s = pd.concat([abs(upperBoundsAcceleration[joint]), 
-                           abs(lowerBoundsAcceleration[joint])]).max(level=0)
-            scalingAcceleration.insert(count, joint, s)
+            s = np.max(np.array([abs(upperBoundsAcceleration[joint])[0],
+                                 abs(lowerBoundsAcceleration[joint])[0]]))
+            scalingAcceleration.insert(count, joint, [s])
             upperBoundsAcceleration[joint] /= scalingAcceleration[joint]
             lowerBoundsAcceleration[joint] /= scalingAcceleration[joint]
 
@@ -514,9 +514,9 @@ class bounds_tracking:
                 lowerBoundsAcceleration[joint] = [-500]
         
             # Scaling                       
-            s = pd.concat([abs(upperBoundsAcceleration[joint]), 
-                           abs(lowerBoundsAcceleration[joint])]).max(level=0)
-            scalingAcceleration.insert(count, joint, s)
+            s = np.max(np.array([abs(upperBoundsAcceleration[joint])[0],
+                                 abs(lowerBoundsAcceleration[joint])[0]]))
+            scalingAcceleration.insert(count, joint, [s])
             upperBoundsAcceleration[joint] /= scalingAcceleration[joint]
             lowerBoundsAcceleration[joint] /= scalingAcceleration[joint]
 

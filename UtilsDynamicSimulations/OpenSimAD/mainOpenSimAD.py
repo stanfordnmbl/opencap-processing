@@ -751,7 +751,7 @@ def run_tracking(
         rightPolynomialJoints.remove('lumbar_bending')
         rightPolynomialJoints.remove('lumbar_rotation')
         
-    pathGenericTemplates = os.path.join(baseDir, "opensimPipeline") 
+    pathGenericTemplates = os.path.join(baseDir, "OpenSimPipeline") 
     pathDummyMotion = os.path.join(pathGenericTemplates, "MuscleAnalysis", 
                                    'DummyMotion_{}.mot'.format(model_type))
     loadPolynomialData = True
