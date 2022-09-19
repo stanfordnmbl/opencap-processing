@@ -3,6 +3,8 @@ __pycache__
 *.log
 Data/*
 
+*DS_Store
+
 UtilsDynamicSimulations/OpenSimAD/build-ExpressionGraphF/*
 UtilsDynamicSimulations/OpenSimAD/build-ExternalFunctionF/*
 UtilsDynamicSimulations/OpenSimAD/install-ExternalFunctionF/*
