@@ -93,12 +93,12 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 
 # We provide a few examples for overground and treadmill activities.
 # Select which example you would like to run.
-session_type = 'overground' # Options are 'overground' and 'treadmill'.
+session_type = 'treadmill' # Options are 'overground' and 'treadmill'.
 case = '0'
 # Predefined settings.
 if session_type == 'overground':
     session_id = "ef516897-f0b2-493e-9927-3022db2d2ac3"
-    trial_name = 'Squats' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
+    trial_name = 'Gait' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
     if trial_name == 'Gait': # Walking example
         motion_type = 'walking'
         time_window = [2.5, 4.0]

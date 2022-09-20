@@ -25,13 +25,10 @@ dimensions = ['x', 'y', 'z']
 nContactSpheres = 6
 
 def run_tracking(
-        baseDir, dataDir, subject, settings, case='default', 
-        data_type='Video', poseDetector='mmpose_0.8', cameraSetup='2-cameras',
-        augmenter='separateLowerUpperBody_OpenPose', solveProblem=True, 
+        baseDir, dataDir, subject, settings, case='default', solveProblem=True, 
         analyzeResults=True, writeGUI=True, visualizeTracking=False, 
         visualizeResultsAgainstBounds=False, printModel=False, computeKAM=False,
-        computeMCF=False, processResults=False,
-        collection_type='default'):
+        computeMCF=False, processResults=False):
     import copy
     
     # Cost function weights.
@@ -48,19 +45,10 @@ def run_tracking(
     OpenSimModel = 'LaiArnoldModified2017_poly_withArms_weldHand'
     if 'OpenSimModel' in settings:  
         OpenSimModel = settings['OpenSimModel']
-    model_type = 'rajagopal2016'
-    if 'model_type' in settings:  
-        model_type = settings['model_type']
     model_full_name = OpenSimModel + "_scaled_adjusted"
     withMTP = True
     if 'withMTP' in settings:  
-        withMTP = settings['withMTP']
-    withActiveMTP = False
-    if 'withActiveMTP' in settings:  
-        withActiveMTP = settings['withActiveMTP']
-        weights['mtpExcitationTerm'] = settings['weights']['w_mtpExcitationTerm']
-    if withActiveMTP:
-        raise ValueError("Not supported yet: withActiveMTP")   
+        withMTP = settings['withMTP']  
     withArms = True  
     if "withArms" in settings:
          withArms = settings['withArms']
@@ -79,18 +67,6 @@ def run_tracking(
     scaleIsometricMuscleForce = 1
     if 'scaleIsometricMuscleForce' in settings: 
         scaleIsometricMuscleForce = settings['scaleIsometricMuscleForce']
-    # dissipation = 2
-    # if 'dissipation' in settings: 
-    #     dissipation = settings['dissipation']
-    # stiffness_spheres = 1 # actually means 1e6
-    # if 'stiffness_spheres' in settings: 
-    #     stiffness_spheres = settings['stiffness_spheres']
-    # specificContactLocations = False
-    # if 'specificContactLocations' in settings: 
-    #     specificContactLocations = settings['specificContactLocations']
-    # lower_transition_speed = False
-    # if 'lower_transition_speed' in settings: 
-    #     lower_transition_speed = settings['lower_transition_speed']
     reserveActuators = False
     if 'reserveActuators' in settings: 
         reserveActuators = settings['reserveActuators']
@@ -122,7 +98,7 @@ def run_tracking(
             if 'meshDensity' in trials[trial]:
                 meshDensity = trials[trial]['meshDensity']
             N[trial] = int(round(timeElapsed[trial] * meshDensity, 2))
-        tgrid = np.linspace(timeIntervals[trial][0], 
+        tgrid = np.linspace(timeIntervals[trial][0],  
                             timeIntervals[trial][1], N[trial]+1)
         tgridf[trial] = np.zeros((1, N[trial]+1))
         tgridf[trial][:,:] = tgrid.T
@@ -141,10 +117,6 @@ def run_tracking(
         isSTSs[trial] = False
         if 'isSTS' in trials[trial]:
             isSTSs[trial] = trials[trial]['isSTS']
-        # if isSTSs[trial]:
-        #     stsThresholds[trial] = 5
-        #     if 'stsThreshold' in trials[trial]:
-        #         stsThresholds[trial] = trials[trial]['stsThreshold']
                 
         isSTSs_yCalcn[trial] = False
         if 'isSTSs_yCalcn' in trials[trial]:
@@ -210,44 +182,19 @@ def run_tracking(
             
         treadmill[trial] = False
         if trials[trial]['treadmill_speed'] != 0:
-            treadmill[trial] = True           
-    
-    # Filter info.          
-    filter_bounds_guess_acceleration = False
-    if 'filter_bounds_guess_acceleration' in settings:
-        filter_bounds_guess_acceleration = (
-            settings['filter_bounds_guess_acceleration'])
+            treadmill[trial] = True
     
     # Guess info.
     type_guess = "dataDriven"
     if 'type_guess' in settings:
-        type_guess = settings['type_guess']    
-    guess_zeroAcceleration = False
-    if 'guess_zeroAcceleration' in settings:
-        guess_zeroAcceleration = settings['guess_zeroAcceleration']
-    guess_zeroMTP = False
-    if 'guess_zeroMTP' in settings:
-        guess_zeroMTP = settings['guess_zeroMTP']
-        
-    # TODO: Bounds info
-    bounds_update = True
-    if 'bounds_update' in settings:
-        bounds_update = settings['bounds_update']
-    if bounds_update:
-        bounds_update_index = 2
-        if 'bounds_update_index' in settings:
-            bounds_update_index = settings['bounds_update_index']
+        type_guess = settings['type_guess']
             
     lb_activation = 0.01
     if 'lb_activation' in settings:
         lb_activation = settings['lb_activation']
     
-    # Problem info.    
-    tracking_data = 'coordinates'
-    if 'tracking_data' in settings:
-        tracking_data = settings['tracking_data']
-    if tracking_data == "coordinates":
-        coordinates_toTrack = settings['coordinates_toTrack']
+    # Problem info.
+    coordinates_toTrack = settings['coordinates_toTrack']
     offset_ty = True
     if 'offset_ty' in settings:
         offset_ty = settings['offset_ty']
@@ -264,24 +211,7 @@ def run_tracking(
         weights['accelerationTrackingTerm'] = 1
         if 'accelerationTrackingTerm' in settings['weights']:
             weights['accelerationTrackingTerm'] = (
-                settings['weights']['accelerationTrackingTerm'])    
-    trackGRF = False
-    if 'trackGRF' in settings:
-        trackGRF = settings['trackGRF']
-    if trackGRF:
-        weights['grfTrackingTerm'] = 1
-        if 'grfTrackingTerm' in settings['weights']:
-            weights['grfTrackingTerm'] = settings['weights']['grfTrackingTerm']    
-    trackGRM = False
-    if 'trackGRM' in settings:
-        trackGRM = settings['trackGRM']
-    if trackGRM:
-        weights['grmTrackingTerm'] = 1
-        if 'grmTrackingTerm' in settings['weights']:
-            weights['grmTrackingTerm'] = settings['weights']['grmTrackingTerm']
-    powerDiff = 2
-    if 'powerDiff' in settings:     
-        powerDiff = settings['powerDiff']
+                settings['weights']['accelerationTrackingTerm'])
     powActivations = 2
     if 'powActivations' in settings:
         powActivations = settings['powActivations']  
@@ -291,115 +221,39 @@ def run_tracking(
     coordinate_constraints = {}
     if 'coordinate_constraints' in settings:
         coordinate_constraints = settings['coordinate_constraints']
-    optimizeContacts = False
-    if 'optimizeContacts' in settings:     
-        optimizeContacts = settings['optimizeContacts']
-    if optimizeContacts:
-        parameter_to_optimize = 'option1'
-        if 'parameter_to_optimize' in settings:     
-            parameter_to_optimize = settings['parameter_to_optimize']
 
     # %% Paths and dirs.
-    # dataDir = copy.deepcopy(dataDir_main)
-    # for s_dir in settings['pathData']: 
-    #     dataDir = os.path.join(dataDir, s_dir)
-    osDir = os.path.join(dataDir, subject, 'OpenSimData') 
-    if data_type == 'Video':
-        if collection_type == 'bigData':
-            pathOSData = os.path.join(osDir, poseDetector, 
-                                      cameraSetup, OpenSimModel)
-        elif collection_type == 'default_OpenCap':
-            pathOSData = os.path.join(osDir, poseDetector, cameraSetup)
-        elif collection_type == 'default':
-            pathOSData = osDir
-            
-        else:
-            pathOSData = os.path.join(osDir, 'Video', poseDetector, 
-                                      cameraSetup, augmenter)
-    else:
-        pathOSData = os.path.join(osDir, "Mocap")
-    pathOSDataMocap = os.path.join(osDir, "Mocap")
-    if collection_type == 'bigData' or collection_type == 'default_OpenCap' or collection_type == 'default':
-        pathModelFolder = os.path.join(pathOSData, 'Model') 
-    else:
-        pathModelFolder = os.path.join(pathOSData, 'Model', OpenSimModel)
-    pathModelFile = os.path.join(pathModelFolder,
-                                 model_full_name + ".osim")
+    pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
+    pathModelFolder = os.path.join(pathOSData, 'Model')
+    pathModelFile = os.path.join(pathModelFolder, model_full_name + ".osim")
     nameMA = "default"
     if not withMTP:
-        nameMA = "default_weldMTP"     
-    pathSession = os.path.join(dataDir, subject)
-    # pathMarkerData = os.path.join(pathSession, "MarkerData")
-    # pathTRCFolder = os.path.join(pathMarkerData, 'PostAugmentation')
-    pathExternalFunctionFolder = os.path.join(pathModelFolder,
-                                              'ExternalFunction')
-    if collection_type == 'bigData' or collection_type == 'default_OpenCap':
-        pathIKFolder = os.path.join(pathOSData, 'IK')
-    if collection_type == 'default':
-        pathIKFolder = os.path.join(pathOSData, 'Kinematics')
-    else:
-        pathIKFolder = os.path.join(pathOSData, 'IK', OpenSimModel)
-    pathGRFFolder = os.path.join(pathSession, 'ForceData')
-    pathEMGFolder = os.path.join(pathSession, 'EMGData')
-    pathIDFolder = os.path.join(pathOSDataMocap, 'ID', OpenSimModel)
-    pathSOFolder = os.path.join(pathOSDataMocap, 'SO', OpenSimModel)
-    pathIKFolderMocap = os.path.join(pathOSDataMocap, 'IK', OpenSimModel)
-    pathJRAfromSOFolderMocap = os.path.join(pathOSDataMocap, 'JRA', OpenSimModel)
-    pathModelFileMocap = os.path.join(pathOSDataMocap, 'Model', OpenSimModel,
-                                      model_full_name + ".osim")  
+        nameMA = "default_weldMTP"
+    pathExternalFunctionFolder = os.path.join(pathModelFolder, 'ExternalFunction')
+    pathIKFolder = os.path.join(pathOSData, 'Kinematics')
     trials_list = [trial for trial in trials]
     listToStr = '_'.join([str(elem) for elem in trials_list])
-    if collection_type == 'bigData' or collection_type == 'default_OpenCap':
-        pathResults = os.path.join(pathOSData, 'DC', listToStr)
-        if 'repetition' in settings:
-            pathResults = os.path.join(pathOSData, 'DC', listToStr + '_rep' + str(settings['repetition']))
-    elif collection_type == 'default':
-        pathResults = os.path.join(pathOSData, 'Dynamics', listToStr)
-        if 'repetition' in settings:
-            pathResults = os.path.join(pathOSData, 'Dynamics', listToStr + '_rep' + str(settings['repetition'])) 
-    else:
-        pathResults = os.path.join(pathOSData, 'DC', OpenSimModel, listToStr)
-        if 'repetition' in settings:
-            pathResults = os.path.join(pathOSData, 'DC', OpenSimModel, listToStr + '_rep' + str(settings['repetition']))        
+    pathResults = os.path.join(pathOSData, 'Dynamics', listToStr)
+    if 'repetition' in settings:
+        pathResults = os.path.join(pathOSData, 'Dynamics', listToStr + '_rep' + str(settings['repetition']))     
     os.makedirs(pathResults, exist_ok=True)
     pathSettings = os.path.join(pathResults, 'Setup_{}.yaml'.format(case))
     if not processResults:
         with open(pathSettings, 'w') as file:
             yaml.dump(settings, file)
-            
-    # %% Uncomment to skip trial if existing solution     
-    # temp_path = os.path.join(pathResults, 'w_opt_{}.npy'.format(case))
-    # exist_result = os.path.exists(temp_path)
-    # if exist_result:
-    #     return
     
     # %% Muscles.
-    if model_type == 'gait2392':
-        muscles = [
-            'glut_med1_r', 'glut_med2_r', 'glut_med3_r', 'glut_min1_r', 
-            'glut_min2_r', 'glut_min3_r', 'semimem_r', 'semiten_r',
-            'bifemlh_r', 'bifemsh_r', 'sar_r', 'add_long_r', 'add_brev_r',
-            'add_mag1_r', 'add_mag2_r', 'add_mag3_r', 'tfl_r', 'pect_r',
-            'grac_r', 'glut_max1_r', 'glut_max2_r', 'glut_max3_r',
-            'iliacus_r', 'psoas_r', 'quad_fem_r', 'gem_r', 'peri_r',
-            'rect_fem_r', 'vas_med_r', 'vas_int_r', 'vas_lat_r',
-            'med_gas_r', 'lat_gas_r', 'soleus_r', 'tib_post_r',
-            'flex_dig_r', 'flex_hal_r', 'tib_ant_r', 'per_brev_r',
-            'per_long_r', 'per_tert_r', 'ext_dig_r', 'ext_hal_r', 'ercspn_r', 
-            'intobl_r', 'extobl_r', 'ercspn_l', 'intobl_l', 'extobl_l']
-        rightSideMuscles = muscles[:-3]
-    elif model_type == 'rajagopal2016':
-        muscles = [
-            'addbrev_r', 'addlong_r', 'addmagDist_r', 'addmagIsch_r', 
-            'addmagMid_r', 'addmagProx_r', 'bflh_r', 'bfsh_r',
-            'edl_r', 'ehl_r', 'fdl_r', 'fhl_r', 'gaslat_r',
-            'gasmed_r', 'glmax1_r', 'glmax2_r', 'glmax3_r', 'glmed1_r',
-            'glmed2_r', 'glmed3_r', 'glmin1_r', 'glmin2_r',
-            'glmin3_r', 'grac_r', 'iliacus_r', 'perbrev_r', 'perlong_r',
-            'piri_r', 'psoas_r', 'recfem_r', 'sart_r',
-            'semimem_r', 'semiten_r', 'soleus_r', 'tfl_r',
-            'tibant_r', 'tibpost_r', 'vasint_r', 'vaslat_r', 'vasmed_r']
-        rightSideMuscles = muscles        
+    muscles = [
+        'addbrev_r', 'addlong_r', 'addmagDist_r', 'addmagIsch_r', 
+        'addmagMid_r', 'addmagProx_r', 'bflh_r', 'bfsh_r',
+        'edl_r', 'ehl_r', 'fdl_r', 'fhl_r', 'gaslat_r',
+        'gasmed_r', 'glmax1_r', 'glmax2_r', 'glmax3_r', 'glmed1_r',
+        'glmed2_r', 'glmed3_r', 'glmin1_r', 'glmin2_r',
+        'glmin3_r', 'grac_r', 'iliacus_r', 'perbrev_r', 'perlong_r',
+        'piri_r', 'psoas_r', 'recfem_r', 'sart_r',
+        'semimem_r', 'semiten_r', 'soleus_r', 'tfl_r',
+        'tibant_r', 'tibpost_r', 'vasint_r', 'vaslat_r', 'vasmed_r']
+    rightSideMuscles = muscles        
     leftSideMuscles = [muscle[:-1] + 'l' for muscle in rightSideMuscles]
     bothSidesMuscles = leftSideMuscles + rightSideMuscles
     NMuscles = len(bothSidesMuscles)
@@ -428,19 +282,10 @@ def run_tracking(
     sideTendonShift = tendonShift(nSideMuscles)
     tendonShift = np.concatenate((sideTendonShift, sideTendonShift), axis=1)    
     from functionCasADiOpenSimAD import hillEquilibrium
-    if model_type == 'gait2392':
-        from muscleDataOpenSimAD import specificTension_3D
-        sideSpecificTension = specificTension_3D(rightSideMuscles)
-        specificTension = np.concatenate((sideSpecificTension, 
-                                          sideSpecificTension), axis=1)
-        f_hillEquilibrium = hillEquilibrium(
-            mtParameters, tendonCompliance, tendonShift, specificTension,
-            ignorePassiveFiberForce=ignorePassiveFiberForce)
-    else:
-        specificTension = 0.5*np.ones((1, NMuscles))
-        f_hillEquilibrium = hillEquilibrium(
-            mtParameters, tendonCompliance, tendonShift, specificTension,
-            ignorePassiveFiberForce=ignorePassiveFiberForce)
+    specificTension = 0.5*np.ones((1, NMuscles))
+    f_hillEquilibrium = hillEquilibrium(
+        mtParameters, tendonCompliance, tendonShift, specificTension,
+        ignorePassiveFiberForce=ignorePassiveFiberForce)
         
     # Time constants for activation dynamics.
     activationTimeConstant = 0.015
@@ -519,12 +364,10 @@ def run_tracking(
         nArmJoints = len(armJoints)
         # idxArmJoints = getIndices(joints, armJoints)
     
-    # Lumbar coordinates (for torque actuators).
-    if not model_type == 'gait2392':        
-        lumbarJoints = ['lumbar_extension', 'lumbar_bending',
-                        'lumbar_rotation']
-        nLumbarJoints = len(lumbarJoints)
-        # idxLumbarJoints = getIndices(joints, lumbarJoints)
+    # Lumbar coordinates (for torque actuators).    
+    lumbarJoints = ['lumbar_extension', 'lumbar_bending',
+                    'lumbar_rotation']
+    nLumbarJoints = len(lumbarJoints)
     
     # Coordinates with passive torques.
     # We here hard code the list to replicate previous results. 
@@ -581,17 +424,14 @@ def run_tracking(
         'ankle_angle_l', 'ankle_angle_r', 
         'subtalar_angle_l', 'subtalar_angle_r',
         'lumbar_extension', 'lumbar_bending', 'lumbar_rotation']
-    if not model_type == 'gait2392':
-        for joint in lumbarJoints:
-            muscleDrivenJoints.remove(joint)
+    for joint in lumbarJoints:
+        muscleDrivenJoints.remove(joint)
         
     # %% Torque actuator activation dynamics
-    if withArms or withActiveMTP or withLumbarCoordinateActuators:
+    if withArms or withLumbarCoordinateActuators:
         from functionCasADiOpenSimAD import armActivationDynamics
         if withArms:
             f_armActivationDynamics = armActivationDynamics(nArmJoints)
-        if withActiveMTP:
-            f_mtpActivationDynamics = armActivationDynamics(nMtpJoints)
         if withLumbarCoordinateActuators:
             f_lumbarActivationDynamics = armActivationDynamics(nLumbarJoints)
     
@@ -621,8 +461,8 @@ def run_tracking(
     f_passiveTorque = {}
     for joint in passiveTorqueJoints:
         f_passiveTorque[joint] = limitTorque(
-            passiveJointTorqueData_3D(joint, model_type)[0],
-            passiveJointTorqueData_3D(joint, model_type)[1], damping)    
+            passiveJointTorqueData_3D(joint)[0],
+            passiveJointTorqueData_3D(joint)[1], damping)    
     if withMTP:
         stiffnessMtp = 25
         dampingMtp = 2 # based on new results from pred sim study.
@@ -632,22 +472,7 @@ def run_tracking(
         dampingArm = 0.1
         f_linearPassiveArmTorque = passiveTorque(stiffnessArm, dampingArm)
     
-    # %% External functions.       
-    
-    # if optimizeContacts:
-    #     F1_c = ca.external('F', os.path.join(
-    #         pathExternalFunctionFolder, 'nominal_c1.dll'))
-    #     # NOutput_F1_c = 54
-    #     F2_c = ca.external('F', os.path.join(
-    #         pathExternalFunctionFolder, 'nominal_c2.dll'))
-    #     NOutput_F2_c = nJoints
-    #     if trackGRM:
-    #         NOutput_F2_c += 6          
-    #     if analyzeResults:
-    #         F1 = ca.external('F', os.path.join(
-    #             pathExternalFunctionFolder, 'nominal_c2_pp.dll'))
-    #     F1_ref = ca.external('F', os.path.join(
-    #         pathExternalFunctionFolder, 'nominal_pp.dll'))         
+    # %% External functions.      
     if platform.system() == 'Windows':
         ext_F = '.dll'
     elif platform.system() == 'Darwin':
@@ -743,17 +568,16 @@ def run_tracking(
     if not withMTP:
         leftPolynomialJoints.remove('mtp_angle_l')
         rightPolynomialJoints.remove('mtp_angle_r')
-    if model_type == 'rajagopal2016':
-        leftPolynomialJoints.remove('lumbar_extension')
-        leftPolynomialJoints.remove('lumbar_bending')
-        leftPolynomialJoints.remove('lumbar_rotation')
-        rightPolynomialJoints.remove('lumbar_extension')
-        rightPolynomialJoints.remove('lumbar_bending')
-        rightPolynomialJoints.remove('lumbar_rotation')
+    leftPolynomialJoints.remove('lumbar_extension')
+    leftPolynomialJoints.remove('lumbar_bending')
+    leftPolynomialJoints.remove('lumbar_rotation')
+    rightPolynomialJoints.remove('lumbar_extension')
+    rightPolynomialJoints.remove('lumbar_bending')
+    rightPolynomialJoints.remove('lumbar_rotation')
         
     pathGenericTemplates = os.path.join(baseDir, "OpenSimPipeline") 
     pathDummyMotion = os.path.join(pathGenericTemplates, "MuscleAnalysis", 
-                                   'DummyMotion_{}.mot'.format(model_type))
+                                   'DummyMotion.mot')
     loadPolynomialData = True
     if (not os.path.exists(os.path.join(
             pathModelFolder, model_full_name + '_polynomial_r_' + 
@@ -789,238 +613,51 @@ def run_tracking(
     f_polynomial['l'] = polynomialApproximation(
         leftSideMuscles, polynomialData['l'], NPolynomials)
     
-    leftPolynomialJointIndices = getIndices(joints, 
-                                                 leftPolynomialJoints)
-    rightPolynomialJointIndices = getIndices(joints, 
-                                                  rightPolynomialJoints)
-    if model_type == 'gait2392':
-        leftPolynomialMuscleIndices = (
-            list(range(nSideMuscles-3)) + 
-            list(range(nSideMuscles, nSideMuscles+3)))
-    elif model_type == 'rajagopal2016':
-        leftPolynomialMuscleIndices = (
-            list(range(nSideMuscles)) + 
-            list(range(nSideMuscles, nSideMuscles)))
+    leftPolynomialJointIndices = getIndices(joints, leftPolynomialJoints)
+    rightPolynomialJointIndices = getIndices(joints, rightPolynomialJoints)    
+    leftPolynomialMuscleIndices = (
+        list(range(nSideMuscles)) + 
+        list(range(nSideMuscles, nSideMuscles)))
     rightPolynomialMuscleIndices = list(range(nSideMuscles))
     from utilsOpenSimAD import getMomentArmIndices
     momentArmIndices = getMomentArmIndices(rightSideMuscles,
                                            leftPolynomialJoints,
                                            rightPolynomialJoints, 
-                                           polynomialData['r'])
-    if model_type == 'gait2392':
-        trunkMomentArmPolynomialIndices = (
-            list(range(nSideMuscles, nSideMuscles+3)) + 
-            list(range(nSideMuscles-3, nSideMuscles)))
-    
+                                           polynomialData['r'])    
     # Test polynomials
     if plotPolynomials:
         from polynomialsOpenSimAD import testPolynomials
-        if model_type == 'gait2392':
-            raise ValueError("Test polynomials gait2392 not supported")
-        elif model_type == 'rajagopal2016':
-            path_data4PolynomialFitting = os.path.join(
-                pathModelFolder, 
-                'data4PolynomialFitting_{}.npy'.format(model_full_name))
-            data4PolynomialFitting = np.load(path_data4PolynomialFitting, 
-                                             allow_pickle=True).item()            
-            testPolynomials(
-                data4PolynomialFitting, rightPolynomialJoints,
-                muscles, f_polynomial['r'], polynomialData['r'], 
-                momentArmIndices)
-            testPolynomials(
-                data4PolynomialFitting, leftPolynomialJoints,
-                leftSideMuscles, f_polynomial['l'], polynomialData['l'], 
-                momentArmIndices)
-            
-    if data_type == 'Video':
-        
-        if bounds_update:
-            if bounds_update_index == 1:
-                polynomial_bounds = {
-                        'hip_flexion_l': {'max': 120, 'min': -30},
-                        'hip_flexion_r': {'max': 120, 'min': -30},
-                        'hip_adduction_l': {'max': 20, 'min': -40},
-                        'hip_adduction_r': {'max': 20, 'min': -40},
-                        'hip_rotation_l': {'max': 30, 'min': -40},
-                        'hip_rotation_r': {'max': 30, 'min': -40},
-                        'knee_angle_l': {'max': 125, 'min': 0},
-                        'knee_angle_r': {'max': 125, 'min': 0},
-                        'knee_adduction_l': {'max': 20, 'min': -30},
-                        'knee_adduction_r': {'max': 20, 'min': -30},
-                        'ankle_angle_l': {'max': 50, 'min': -50},
-                        'ankle_angle_r': {'max': 50, 'min': -50},
-                        'subtalar_angle_l': {'max': 35, 'min': -35},
-                        'subtalar_angle_r': {'max': 35, 'min': -35},
-                        'mtp_angle_l': {'max': 5, 'min': -45},
-                        'mtp_angle_r': {'max': 5, 'min': -45}}                
-            elif bounds_update_index == 2:                
-                polynomial_bounds = {
-                        'hip_flexion_l': {'max': 120, 'min': -30},
-                        'hip_flexion_r': {'max': 120, 'min': -30},
-                        'hip_adduction_l': {'max': 20, 'min': -50},
-                        'hip_adduction_r': {'max': 20, 'min': -50},
-                        'hip_rotation_l': {'max': 35, 'min': -40},
-                        'hip_rotation_r': {'max': 35, 'min': -40},
-                        'knee_angle_l': {'max': 138, 'min': 0},
-                        'knee_angle_r': {'max': 138, 'min': 0},
-                        'knee_adduction_l': {'max': 20, 'min': -30},
-                        'knee_adduction_r': {'max': 20, 'min': -30},
-                        'ankle_angle_l': {'max': 50, 'min': -50},
-                        'ankle_angle_r': {'max': 50, 'min': -50},
-                        'subtalar_angle_l': {'max': 35, 'min': -35},
-                        'subtalar_angle_r': {'max': 35, 'min': -35},
-                        'mtp_angle_l': {'max': 5, 'min': -45},
-                        'mtp_angle_r': {'max': 5, 'min': -45}}                
-            else:
-                raise ValueError('bounds_update_index non known')                
-        else:
-            # This is what used to be used as ocp bounds, not matching what was
-            # used for fitting the coefficients (big data 107)
-            polynomial_bounds = {
-                    'hip_flexion_l': {'max': 120, 'min': -30},
-                    'hip_flexion_r': {'max': 120, 'min': -30},
-                    'hip_adduction_l': {'max': 20, 'min': -35},
-                    'hip_adduction_r': {'max': 20, 'min': -35},
-                    'hip_rotation_l': {'max': 25, 'min': -30},
-                    'hip_rotation_r': {'max': 25, 'min': -30},
-                    'knee_angle_l': {'max': 120, 'min': 0},
-                    'knee_angle_r': {'max': 120, 'min': 0},
-                    'knee_adduction_l': {'max': 20, 'min': -30},
-                    'knee_adduction_r': {'max': 20, 'min': -30},
-                    'ankle_angle_l': {'max': 50, 'min': -40},
-                    'ankle_angle_r': {'max': 50, 'min': -40},
-                    'subtalar_angle_l': {'max': 20, 'min': -35},
-                    'subtalar_angle_r': {'max': 20, 'min': -35},
-                    'mtp_angle_l': {'max': 5, 'min': -45},
-                    'mtp_angle_r': {'max': 5, 'min': -45}}            
-    elif data_type == 'Mocap':
-        polynomial_bounds = {
-                'hip_flexion_l': {'max': 120, 'min': -30},
-                'hip_flexion_r': {'max': 120, 'min': -30},
-                'hip_adduction_l': {'max': 20, 'min': -40},
-                'hip_adduction_r': {'max': 20, 'min': -40},
-                'hip_rotation_l': {'max': 30, 'min': -40},
-                'hip_rotation_r': {'max': 30, 'min': -40},
-                'knee_angle_l': {'max': 125, 'min': 0},
-                'knee_angle_r': {'max': 125, 'min': 0},
-                'knee_adduction_l': {'max': 20, 'min': -30},
-                'knee_adduction_r': {'max': 20, 'min': -30},
-                'ankle_angle_l': {'max': 50, 'min': -50},
-                'ankle_angle_r': {'max': 50, 'min': -50},
-                'subtalar_angle_l': {'max': 35, 'min': -35},
-                'subtalar_angle_r': {'max': 35, 'min': -35},
-                'mtp_angle_l': {'max': 5, 'min': -45},
-                'mtp_angle_r': {'max': 5, 'min': -45}}
-        
-    # %% Contacts.
-    # NContactParameters = 0
-    # if optimizeContacts:        
-    #     # Indices in external function (c1)
-    #     foot_segments = ['calcn_l', 'calcn_r', 'toes_l', 'toes_r']
-    #     outs_c1 = {'angular_velocity': 3, 'linear_velocity': 3,
-    #               'position': 3, 'rotation': 9, 'translation': 3}
-    #     idxF_c1 = {}
-    #     idx_acc = 0
-    #     for segment in foot_segments:
-    #         idxF_c1[segment] = {}
-    #         for out_c1 in outs_c1:
-    #             idxF_c1[segment][out_c1] = list(
-    #                 range(idx_acc, idx_acc+outs_c1[out_c1]))
-    #             idx_acc += outs_c1[out_c1]       
-        
-    #     # Default values
-    #     normal = np.array([[0, 1, 0]])
-    #     transitionVelocity = 0.2
-    #     staticFriction = 0.8
-    #     dynamicFriction = 0.8
-    #     viscousFriction = 0.5
-    #     stiffness = 1e6
-    #     dissipation = 2.0
-        
-    #     # Contact model.
-    #     from functionCasADiOpenSimAD import smoothSphereHalfSpaceForce
-    #     f_contactForce = smoothSphereHalfSpaceForce(
-    #         transitionVelocity, staticFriction, dynamicFriction,
-    #         viscousFriction, normal)
-    
-    #     if parameter_to_optimize == "option1":
-    #         NContactParameters = nContactSpheres*3       
-    #         contactParameterNames = []
-    #         for s in range(nContactSpheres):
-    #             contactParameterNames.append("s{}_loc_x".format(s+1))
-    #             contactParameterNames.append("s{}_loc_z".format(s+1))
-    #         for s in range(nContactSpheres):
-    #             contactParameterNames.append("s{}_radius".format(s+1))
-                
-    #     if trackGRM:
-    #         idxGRM = list(range(nJoints, nJoints+6))
-            
-    #     # Test implementation.
-    #     vecF = -np.ones((99, 1))
-    #     resF = (F1_ref(vecF)).full()        
-    #     vecF_c1 = -np.ones((66, 1))
-    #     resF_c1 = (F1_c(vecF_c1)).full()        
-    #     RBG, posB, TBG, lVelB, aVelB = {}, {}, {}, {}, {}
-    #     for segment in foot_segments:
-    #         RBG_flat = resF_c1[idxF_c1[segment]['rotation']]
-    #         RBG[segment] = np.reshape(RBG_flat, (3,3))
-    #         posB[segment] = resF_c1[idxF_c1[segment]['position']]
-    #         TBG[segment] = resF_c1[idxF_c1[segment]['translation']]
-    #         lVelB[segment] = resF_c1[idxF_c1[segment]['linear_velocity']]
-    #         aVelB[segment] = resF_c1[idxF_c1[segment]['angular_velocity']]        
-    #     if nContactSpheres == 6:
-    #         # Default values
-    #         radius = 0.032
-    #         locSpheres = np.array(
-    #             [[0.00215773306688716053,  -0.01, -0.00434269152195360195],
-    #              [0.16841223157345971972,  -0.01, -0.03258850869005603529],
-    #              [0.15095065283989317351,  -0.01,  0.05860493716970469752],
-    #              [0.07517351958454182581,  -0.01,  0.02992219727974926649],
-    #              [0.06809743951165971032,  -0.01, -0.02129214951175864221],
-    #              [0.05107307963374478621,  -0.01, 0.07020500618327656095]])            
-    #         locSphere_inB = {}
-    #         for n_c in range(nContactSpheres):
-    #             locSphere_inB[str(n_c+1)] = {}
-    #             locSphere_inB[str(n_c+1)]['r'] = locSpheres[n_c, :].T
-    #             locSphere_inB[str(n_c+1)]['l'] = (
-    #                 locSpheres[n_c, :].T * np.array([1,1,-1]))
-    #         appliedF = {}
-    #         side_contacts = ['r', 'l']
-    #         contactSegments = ['calcn', 'calcn', 'calcn', 'calcn', 
-    #                            'toes', 'toes']
-    #         for n_c in range(nContactSpheres):
-    #             c_n = str(n_c+1)
-    #             appliedF[c_n] = {}
-    #             for s_c in side_contacts:
-    #                 c_s = contactSegments[n_c] + '_' + s_c                    
-    #                 appliedF[c_n][s_c] = f_contactForce(
-    #                     dissipation, stiffness, radius,
-    #                     locSphere_inB[c_n][s_c], posB[c_s], lVelB[c_s],
-    #                     aVelB[c_s], RBG[c_s], TBG[c_s])                    
-    #         in_c2 = ca.DM(1, nContactSpheres*3*3)            
-    #         count = 0
-    #         for n_c in range(nContactSpheres):
-    #             c_n = str(n_c+1)
-    #             for s_c in side_contacts:
-    #                 in_c2[0, count*3:count*3+3] = appliedF[c_n][s_c]
-    #                 count += 1
-    #             in_c2[0, nContactSpheres*2*3+n_c*2] = (
-    #                 locSphere_inB[c_n]['r'][0,])
-    #             in_c2[0, nContactSpheres*2*3+n_c*2+1] = (
-    #                 locSphere_inB[c_n]['r'][2,])             
-    #             in_c2[0, nContactSpheres*2*4+n_c] = radius
-    #         resF_c2 = (F2_c(ca.vertcat(vecF,in_c2.T))).full()        
-    #     diffRes = resF[:nJoints] - resF_c2[:nJoints]
-    #     assert np.alltrue(np.abs(diffRes) < 10**(-8)), (
-    #         "Error contact implementation")
-    #     idxGRM_pp = idxGR["GRM"]["all"]['r'] + idxGR["GRM"]["all"]['l']
-    #     diffRes2 = resF[idxGRM_pp] - resF_c2[idxGRM]
-    #     assert np.alltrue(np.abs(diffRes2) < 10**(-8)), (
-    #         "Error contact implementation 2")
-    # else:
-    #     if trackGRF or trackGRM:
-    #         idxGRF = idxGR["GRF"]["all"]['r'] + idxGR["GRF"]["all"]['l']
-    #         idxGRM = idxGR["GRM"]["all"]['r'] + idxGR["GRM"]["all"]['l']
+        path_data4PolynomialFitting = os.path.join(
+            pathModelFolder, 
+            'data4PolynomialFitting_{}.npy'.format(model_full_name))
+        data4PolynomialFitting = np.load(path_data4PolynomialFitting, 
+                                         allow_pickle=True).item()            
+        testPolynomials(
+            data4PolynomialFitting, rightPolynomialJoints,
+            muscles, f_polynomial['r'], polynomialData['r'], 
+            momentArmIndices)
+        testPolynomials(
+            data4PolynomialFitting, leftPolynomialJoints,
+            leftSideMuscles, f_polynomial['l'], polynomialData['l'], 
+            momentArmIndices)
+               
+    polynomial_bounds = {
+            'hip_flexion_l': {'max': 120, 'min': -30},
+            'hip_flexion_r': {'max': 120, 'min': -30},
+            'hip_adduction_l': {'max': 20, 'min': -50},
+            'hip_adduction_r': {'max': 20, 'min': -50},
+            'hip_rotation_l': {'max': 35, 'min': -40},
+            'hip_rotation_r': {'max': 35, 'min': -40},
+            'knee_angle_l': {'max': 138, 'min': 0},
+            'knee_angle_r': {'max': 138, 'min': 0},
+            'knee_adduction_l': {'max': 20, 'min': -30},
+            'knee_adduction_r': {'max': 20, 'min': -30},
+            'ankle_angle_l': {'max': 50, 'min': -50},
+            'ankle_angle_r': {'max': 50, 'min': -50},
+            'subtalar_angle_l': {'max': 35, 'min': -35},
+            'subtalar_angle_r': {'max': 35, 'min': -35},
+            'mtp_angle_l': {'max': 5, 'min': -45},
+            'mtp_angle_r': {'max': 5, 'min': -45}}
             
     # %% Kinematic data
     from utilsOpenSimAD import getIK, filterDataFrame
@@ -1054,156 +691,6 @@ def run_tracking(
         if 'weight' in coordinates_toTrack[coord]:
             w_dataToTrack[count, 0] = coordinates_toTrack[coord]['weight']      
     idx_coordinates_toTrack = getIndices(joints, coordinates_toTrack_list)
-    
-    # %% GRF data     
-    from utilsOpenSimAD import getGRFAll, getGRFPeaks 
-    GRF_toTrack = {}
-    GRF_peaks = {}
-    for trial in trials:
-        # Experimental data do not have the videoAndMocap. It is a bit hacky,
-        # but we here 
-        trial_exp =  trial
-        if 'videoAndMocap' in trial:
-            trial_exp = trial[:-14]
-        pathGRFFile = os.path.join(pathGRFFolder, trial_exp + '_forces.mot')
-        if os.path.exists(pathGRFFile):
-            GRF_toTrack[trial] = getGRFAll(
-                pathGRFFile, timeIntervals[trial], N[trial])            
-            # Select peak from non-interpolated data.
-            GRF_peaks[trial] = getGRFPeaks(GRF_toTrack[trial], 
-                                           timeIntervals[trial])
-            
-    # %% ID data
-    from utilsOpenSimAD import getID        
-    ID_toTrack = {}
-    for trial in trials: 
-        # Experimental data do not have the videoAndMocap. It is a bit hacky,
-        # but we here 
-        trial_exp =  trial
-        if 'videoAndMocap' in trial:
-            trial_exp = trial[:-14]
-        pathIDFile = os.path.join(pathIDFolder, trial_exp + '.sto')
-        if os.path.exists(pathIDFile):
-            ID_temp = getID(pathIDFile, joints)
-            ID_toTrack[trial] = interpolateDataFrame(
-                ID_temp, timeIntervals[trial][0], timeIntervals[trial][1],
-                N[trial]).to_numpy()[:,1::].T
-            
-    # %% EMG data
-    from utilsOpenSimAD import getEMG        
-    EMG_ref = {}
-    for trial in trials: 
-        # Experimental data do not have the videoAndMocap. It is a bit hacky,
-        # but we here 
-        trial_exp =  trial
-        if 'videoAndMocap' in trial:
-            trial_exp = trial[:-14]
-        pathEMGFile = os.path.join(pathEMGFolder, trial_exp + '_EMG.sto')
-        if os.path.exists(pathEMGFile):
-            EMG_temp = getEMG(pathEMGFile, bothSidesMuscles)
-            EMG_ref[trial] = interpolateDataFrame(
-                EMG_temp, timeIntervals[trial][0], timeIntervals[trial][1],
-                N[trial]).to_numpy()[:,1::].T
-            
-    # %% SO data
-    from utilsOpenSimAD import getFromStorage
-    SO_toTrack = {}
-    for trial in trials: 
-        # Experimental data do not have the videoAndMocap. It is a bit hacky,
-        # but we here 
-        trial_exp =  trial
-        if 'videoAndMocap' in trial:
-            trial_exp = trial[:-14]
-        pathSOFile = os.path.join(
-            pathSOFolder, trial_exp + '_StaticOptimization_activation.sto')
-        if os.path.exists(pathSOFile):
-            SO_temp = getFromStorage(pathSOFile, bothSidesMuscles)
-            SO_toTrack[trial] = interpolateDataFrame(
-                SO_temp, timeIntervals[trial][0], timeIntervals[trial][1],
-                N[trial]).to_numpy()[:,1::].T
-            
-    # %% Mocap-based joint positions, velocities, and accelerations.
-    Qs_mocap_ref = {}
-    Qds_mocap_ref = {}
-    Qdds_mocap_ref = {}
-    for trial in trials:
-        # Experimental data do not have the videoAndMocap. It is a bit hacky,
-        # but we here 
-        trial_exp =  trial
-        if 'videoAndMocap' in trial:
-            trial_exp = trial[:-14]
-        pathIKFileMocap = os.path.join(pathIKFolderMocap, trial_exp + '.mot')
-        if os.path.exists(pathIKFileMocap):
-            # Extract joint positions from walking trial.
-            c_Ik_mocap = getIK(pathIKFileMocap, joints)
-            if filter_coordinates_toTracks[trial]:
-                c_Ik_mocap_filter = filterDataFrame(
-                    c_Ik_mocap, cutoff_frequency=cutoff_freq_coords[trial])
-            else:
-                c_Ik_mocap_filter = c_Ik_mocap
-            c_Ik_mocap_sel = selectDataFrame(
-                c_Ik_mocap_filter, timeIntervals[trial][0],
-                timeIntervals[trial][1])
-            Qs_mocap_ref[trial] = interpolateDataFrame(
-                c_Ik_mocap_filter, timeIntervals[trial][0], 
-                timeIntervals[trial][1],
-                N[trial]).to_numpy()[:,1::].T
-            Qs_mocap_spline = c_Ik_mocap_sel.copy()
-            Qds_mocap_spline = c_Ik_mocap_sel.copy()
-            Qdds_mocap_spline = c_Ik_mocap_sel.copy()
-            for joint in joints:
-                spline = interpolate.InterpolatedUnivariateSpline(
-                    c_Ik_mocap_sel['time'], 
-                    c_Ik_mocap_sel[joint], k=3)
-                Qs_mocap_spline[joint] = spline(
-                    c_Ik_mocap_sel['time'])
-                splineD1 = spline.derivative(n=1)
-                Qds_mocap_spline[joint] = splineD1(
-                    c_Ik_mocap_sel['time'])
-                splineD2 = spline.derivative(n=2)
-                Qdds_mocap_spline[joint] = splineD2(
-                    c_Ik_mocap_sel['time'])
-            
-            # Filtering
-            if filter_Qds_toTracks[trial]:
-                Qds_mocap_spline_filter = filterDataFrame(
-                    Qds_mocap_spline,
-                    cutoff_frequency=cutoff_freq_Qds[trial])
-            else:
-                Qds_mocap_spline_filter = Qds_mocap_spline                
-            if filter_Qdds_toTracks[trial]:
-                Qdds_mocap_spline_filter = filterDataFrame(
-                    Qdds_mocap_spline,
-                    cutoff_frequency=cutoff_freq_Qdds[trial])
-            else:
-                Qdds_mocap_spline_filter = Qdds_mocap_spline
-                
-            # Instead of splining Qs twice to get Qdds, spline Qds, which can
-            # be filtered or not.
-            if splineQds[trial]:
-                Qdds_mocap_spline2 = c_Ik_mocap_sel.copy()
-                for joint in joints:
-                    spline = interpolate.InterpolatedUnivariateSpline(
-                        Qds_mocap_spline_filter['time'], 
-                        Qds_mocap_spline_filter[joint], k=3)
-                    splineD1 = spline.derivative(n=1)
-                    Qdds_mocap_spline2[joint] = splineD1(
-                        Qds_mocap_spline_filter['time'])
-                    
-                if filter_Qdds_toTracks[trial]:
-                    Qdds_mocap_spline_filter = filterDataFrame(
-                        Qdds_mocap_spline2, 
-                        cutoff_frequency=cutoff_freq_Qdds[trial])
-                else:
-                    Qdds_mocap_spline_filter = Qdds_mocap_spline2
-            
-            # Interpolation
-            Qds_mocap_ref[trial] = interpolateDataFrame(
-                Qds_mocap_spline_filter, timeIntervals[trial][0], 
-                timeIntervals[trial][1], N[trial]).to_numpy()[:,1::].T
-            Qdds_mocap_ref[trial] = interpolateDataFrame(
-                Qdds_mocap_spline_filter, timeIntervals[trial][0], 
-                timeIntervals[trial][1], N[trial]).to_numpy()[:,1::].T            
    
     # %% Other helper CasADi functions
     from functionCasADiOpenSimAD import normSumSqr
@@ -1213,24 +700,12 @@ def run_tracking(
     f_NMusclesSum2 = normSumSqr(NMuscles)
     f_NMusclesSumWeightedPow = normSumWeightedPow(NMuscles, powActivations)
     f_nJointsSum2 = normSumSqr(nJoints)
-    # f_NQsToTrackSum2 = normSumSqr(nEl_toTrack)
     f_NQsToTrackWSum2 = normSumWeightedSqrDiff(nEl_toTrack)
-    if withActiveMTP:
-        f_nMtpJointsSum2 = normSumSqr(nMtpJoints)
     if withArms:
         f_nArmJointsSum2 = normSumSqr(nArmJoints)
     if withLumbarCoordinateActuators:
-        f_nLumbarJointsSum2 = normSumSqr(nLumbarJoints)
-    if trackGRF or trackGRM:
-        f_NGRToTrackSum2 = normSumSqr(6)        
-    # f_nPassiveTorqueJointsSum2 = normSumSqr(nPassiveTorqueJoints)
-    f_diffTorques = diffTorques()
-    if powerDiff == 2:
-        f_normSumSqrDiff_tracking = normSumWeightedSqrDiff(nEl_toTrack)
-    else:
-       from functionCasADiOpenSimAD import normSumWeightedPowDiff
-       f_normSumSqrDiff_tracking = normSumWeightedPowDiff(powerDiff, 
-                                                          nEl_toTrack)     
+        f_nLumbarJointsSum2 = normSumSqr(nLumbarJoints)  
+    f_diffTorques = diffTorques()  
         
     # %% Bounds
     from boundsOpenSimAD import bounds_tracking
@@ -1253,13 +728,7 @@ def run_tracking(
         uw['ArmAk'], lw['ArmAk'], scaling['ArmAk'] = {}, {}, {}
         uw['ArmAj'], lw['ArmAj'], scaling['ArmAj'] = {}, {}, {}
         uw['ArmE'], lw['ArmE'], scaling['ArmE'] = {}, {}, {}
-        uw['ArmEk'], lw['ArmEk'], scaling['ArmEk'] = {}, {}, {}  
-    if withActiveMTP:
-        uw['MtpA'], lw['MtpA'], scaling['MtpA'] = {}, {}, {}
-        uw['MtpAk'], lw['MtpAk'], scaling['MtpAk'] = {}, {}, {}
-        uw['MtpAj'], lw['MtpAj'], scaling['MtpAj'] = {}, {}, {}
-        uw['MtpE'], lw['MtpE'], scaling['MtpE'] = {}, {}, {}
-        uw['MtpEk'], lw['MtpEk'], scaling['MtpEk'] = {}, {}, {}
+        uw['ArmEk'], lw['ArmEk'], scaling['ArmEk'] = {}, {}, {}
     if withLumbarCoordinateActuators:
         uw['LumbarA'], lw['LumbarA'], scaling['LumbarA'] = {}, {}, {}
         uw['LumbarAk'], lw['LumbarAk'], scaling['LumbarAk'] = {}, {}, {}
@@ -1275,12 +744,7 @@ def run_tracking(
     uw['Qddsk'], lw['Qddsk'], scaling['Qddsk'] = {}, {}, {}    
     if offset_ty:
         uw['Offset'], lw['Offset'], scaling['Offset'] = {}, {}, {}
-        uw['Offsetk'], lw['Offsetk'], scaling['Offsetk'] = {}, {}, {}    
-    if optimizeContacts:
-        uw['ContactParameters'], lw['ContactParameters'], scaling['ContactParameters_v'], scaling['ContactParameters_r'] = {}, {}, {}, {}    
-    if GRF_toTrack:
-        scaling['GRF'] = {}
-        scaling['GRM'] = {}
+        uw['Offsetk'], lw['Offsetk'], scaling['Offsetk'] = {}, {}, {}
     if reserveActuators:
         uw['rAct'], lw['rAct'], scaling['rAct'] = {}, {}, {}
         uw['rActk'], lw['rActk']= {}, {}
@@ -1305,16 +769,7 @@ def run_tracking(
         uw['Fj'][trial] = ca.vec(uw['F'][trial].to_numpy().T * np.ones((1, d*N[trial]))).full()
         lw['Fj'][trial] = ca.vec(lw['F'][trial].to_numpy().T * np.ones((1, d*N[trial]))).full()
         # Joint positions
-        # uw['Qs'][trial], lw['Qs'][trial], scaling['Qs'][trial] =  bounds.getBoundsPosition()
-        if bounds_update:
-            if bounds_update_index == 1:
-                uw['Qs'][trial], lw['Qs'][trial], scaling['Qs'][trial] =  bounds.getBoundsPosition_fixed_update1(data_type=data_type)    
-            elif bounds_update_index == 2:
-                uw['Qs'][trial], lw['Qs'][trial], scaling['Qs'][trial] =  bounds.getBoundsPosition_fixed_update2(data_type=data_type)       
-            else:
-                raise ValueError('Unknown bounds_index')
-        else:
-            uw['Qs'][trial], lw['Qs'][trial], scaling['Qs'][trial] =  bounds.getBoundsPosition_fixed(data_type=data_type)
+        uw['Qs'][trial], lw['Qs'][trial], scaling['Qs'][trial] =  bounds.getBoundsPosition_fixed_update2()
         uw['Qsk'][trial] = ca.vec(uw['Qs'][trial].to_numpy().T * np.ones((1, N[trial]+1))).full()
         lw['Qsk'][trial] = ca.vec(lw['Qs'][trial].to_numpy().T * np.ones((1, N[trial]+1))).full()
         uw['Qsj'][trial] = ca.vec(uw['Qs'][trial].to_numpy().T * np.ones((1, d*N[trial]))).full()
@@ -1332,13 +787,6 @@ def run_tracking(
             lw['ArmAk'][trial] = ca.vec(lw['ArmA'][trial].to_numpy().T * np.ones((1, N[trial]+1))).full()
             uw['ArmAj'][trial] = ca.vec(uw['ArmA'][trial].to_numpy().T * np.ones((1, d*N[trial]))).full()
             lw['ArmAj'][trial] = ca.vec(lw['ArmA'][trial].to_numpy().T * np.ones((1, d*N[trial]))).full()
-        if withActiveMTP:
-            # MTP activations
-            uw['MtpA'][trial], lw['MtpA'][trial], scaling['MtpA'][trial] = bounds.getBoundsMtpActivation(mtpJoints)
-            uw['MtpAk'][trial] = ca.vec(uw['MtpA'][trial].to_numpy().T * np.ones((1, N[trial]+1))).full()
-            lw['MtpAk'][trial] = ca.vec(lw['MtpA'][trial].to_numpy().T * np.ones((1, N[trial]+1))).full()
-            uw['MtpAj'][trial] = ca.vec(uw['MtpA'][trial].to_numpy().T * np.ones((1, d*N[trial]))).full()
-            lw['MtpAj'][trial] = ca.vec(lw['MtpA'][trial].to_numpy().T * np.ones((1, d*N[trial]))).full()
         if withLumbarCoordinateActuators:
             # Lumbar activations
             uw['LumbarA'][trial], lw['LumbarA'][trial], scaling['LumbarA'][trial] = bounds.getBoundsLumbarActivation(lumbarJoints)
@@ -1359,11 +807,6 @@ def run_tracking(
             uw['ArmE'][trial], lw['ArmE'][trial], scaling['ArmE'][trial] = bounds.getBoundsArmExcitation(armJoints)
             uw['ArmEk'][trial] = ca.vec(uw['ArmE'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
             lw['ArmEk'][trial] = ca.vec(lw['ArmE'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
-        if withActiveMTP:
-            # MTP excitations
-            uw['MtpE'][trial], lw['MtpE'][trial], scaling['MtpE'][trial] = bounds.getBoundsMtpExcitation(mtpJoints)
-            uw['MtpEk'][trial] = ca.vec(uw['MtpE'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
-            lw['MtpEk'][trial] = ca.vec(lw['MtpE'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
         if withLumbarCoordinateActuators:
             # Arm excitations
             uw['LumbarE'][trial], lw['LumbarE'][trial], scaling['LumbarE'][trial] = bounds.getBoundsLumbarExcitation(lumbarJoints)
@@ -1374,10 +817,7 @@ def run_tracking(
         uw['FDtk'][trial] = ca.vec(uw['FDt'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
         lw['FDtk'][trial] = ca.vec(lw['FDt'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
         # Joint velocity derivatives (accelerations)
-        if filter_bounds_guess_acceleration:
-            uw['Qdds'][trial], lw['Qdds'][trial], scaling['Qdds'][trial] = bounds.getBoundsAccelerationFiltered()
-        else:
-            uw['Qdds'][trial], lw['Qdds'][trial], scaling['Qdds'][trial] = bounds.getBoundsAcceleration()
+        uw['Qdds'][trial], lw['Qdds'][trial], scaling['Qdds'][trial] = bounds.getBoundsAcceleration()
         uw['Qddsk'][trial] = ca.vec(uw['Qdds'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
         lw['Qddsk'][trial] = ca.vec(lw['Qdds'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
         # Reserve actuators
@@ -1385,8 +825,7 @@ def run_tracking(
             uw['rAct'][trial], lw['rAct'][trial], scaling['rAct'][trial] = {}, {}, {}
             uw['rActk'][trial], lw['rActk'][trial], = {}, {}
             for c_j in reserveActuatorJoints:
-                uw['rAct'][trial][c_j], lw['rAct'][trial][c_j], scaling['rAct'][trial][c_j] = bounds.getBoundsReserveActuators(c_j,
-                                                                                                                               reserveActuatorJoints[c_j])
+                uw['rAct'][trial][c_j], lw['rAct'][trial][c_j], scaling['rAct'][trial][c_j] = bounds.getBoundsReserveActuators(c_j, reserveActuatorJoints[c_j])
                 uw['rActk'][trial][c_j] = ca.vec(uw['rAct'][trial][c_j].to_numpy().T * np.ones((1, N[trial]))).full()
                 lw['rActk'][trial][c_j] = ca.vec(lw['rAct'][trial][c_j].to_numpy().T * np.ones((1, N[trial]))).full()
                     
@@ -1394,33 +833,10 @@ def run_tracking(
         # Static parameters
         #######################################################################
         if offset_ty:
-            if tracking_data == "coordinates":
-                # scaling['Offset'][trial] = scaling['Qs'][trial].iloc[0]["pelvis_ty"]
-                # TODO
-                scaling['Offset'][trial] = 1.
-            elif tracking_data == "markers":
-                scaling['Offset'][trial] = (
-                    scaling['Marker'].iloc[0][scaling['Marker'].columns[0]])           
+            scaling['Offset'][trial] = 1.         
             uw['Offset'][trial], lw['Offset'][trial] = bounds.getBoundsOffset(scaling['Offset'][trial])
             uw['Offsetk'][trial] = uw['Offset'][trial].to_numpy()
             lw['Offsetk'][trial] = lw['Offset'][trial].to_numpy()
-            
-        if optimizeContacts:
-            (uw['ContactParameters'][trial], lw['ContactParameters'][trial], 
-             scaling['ContactParameters_v'][trial], 
-             scaling['ContactParameters_r'][trial]) = (
-                 bounds.getBoundsContactParameters(nContactSpheres, 
-                                                   parameter_to_optimize))
-
-        if GRF_toTrack:
-        # if trackGRF:            
-            _, _, scaling['GRF'][trial] = bounds.getBoundsGR(
-                GRF_toTrack[trial]['df_interp']['forces']['all'], 
-                GRF_toTrack[trial]['headers']['forces']['all'])
-        # if trackGRM:
-            _, _, scaling['GRM'][trial] = bounds.getBoundsGR(
-                GRF_toTrack[trial]['df_interp']['torques_G']['all'], 
-                GRF_toTrack[trial]['headers']['torques']['all'])   
     
     # %% Guesses
     if type_guess == "dataDriven":         
@@ -1435,8 +851,6 @@ def run_tracking(
     w0['Qds'], w0['Qdsj'] = {}, {}
     if withArms:
         w0['ArmA'], w0['ArmAj'], w0['ArmE'] = {}, {}, {}
-    if withActiveMTP:
-        w0['MtpA'], w0['MtpAj'],w0['MtpE'] = {}, {}, {}
     if withLumbarCoordinateActuators:
         w0['LumbarA'], w0['LumbarAj'], w0['LumbarE'] = {}, {}, {}
     w0['ADt'] = {}
@@ -1444,8 +858,6 @@ def run_tracking(
     w0['Qdds'] = {}
     if offset_ty:
         w0['Offset'] = {}
-    if optimizeContacts:
-        w0['ContactParameters'] = {}
     if reserveActuators:
         w0['rAct'] = {}        
     # Loop over trials 
@@ -1467,17 +879,14 @@ def run_tracking(
         w0['F'][trial] = guess.getGuessForce(scaling['F'][trial])
         w0['Fj'][trial] = guess.getGuessForceCol()
         # Joint positions
-        w0['Qs'][trial] = guess.getGuessPosition(scaling['Qs'][trial], guess_zeroMTP)
+        w0['Qs'][trial] = guess.getGuessPosition(scaling['Qs'][trial])
         w0['Qsj'][trial] = guess.getGuessPositionCol()
         # Joint velocities
-        w0['Qds'][trial] = guess.getGuessVelocity(scaling['Qds'][trial], guess_zeroMTP)
+        w0['Qds'][trial] = guess.getGuessVelocity(scaling['Qds'][trial])
         w0['Qdsj'][trial] = guess.getGuessVelocityCol()    
         if withArms:
             w0['ArmA'][trial] = guess.getGuessTorqueActuatorActivation(armJoints)   
             w0['ArmAj'][trial] = guess.getGuessTorqueActuatorActivationCol(armJoints)
-        if withActiveMTP:
-            w0['MtpA'][trial] = guess.getGuessTorqueActuatorActivation(mtpJoints)
-            w0['MtpAj'][trial] = guess.getGuessTorqueActuatorActivationCol(mtpJoints)
         if withLumbarCoordinateActuators:
             w0['LumbarA'][trial] = guess.getGuessTorqueActuatorActivation(lumbarJoints)   
             w0['LumbarAj'][trial] = guess.getGuessTorqueActuatorActivationCol(lumbarJoints)
@@ -1490,25 +899,13 @@ def run_tracking(
         if withArms:
             # Arm activations
             w0['ArmE'][trial] = guess.getGuessTorqueActuatorExcitation(armJoints)
-        if withActiveMTP:
-            # MTP activations
-            w0['MtpE'][trial] = guess.getGuessTorqueActuatorExcitation(mtpJoints)
         if withLumbarCoordinateActuators:
             # Lumbar activations
             w0['LumbarE'][trial] = guess.getGuessTorqueActuatorExcitation(lumbarJoints)
         # Muscle force derivatives   
         w0['FDt'][trial] = guess.getGuessForceDerivative(scaling['FDt'][trial])
         # Joint velocity derivatives (accelerations)
-        if filter_bounds_guess_acceleration:
-            w0['Qdds'][trial] = (
-                guess.getGuessAccelerationFiltered(scaling['Qdds'][trial], 
-                                                   guess_zeroAcceleration,
-                                                   guess_zeroMTP))
-        else:
-            w0['Qdds'][trial] = (
-                guess.getGuessAcceleration(scaling['Qdds'][trial], 
-                                           guess_zeroAcceleration,
-                                           guess_zeroMTP))
+        w0['Qdds'][trial] = guess.getGuessAcceleration(scaling['Qdds'][trial])
         # Reserve actuators
         if reserveActuators:
             w0['rAct'][trial] = {}
@@ -1521,152 +918,114 @@ def run_tracking(
         if offset_ty:
             w0['Offset'][trial] = guess.getGuessOffset(scaling['Offset'][trial])
             
-        if optimizeContacts:
-            from guessesOpenSimAD import contactParameterGuess
-            guessParameters = contactParameterGuess()
-            w0['ContactParameters'][trial] = (
-                guessParameters.getGuessContactParameters(
-                    nContactSpheres, parameter_to_optimize, 
-                    scaling['ContactParameters_v'][trial], scaling['ContactParameters_r'][trial]))
-            
     # %% Tracking data
-    if tracking_data == "coordinates":
-        from utilsOpenSimAD import scaleDataFrame, selectFromDataFrame
-        
-        dataToTrack_sc = {}
-        dataToTrack_nsc = {}
-        dataToTrack_dot_nsc = {}
-        dataToTrack_dot_sc = {}
-        dataToTrack_dotdot_nsc = {}
-        dataToTrack_dotdot_sc = {}
-        refData_dot_nsc = {}
-        refData_dotdot_nsc = {}
-        for trial in trials:
-            dataToTrack_sc[trial] = scaleDataFrame(
-                Qs_toTrack[trial], scaling['Qs'][trial], 
-                coordinates_toTrack_list).to_numpy()[:,1::].T
-             
-            dataToTrack_nsc[trial] = selectFromDataFrame(
-                Qs_toTrack[trial], 
-                coordinates_toTrack_list).to_numpy()[:,1::].T
-        
-            Qs_spline = Qs_toTrack_sel[trial].copy()
-            Qds_spline = Qs_toTrack_sel[trial].copy()
-            Qdds_spline = Qs_toTrack_sel[trial].copy()
+    from utilsOpenSimAD import scaleDataFrame, selectFromDataFrame
+    
+    dataToTrack_sc = {}
+    dataToTrack_nsc = {}
+    dataToTrack_dot_nsc = {}
+    dataToTrack_dot_sc = {}
+    dataToTrack_dotdot_nsc = {}
+    dataToTrack_dotdot_sc = {}
+    refData_dot_nsc = {}
+    refData_dotdot_nsc = {}
+    for trial in trials:
+        dataToTrack_sc[trial] = scaleDataFrame(
+            Qs_toTrack[trial], scaling['Qs'][trial], 
+            coordinates_toTrack_list).to_numpy()[:,1::].T
+         
+        dataToTrack_nsc[trial] = selectFromDataFrame(
+            Qs_toTrack[trial], 
+            coordinates_toTrack_list).to_numpy()[:,1::].T
+    
+        Qs_spline = Qs_toTrack_sel[trial].copy()
+        Qds_spline = Qs_toTrack_sel[trial].copy()
+        Qdds_spline = Qs_toTrack_sel[trial].copy()
+        for joint in joints:
+            spline = interpolate.InterpolatedUnivariateSpline(
+                Qs_toTrack_sel[trial]['time'], 
+                Qs_toTrack_sel[trial][joint], k=3)
+            Qs_spline[joint] = spline(
+                Qs_toTrack_sel[trial]['time'])
+            splineD1 = spline.derivative(n=1)
+            Qds_spline[joint] = splineD1(
+                Qs_toTrack_sel[trial]['time'])                
+            
+            splineD2 = spline.derivative(n=2)
+            Qdds_spline[joint] = splineD2(
+                Qs_toTrack_sel[trial]['time'])
+            
+        # Filtering
+        if filter_Qds_toTracks[trial]:
+            Qds_spline_filter = filterDataFrame(
+                Qds_spline, cutoff_frequency=cutoff_freq_Qds[trial])
+        else:
+            Qds_spline_filter = Qds_spline
+            
+        if filter_Qdds_toTracks[trial]:
+            Qdds_spline_filter = filterDataFrame(
+                Qdds_spline, cutoff_frequency=cutoff_freq_Qdds[trial])
+        else:
+            Qdds_spline_filter = Qdds_spline
+            
+        # Instead of splining Qs twice to get Qdds, spline Qds, which can
+        # be filtered or not.
+        if splineQds[trial]:
+            Qdds_spline2 = Qs_toTrack_sel[trial].copy()
             for joint in joints:
                 spline = interpolate.InterpolatedUnivariateSpline(
-                    Qs_toTrack_sel[trial]['time'], 
-                    Qs_toTrack_sel[trial][joint], k=3)
-                Qs_spline[joint] = spline(
-                    Qs_toTrack_sel[trial]['time'])
+                    Qds_spline_filter['time'], 
+                    Qds_spline_filter[joint], k=3)
                 splineD1 = spline.derivative(n=1)
-                Qds_spline[joint] = splineD1(
-                    Qs_toTrack_sel[trial]['time'])                
-                
-                splineD2 = spline.derivative(n=2)
-                Qdds_spline[joint] = splineD2(
-                    Qs_toTrack_sel[trial]['time'])
-                
-            # Filtering
-            if filter_Qds_toTracks[trial]:
-                Qds_spline_filter = filterDataFrame(
-                    Qds_spline, cutoff_frequency=cutoff_freq_Qds[trial])
-            else:
-                Qds_spline_filter = Qds_spline
+                Qdds_spline2[joint] = splineD1(
+                    Qds_spline_filter['time'])
                 
             if filter_Qdds_toTracks[trial]:
                 Qdds_spline_filter = filterDataFrame(
-                    Qdds_spline, cutoff_frequency=cutoff_freq_Qdds[trial])
+                    Qdds_spline2, cutoff_frequency=cutoff_freq_Qdds[trial])
             else:
-                Qdds_spline_filter = Qdds_spline
-                
-            # Instead of splining Qs twice to get Qdds, spline Qds, which can
-            # be filtered or not.
-            if splineQds[trial]:
-                Qdds_spline2 = Qs_toTrack_sel[trial].copy()
-                for joint in joints:
-                    spline = interpolate.InterpolatedUnivariateSpline(
-                        Qds_spline_filter['time'], 
-                        Qds_spline_filter[joint], k=3)
-                    splineD1 = spline.derivative(n=1)
-                    Qdds_spline2[joint] = splineD1(
-                        Qds_spline_filter['time'])
-                    
-                if filter_Qdds_toTracks[trial]:
-                    Qdds_spline_filter = filterDataFrame(
-                        Qdds_spline2, cutoff_frequency=cutoff_freq_Qdds[trial])
-                else:
-                    Qdds_spline_filter = Qdds_spline2
-                
-            # Interpolation
-            Qds_spline_interp = interpolateDataFrame(
-                Qds_spline_filter, timeIntervals[trial][0], 
-                timeIntervals[trial][1], N[trial])
-            Qdds_spline_interp = interpolateDataFrame(
-                Qdds_spline_filter, timeIntervals[trial][0], 
-                timeIntervals[trial][1], N[trial])
-                
-            dataToTrack_dot_nsc[trial] = selectFromDataFrame(
-                Qds_spline_interp, 
-                coordinates_toTrack_list).to_numpy()[:,1::].T
-            dataToTrack_dot_sc[trial] = scaleDataFrame(
-                Qds_spline_interp, scaling['Qds'][trial], 
-                coordinates_toTrack_list).to_numpy()[:,1::].T
+                Qdds_spline_filter = Qdds_spline2
             
-            dataToTrack_dotdot_nsc[trial] = selectFromDataFrame(
-                Qdds_spline_interp, 
-                coordinates_toTrack_list).to_numpy()[:,1::].T
-            dataToTrack_dotdot_sc[trial] = scaleDataFrame(
-                Qdds_spline_interp, scaling['Qdds'][trial], 
-                coordinates_toTrack_list).to_numpy()[:,1::].T
+        # Interpolation
+        Qds_spline_interp = interpolateDataFrame(
+            Qds_spline_filter, timeIntervals[trial][0], 
+            timeIntervals[trial][1], N[trial])
+        Qdds_spline_interp = interpolateDataFrame(
+            Qdds_spline_filter, timeIntervals[trial][0], 
+            timeIntervals[trial][1], N[trial])
             
-            refData_dot_nsc[trial] = selectFromDataFrame(
-                Qds_spline_interp, 
-                joints).to_numpy()[:,1::].T            
-            refData_dotdot_nsc[trial] = selectFromDataFrame(
-                Qdds_spline_interp, 
-                joints).to_numpy()[:,1::].T
-            
-        # Scanity check: ensure that the Qs to track are within the bounds
-        # used to define the polynomials.
-        from utilsOpenSimAD import checkQsWithinPolynomialBounds
-        successCheckPoly = checkQsWithinPolynomialBounds(dataToTrack_nsc, 
-                                      polynomial_bounds,
-                                      coordinates_toTrack_list,
-                                      trials)
-        # Exit if problem with poly
-        if not successCheckPoly:
-            print('Problem poly range')
-            return
+        dataToTrack_dot_nsc[trial] = selectFromDataFrame(
+            Qds_spline_interp, 
+            coordinates_toTrack_list).to_numpy()[:,1::].T
+        dataToTrack_dot_sc[trial] = scaleDataFrame(
+            Qds_spline_interp, scaling['Qds'][trial], 
+            coordinates_toTrack_list).to_numpy()[:,1::].T
         
-        # if 'translational' in coordinates_toTrack:            
-        #     dataToTrack_tr_sc = scaleDataFrame(
-        #         Qs_toTrack[trial], scaling['Qs'][trial], 
-        #         coordinates_toTrack_tr).to_numpy()[:,1::].T
-        #     dataToTrack_tr_nsc = selectFromDataFarme(
-        #         Qs_toTrack[trial], 
-        #         coordinates_toTrack_tr).to_numpy()[:,1::].T
+        dataToTrack_dotdot_nsc[trial] = selectFromDataFrame(
+            Qdds_spline_interp, 
+            coordinates_toTrack_list).to_numpy()[:,1::].T
+        dataToTrack_dotdot_sc[trial] = scaleDataFrame(
+            Qdds_spline_interp, scaling['Qdds'][trial], 
+            coordinates_toTrack_list).to_numpy()[:,1::].T
         
-    if GRF_toTrack:
-        grfToTrack_sc = {}
-        grfToTrack_nsc = {}
-        for trial in trials:
-            grfToTrack_sc[trial] = scaleDataFrame(
-                GRF_toTrack[trial]['df_interp']['forces']['all'], scaling['GRF'][trial], 
-                GRF_toTrack[trial]['headers']['forces']['all']).to_numpy()[:,1::].T
-            grfToTrack_nsc[trial] = selectFromDataFrame(
-                GRF_toTrack[trial]['df_interp']['forces']['all'], 
-                GRF_toTrack[trial]['headers']['forces']['all']).to_numpy()[:,1::].T
-            
-        grmToTrack_sc = {}
-        grmToTrack_nsc = {}
-        for trial in trials:            
-            grmToTrack_sc[trial] = scaleDataFrame(
-                GRF_toTrack[trial]['df_interp']['torques_G']['all'], scaling['GRM'][trial], 
-                GRF_toTrack[trial]['headers']['torques']['all']).to_numpy()[:,1::].T
-            grmToTrack_nsc[trial] = selectFromDataFrame(
-                GRF_toTrack[trial]['df_interp']['torques_G']['all'], 
-                GRF_toTrack[trial]['headers']['torques']['all']).to_numpy()[:,1::].T
+        refData_dot_nsc[trial] = selectFromDataFrame(
+            Qds_spline_interp, 
+            joints).to_numpy()[:,1::].T            
+        refData_dotdot_nsc[trial] = selectFromDataFrame(
+            Qdds_spline_interp, 
+            joints).to_numpy()[:,1::].T
+        
+    # Scanity check: ensure that the Qs to track are within the bounds
+    # used to define the polynomials.
+    from utilsOpenSimAD import checkQsWithinPolynomialBounds
+    successCheckPoly = checkQsWithinPolynomialBounds(dataToTrack_nsc, 
+                                  polynomial_bounds,
+                                  coordinates_toTrack_list,
+                                  trials)
+    # Exit if problem with poly
+    if not successCheckPoly:
+        print('Problem poly range')
+        return
             
     # %% Update bounds if enveloppe constraints
     if coordinate_constraints:
@@ -1718,18 +1077,10 @@ def run_tracking(
         # Initialize opti instance.
         opti = ca.Opti()            
         # Static parameters.
-        # if optimizeContacts:
-        #     p = opti.variable(NContactParameters)
-        #     opti.subject_to(opti.bounded(lw['ContactParameters'][trial].T, p,
-        #                                  uw['ContactParameters'][trial].T))
-        #     opti.set_initial(p, w0['ContactParameters'][trial])
-        #     # assert np.alltrue(lw['ContactParameters'][trial] <= w0['ContactParameters'][trial]), "lw contact parameters"
-        #     # assert np.alltrue(uw['ContactParameters'][trial] >= w0['ContactParameters'][trial]), "uw contact parameters"
         if offset_ty:
             # Offset pelvis_ty.
             offset = opti.variable(1)
-            opti.subject_to(opti.bounded(lw['Offsetk'][trial], offset,
-                                         uw['Offsetk'][trial]))
+            opti.subject_to(opti.bounded(lw['Offsetk'][trial], offset, uw['Offsetk'][trial]))
             opti.set_initial(offset, w0['Offset'][trial])
         else:
             offset = 0            
@@ -1738,8 +1089,6 @@ def run_tracking(
         Qs, Qs_col, Qds, Qds_col = {}, {}, {}, {}
         if withArms:
             aArm, aArm_col, eArm = {}, {}, {}
-        if withActiveMTP:
-            aMtp, aMtp_col, eMtp = {}, {}, {}
         if withLumbarCoordinateActuators:
             aLumbar, aLumbar_col, eLumbar = {}, {}, {}            
         aDt, nFDt, Qdds = {}, {}, {}
@@ -1782,16 +1131,16 @@ def run_tracking(
                     w0['Qs'][trial].to_numpy().T[:,-1], 
                     (w0['Qs'][trial].to_numpy().T.shape[0], 1))), axis=1)
             opti.set_initial(Qs[trial], guessQsEnd)
-            # TODO 5 is for s11
-            assert np.alltrue(lw['Qsk'][trial] - 5*np.pi/180 <= ca.vec(guessQsEnd).full()), "lw Joint position"
-            assert np.alltrue(uw['Qsk'][trial] + 5*np.pi/180 >= ca.vec(guessQsEnd).full()), "uw Joint position"
+            # Small margin to account for filtering.
+            assert np.alltrue(lw['Qsk'][trial] - np.pi/180 <= ca.vec(guessQsEnd).full()), "lw Joint position"
+            assert np.alltrue(uw['Qsk'][trial] + np.pi/180 >= ca.vec(guessQsEnd).full()), "uw Joint position"
             # Joint position at collocation points
             Qs_col[trial] = opti.variable(nJoints, d*N[trial])
             opti.subject_to(opti.bounded(lw['Qsj'][trial], ca.vec(Qs_col[trial]), uw['Qsj'][trial]))
             opti.set_initial(Qs_col[trial], w0['Qsj'][trial].to_numpy().T)
             # Small margin to account for filtering.
-            assert np.alltrue(lw['Qsj'][trial] - 5*np.pi/180 <= ca.vec(w0['Qsj'][trial].to_numpy().T).full()), "lw Joint position col"
-            assert np.alltrue(uw['Qsj'][trial] + 5*np.pi/180 >= ca.vec(w0['Qsj'][trial].to_numpy().T).full()), "uw Joint position col"
+            assert np.alltrue(lw['Qsj'][trial] - np.pi/180 <= ca.vec(w0['Qsj'][trial].to_numpy().T).full()), "lw Joint position col"
+            assert np.alltrue(uw['Qsj'][trial] + np.pi/180 >= ca.vec(w0['Qsj'][trial].to_numpy().T).full()), "uw Joint position col"
             # Joint velocity at mesh points
             Qds[trial] = opti.variable(nJoints, N[trial]+1)
             opti.subject_to(opti.bounded(lw['Qdsk'][trial], ca.vec(Qds[trial]), uw['Qdsk'][trial]))
@@ -1821,19 +1170,6 @@ def run_tracking(
                 opti.set_initial(aArm_col[trial], w0['ArmAj'][trial].to_numpy().T)
                 assert np.alltrue(lw['ArmAj'][trial] <= ca.vec(w0['ArmAj'][trial].to_numpy().T).full()), "lw Arm activation col"
                 assert np.alltrue(uw['ArmAj'][trial] >= ca.vec(w0['ArmAj'][trial].to_numpy().T).full()), "uw Arm activation col"
-            if withActiveMTP:
-                # Mtp activation at mesh points
-                aMtp[trial] = opti.variable(nMtpJoints, N[trial]+1)
-                opti.subject_to(opti.bounded(lw['MtpAk'][trial], ca.vec(aMtp[trial]), uw['MtpAk'][trial]))
-                opti.set_initial(aMtp[trial], w0['MtpA'][trial].to_numpy().T)
-                assert np.alltrue(lw['MtpAk'][trial] <= ca.vec(w0['MtpA'][trial].to_numpy().T).full()), "lw Mtp activation"
-                assert np.alltrue(uw['MtpAk'][trial] >= ca.vec(w0['MtpA'][trial].to_numpy().T).full()), "uw Mtp activation"
-                # Mtp activation at collocation points
-                aMtp_col[trial] = opti.variable(nMtpJoints, d*N[trial])
-                opti.subject_to(opti.bounded(lw['MtpAj'][trial], ca.vec(aMtp_col[trial]), uw['MtpAj'][trial]))
-                opti.set_initial(aMtp_col[trial], w0['MtpAj'][trial].to_numpy().T)
-                assert np.alltrue(lw['MtpAj'][trial] <= ca.vec(w0['MtpAj'][trial].to_numpy().T).full()), "lw Mtp activation col"
-                assert np.alltrue(uw['MtpAj'][trial] >= ca.vec(w0['MtpAj'][trial].to_numpy().T).full()), "uw Mtp activation col"
             if withLumbarCoordinateActuators:
                 # Lumbar activation at mesh points
                 aLumbar[trial] = opti.variable(nLumbarJoints, N[trial]+1)
@@ -1861,13 +1197,6 @@ def run_tracking(
                 opti.set_initial(eArm[trial], w0['ArmE'][trial].to_numpy().T)
                 assert np.alltrue(lw['ArmEk'][trial] <= ca.vec(w0['ArmE'][trial].to_numpy().T).full()), "lw Arm excitation"
                 assert np.alltrue(uw['ArmEk'][trial] >= ca.vec(w0['ArmE'][trial].to_numpy().T).full()), "uw Arm excitation"
-            if withActiveMTP:
-                # Mtp excitation at mesh points
-                eMtp[trial] = opti.variable(nMtpJoints, N[trial])
-                opti.subject_to(opti.bounded(lw['MtpEk'][trial], ca.vec(eMtp[trial]), uw['MtpEk'][trial]))
-                opti.set_initial(eMtp[trial], w0['MtpE'][trial].to_numpy().T)
-                assert np.alltrue(lw['MtpEk'][trial] <= ca.vec(w0['MtpE'][trial].to_numpy().T).full()), "lw Mtp excitation"
-                assert np.alltrue(uw['MtpEk'][trial] >= ca.vec(w0['MtpE'][trial].to_numpy().T).full()), "uw Mtp excitation"
             if withLumbarCoordinateActuators:
                 # Lumbar excitation at mesh points
                 eLumbar[trial] = opti.variable(nLumbarJoints, N[trial])
@@ -1966,19 +1295,6 @@ def run_tracking(
                     uwp = uw['ArmA'][trial].to_numpy().T
                     y = w0['ArmAj'][trial].to_numpy().T
                     title='Arm activation at collocation points' 
-                    plotVSBounds(y,lwp,uwp,title) 
-                if withActiveMTP:
-                    # Mtp activation at mesh points
-                    lwp = lw['MtpA'][trial].to_numpy().T
-                    uwp = uw['MtpA'][trial].to_numpy().T
-                    y = w0['MtpA'][trial].to_numpy().T
-                    title='Mtp activation at mesh points' 
-                    plotVSBounds(y,lwp,uwp,title) 
-                    # Mtp activation at collocation points
-                    lwp = lw['MtpA'][trial].to_numpy().T
-                    uwp = uw['MtpA'][trial].to_numpy().T
-                    y = w0['MtpAj'][trial].to_numpy().T
-                    title='Mtp activation at collocation points' 
                     plotVSBounds(y,lwp,uwp,title)
                 if withLumbarCoordinateActuators:
                     # Lumbar activation at mesh points
@@ -2006,13 +1322,6 @@ def run_tracking(
                     uwp = uw['ArmE'][trial].to_numpy().T
                     y = w0['ArmE'][trial].to_numpy().T
                     title='Arm excitation at mesh points' 
-                    plotVSBounds(y,lwp,uwp,title) 
-                if withActiveMTP:
-                    # Mtp excitation at mesh points
-                    lwp = lw['MtpE'][trial].to_numpy().T
-                    uwp = uw['MtpE'][trial].to_numpy().T
-                    y = w0['MtpE'][trial].to_numpy().T
-                    title='Mtp excitation at mesh points' 
                     plotVSBounds(y,lwp,uwp,title)
                 if withLumbarCoordinateActuators:
                     # Lumbar excitation at mesh points
@@ -2048,10 +1357,7 @@ def run_tracking(
                 rAct_nsc = {}
                 for c_j in reserveActuatorJoints:
                     rAct_nsc[c_j] = rAct[trial][c_j] * (scaling['rAct'][trial][c_j].to_numpy().T * np.ones((1, N[trial])))
-            
-            # if optimizeContacts:
-            #     p_nsc = ((p - scaling['ContactParameters_r'][trial]) / scaling['ContactParameters_v'][trial])
-    
+                    
             # %% Offset data.
             dataToTrack_nsc_offset = ca.MX(dataToTrack_nsc[trial].shape[0],
                                            dataToTrack_nsc[trial].shape[1])                    
@@ -2144,12 +1450,7 @@ def run_tracking(
                             c_ma = [i - nSideMuscles for 
                                     i in momentArmIndices[joint]]
                             dMk[joint] = dMk_r[
-                                c_ma, rightPolynomialJoints.index(joint)]
-                # Trunk.
-                if model_type == 'gait2392':
-                    for joint in lumbarJoints:
-                        dMk[joint] = dMk_l[trunkMomentArmPolynomialIndices, 
-                                           leftPolynomialJoints.index(joint)]               
+                                c_ma, rightPolynomialJoints.index(joint)]            
                 
                 ###############################################################
                 # Hill-equilibrium 
@@ -2193,90 +1494,14 @@ def run_tracking(
             
                 ###############################################################
                 # Call external function
-                if optimizeContacts:
-                    # Commenting for now
-                    print("No longer supported")
-                    # # Call first external function
-                    # T1k = F1_c(ca.vertcat(QsQdskj_nsc[:, 0]))
-                    
-                    # RBGk, posBk, TBGk, lVelBk, aVelBk = {}, {}, {}, {}, {}
-                    # for segment in foot_segments:
-                    #     RBG_flat = T1k[idxF_c1[segment]['rotation']]
-                    #     RBGk[segment] = ca.reshape(RBG_flat, 3, 3)
-                    #     posBk[segment] = T1k[idxF_c1[segment]['position']]
-                    #     TBGk[segment] = T1k[idxF_c1[segment]['translation']]
-                    #     lVelBk[segment] = T1k[idxF_c1[segment]['linear_velocity']]
-                    #     aVelBk[segment] = T1k[idxF_c1[segment]['angular_velocity']]
-                    
-                    # if nContactSpheres == 6:                   
-                    #     if parameter_to_optimize == "option1":                                
-                    #         locSphere_inB_p = {}
-                    #         radius_p = {}
-                    #         appliedFk = {}
-                    #         for n_c in range(nContactSpheres):
-                    #             c_n = str(n_c+1)
-                    #             locSphere_inB_p[c_n] = {}
-                    #             locSphere_inB_p[c_n]['r'] = (
-                    #                 ca.vertcat(p_nsc[n_c*2], -0.01, 
-                    #                             p_nsc[n_c*2+1]))
-                    #             locSphere_inB_p[c_n]['l'] = (
-                    #                 ca.vertcat(p_nsc[n_c*2], -0.01,
-                    #                             -p_nsc[n_c*2+1]))
-                    #             radius_p[c_n] = (
-                    #                 p_nsc[2*nContactSpheres+n_c])
-                    #             appliedFk[c_n] = {}
-                    #             for s_c in side_contacts:
-                    #                 c_s = contactSegments[n_c] + '_' + s_c                    
-                    #                 appliedFk[c_n][s_c] = f_contactForce(
-                    #                     dissipation, stiffness, radius_p[c_n],
-                    #                     locSphere_inB_p[c_n][s_c], posBk[c_s],
-                    #                     lVelBk[c_s], aVelBk[c_s], RBGk[c_s],
-                    #                     TBGk[c_s])                                    
-                    #         in_c2 = ca.MX(1, nContactSpheres*3*3)            
-                    #         count = 0
-                    #         for n_c in range(nContactSpheres):
-                    #             c_n = str(n_c+1)
-                    #             for s_c in side_contacts:
-                    #                 in_c2[0, count*3:count*3+3] = (
-                    #                     appliedFk[c_n][s_c])
-                    #                 count += 1
-                    #             in_c2[0, nContactSpheres*2*3+n_c*2] = (
-                    #                 locSphere_inB_p[c_n]['r'][0,])
-                    #             in_c2[0, nContactSpheres*2*3+n_c*2+1] = (
-                    #                 locSphere_inB_p[c_n]['r'][2,])             
-                    #             in_c2[0, nContactSpheres*2*4+n_c] = (
-                    #                 radius_p[c_n])
-                        
-                    # # Call second external function (run inverse dynamics)
-                    # Tk = F2_c(ca.vertcat(QsQdskj_nsc[:, 0], Qddsk_nsc,
-                    #                      in_c2.T))
-                    # if trackGRF:
-                    #     GRF_rk = ca.MX(1, 3) 
-                    #     GRF_lk = ca.MX(1, 3) 
-                    #     for n_c in range(nContactSpheres):
-                    #         c_n = str(n_c+1)
-                    #         for s_c in side_contacts:
-                    #             if s_c == 'r':
-                    #                 GRF_rk += appliedFk[c_n][s_c]
-                    #             elif s_c == 'l':
-                    #                 GRF_lk += appliedFk[c_n][s_c]
-                    #     GRFk = ca.horzcat(GRF_rk, GRF_lk).T                        
-                    # if trackGRM:
-                    #     GRMk = Tk[idxGRM]
+                if treadmill[trial]:
+                    Tk = F[trial](ca.vertcat(
+                        ca.vertcat(QsQdskj_nsc[:, 0],
+                                   Qddsk_nsc[idxJoints4F]),
+                        -trials[trial]['treadmill_speed']))
                 else:
-                    if treadmill[trial]:
-                        Tk = F[trial](ca.vertcat(
-                            ca.vertcat(QsQdskj_nsc[:, 0],
-                                       Qddsk_nsc[idxJoints4F]),
-                            -trials[trial]['treadmill_speed']))
-                    else:
-                        Tk = F[trial](ca.vertcat(QsQdskj_nsc[:, 0], 
-                                                 Qddsk_nsc[idxJoints4F]))
-                        
-                    # if trackGRF:
-                    #     GRFk = Tk[idxGRF]                        
-                    # if trackGRM:
-                    #     GRMk = Tk[idxGRM]
+                    Tk = F[trial](ca.vertcat(QsQdskj_nsc[:, 0], 
+                                             Qddsk_nsc[idxJoints4F]))
                         
                 for j in range(d):
                     
@@ -2349,18 +1574,6 @@ def run_tracking(
                         lumbarExcitationTerm = f_nLumbarJointsSum2(eLumbark)
                         J += (weights['lumbarExcitationTerm'] * 
                               lumbarExcitationTerm * h * B[j + 1])
-                    # if trackGRF:                    
-                    #     grfTrackingTerm = f_NGRToTrackSum2(
-                    #         (GRFk / (scaling['GRF'][trial].to_numpy().T)) - 
-                    #         grfToTrack_sc[trial][:, k])
-                    #     J += (weights['grfTrackingTerm'] * grfTrackingTerm * 
-                    #           h * B[j + 1])                    
-                    # if trackGRM:
-                    #     grmTrackingTerm = f_NGRToTrackSum2(
-                    #         (GRMk / (scaling['GRM'][trial].to_numpy().T)) - 
-                    #         grmToTrack_sc[trial][:, k])
-                    #     J += (weights['grmTrackingTerm'] * grmTrackingTerm * 
-                    #           h * B[j + 1])
                     if trackQdds:
                         accelerationTrackingTerm = f_NQsToTrackWSum2(
                             Qddsk[idx_coordinates_toTrack],
@@ -2484,17 +1697,6 @@ def run_tracking(
                 if yCalcnToes[trial]:
                     yCalcnToesk = Tk[idx_yCalcnToes]
                     opti.subject_to(yCalcnToesk > yCalcnToesThresholds[trial])
-                    
-                        
-                # if isSTSs[trial] and k==0:
-                #     vGRFk = Tk[idx_vGRF_buttocks]
-                #     opti.subject_to(vGRFk > stsThresholds[trial])
-                    
-                    # for n_c in range(nContactSpheres):
-                    #     c_n = str(n_c+1)
-                    #     for s_c in side_contacts:
-                    #         opti.subject_to(appliedFk[c_n][s_c][0,1] > 
-                    #                         squatThresholds[trial])
                 
             ###################################################################
             # Periodic constraints 
@@ -2518,7 +1720,7 @@ def run_tracking(
                     # Lumbar activations
                     opti.subject_to(aLumbar[trial][idxPeriodicLumbar, -1] - 
                                     aLumbar[trial][idxPeriodicLumbar, 0] == 0)
-                    
+                # TODO arms periodic constraints                    
                 # if withArms:
                 #     # Arm activations
                 #     opti.subject_to(aArm[trial][:, -1] - 
@@ -2527,8 +1729,7 @@ def run_tracking(
             ###################################################################
             # Constraints on pelvis_ty if offset as design variable
             ###################################################################
-            if (tracking_data == "coordinates" and offset_ty and 
-                'pelvis_ty' in coordinate_constraints):
+            if offset_ty and 'pelvis_ty' in coordinate_constraints:
                 
                 pelvis_ty_sc_offset = (
                     pelvis_ty_sc[trial] + offset / 
@@ -2579,8 +1780,6 @@ def run_tracking(
         Qds_opt, Qds_col_opt = {}, {}
         if withArms:
             aArm_opt, aArm_col_opt, eArm_opt = {}, {}, {}
-        if withActiveMTP:    
-            aMtp_opt, aMtp_col_opt, eMtp_opt = {}, {}, {}
         if withLumbarCoordinateActuators:
             aLumbar_opt, aLumbar_col_opt, eLumbar_opt = {}, {}, {}            
         aDt_opt = {}
@@ -2629,16 +1828,7 @@ def run_tracking(
                 aArm_col_opt[trial] = (
                     np.reshape(w_opt[starti:starti+nArmJoints*(d*N[trial])],
                                (d*N[trial], nArmJoints))).T
-                starti = starti + nArmJoints*(d*N[trial])       
-            if withActiveMTP:
-                aMtp_opt[trial] = (
-                    np.reshape(w_opt[starti:starti+nMtpJoints*(N[trial]+1)],
-                               (N[trial]+1, nMtpJoints))).T
-                starti = starti + nMtpJoints*(N[trial]+1)    
-                aMtp_col_opt[trial] = (
-                    np.reshape(w_opt[starti:starti+nMtpJoints*(d*N[trial])],
-                               (d*N[trial], nMtpJoints))).T
-                starti = starti + nMtpJoints*(d*N[trial])
+                starti = starti + nArmJoints*(d*N[trial])
             if withLumbarCoordinateActuators:
                 aLumbar_opt[trial] = (
                     np.reshape(w_opt[starti:starti+nLumbarJoints*(N[trial]+1)],
@@ -2656,12 +1846,7 @@ def run_tracking(
                 eArm_opt[trial] = (
                     np.reshape(w_opt[starti:starti+nArmJoints*N[trial]],
                                (N[trial], nArmJoints))).T
-                starti = starti + nArmJoints*N[trial]   
-            if withActiveMTP:
-                eMtp_opt[trial] = (
-                    np.reshape(w_opt[starti:starti+nMtpJoints*N[trial]],
-                               (N[trial], nMtpJoints))).T
-                starti = starti + nMtpJoints*N[trial]
+                starti = starti + nArmJoints*N[trial]
             if withLumbarCoordinateActuators:
                 eLumbar_opt[trial] = (
                     np.reshape(w_opt[starti:starti+nLumbarJoints*N[trial]],
@@ -2781,91 +1966,16 @@ def run_tracking(
                 mtpT = np.zeros((nMtpJoints, N[trial]))
             if withArms:
                 armT = np.zeros((nArmJoints, N[trial]))
-            if optimizeContacts:
-                GRF_optk = np.zeros((6 , N[trial]))
-            for k in range(N[trial]):                
-                if optimizeContacts:           
-                    print("Not supported")
-                    # # Call first external function
-                    # T1k = F1_c(ca.vertcat(QsQds_opt_nsc[trial][:, k]))
-                    # T1k_out = T1k.full()
-                    
-                    # RBGk_opt, posBk_opt, TBGk_opt, lVelBk_opt, aVelBk_opt = {}, {}, {}, {}, {}
-                    # for segment in foot_segments:
-                    #     RBG_flat = T1k_out[idxF_c1[segment]['rotation']]
-                    #     RBGk_opt[segment] = ca.reshape(RBG_flat, 3, 3)
-                    #     posBk_opt[segment] = T1k_out[idxF_c1[segment]['position']]
-                    #     TBGk_opt[segment] = T1k_out[idxF_c1[segment]['translation']]
-                    #     lVelBk_opt[segment] = T1k_out[idxF_c1[segment]['linear_velocity']]
-                    #     aVelBk_opt[segment] = T1k_out[idxF_c1[segment]['angular_velocity']]
-                    
-                    # if nContactSpheres == 6:                        
-                    #     if parameter_to_optimize == "option1":
-                    #         locSphere_inB_opt = {}
-                    #         radius_opt = {}
-                    #         appliedFk_opt = {}
-                    #         for n_c in range(nContactSpheres):
-                    #             c_n = str(n_c+1)
-                    #             locSphere_inB_opt[c_n] = {}
-                    #             locSphere_inB_opt[c_n]['r'] = (
-                    #                 ca.vertcat(p_opt_nsc[n_c*2], -0.01, p_opt_nsc[n_c*2+1]))
-                    #             locSphere_inB_opt[c_n]['l'] = (
-                    #                 ca.vertcat(p_opt_nsc[n_c*2], -0.01, -p_opt_nsc[n_c*2+1]))
-                    #             radius_opt[c_n] = (p_opt_nsc[2*nContactSpheres+n_c])
-                    #             appliedFk_opt[c_n] = {}
-                    #             for s_c in side_contacts:
-                    #                 c_s = contactSegments[n_c] + '_' + s_c                    
-                    #                 appliedFk_opt[c_n][s_c] = f_contactForce(
-                    #                     dissipation, stiffness, radius_opt[c_n],
-                    #                     locSphere_inB_opt[c_n][s_c], posBk_opt[c_s],
-                    #                     lVelBk_opt[c_s], aVelBk_opt[c_s], RBGk_opt[c_s],
-                    #                     TBGk_opt[c_s])                                    
-                    #         in_c2_opt = ca.DM(1, nContactSpheres*3*3)            
-                    #         count = 0
-                    #         for n_c in range(nContactSpheres):
-                    #             c_n = str(n_c+1)
-                    #             for s_c in side_contacts:
-                    #                 in_c2_opt[0, count*3:count*3+3] = (
-                    #                     appliedFk_opt[c_n][s_c])
-                    #                 count += 1
-                    #             in_c2_opt[0, nContactSpheres*2*3+n_c*2] = (
-                    #                 locSphere_inB_opt[c_n]['r'][0,])
-                    #             in_c2_opt[0, nContactSpheres*2*3+n_c*2+1] = (
-                    #                 locSphere_inB_opt[c_n]['r'][2,])             
-                    #             in_c2_opt[0, nContactSpheres*2*4+n_c] = (
-                    #                 radius_opt[c_n]) 
-                    #     Tk = F1[trial](ca.vertcat(QsQds_opt_nsc[trial][:, k],
-                    #                        Qdds_opt_nsc[trial][:, k], in_c2_opt.T))
-                        
-                    #     GRF_rk_opt = ca.DM(1, 3) 
-                    #     GRF_lk_opt = ca.DM(1, 3) 
-                    #     for n_c in range(nContactSpheres):
-                    #         c_n = str(n_c+1)
-                    #         for s_c in side_contacts:
-                    #             if s_c == 'r':
-                    #                 GRF_rk_opt += appliedFk_opt[c_n][s_c]
-                    #             elif s_c == 'l':
-                    #                 GRF_lk_opt += appliedFk_opt[c_n][s_c]
-                    #     GRF_optk[:, k] = ca.horzcat(GRF_rk_opt, GRF_lk_opt)                
+            for k in range(N[trial]):
+                if treadmill[trial]:
+                    Tk = F[trial](ca.vertcat(
+                        ca.vertcat(QsQds_opt_nsc[trial][:, k],
+                                   Qdds_opt_nsc[trial][:, k]), 
+                        -trials[trial]['treadmill_speed']))
                 else:
-                    if treadmill[trial]:
-                        Tk = F[trial](ca.vertcat(
-                            ca.vertcat(QsQds_opt_nsc[trial][:, k],
-                                       Qdds_opt_nsc[trial][:, k]), 
-                            -trials[trial]['treadmill_speed']))
-                    else:
-                        Tk = F[trial](ca.vertcat(QsQds_opt_nsc[trial][:, k],
-                                       Qdds_opt_nsc[trial][:, k]))
-                F_out_pp[:, k] = Tk.full().T                
-                if withMTP:
-                    for cj, joint in enumerate(mtpJoints):
-                        c_aMtp_opt = 0
-                        if withActiveMTP:
-                            c_aMtp_opt = aMtp_opt[trial][cj, k]
-                        mtpT[cj, k] = f_diffTorques(
-                            F_out_pp[F_map[trial]['residuals'][joint], k], c_aMtp_opt, 
-                            (linearPassiveTorqueMtp_opt[trial][cj, k] + 
-                             passiveTorqueMtp_opt[trial][cj, k]))
+                    Tk = F[trial](ca.vertcat(QsQds_opt_nsc[trial][:, k],
+                                   Qdds_opt_nsc[trial][:, k]))
+                F_out_pp[:, k] = Tk.full().T
                 if withArms:
                     for cj, joint in enumerate(armJoints):
                         armT[cj, k] = f_diffTorques(
@@ -2892,11 +2002,7 @@ def run_tracking(
                 (GRF_all_opt['r'][trial], GRF_all_opt['l'][trial]), axis=0)   
             GRM_all_opt['all'][trial] = np.concatenate(
                 (GRM_all_opt['r'][trial], GRM_all_opt['l'][trial]), axis=0)
-            
-            if optimizeContacts and stats['success']:               
-               assert np.alltrue(
-                       np.abs(GRF_optk - GRF_all_opt['all'][trial]) 
-                       < 10**(-5)), "error GRFs"               
+             
             for side in sides:
                 for sphere in spheres:
                     GRF_s_opt[side][sphere][trial] = F_out_pp[idxGR["GRF"][sphere][side], :]
@@ -3025,7 +2131,7 @@ def run_tracking(
         for trial in trials:
             refData_nsc = Qs_toTrack[trial].to_numpy()[:,1::].T
             refData_offset_nsc[trial] = copy.deepcopy(refData_nsc)
-            if offset_ty and tracking_data == "coordinates":                    
+            if offset_ty:                    
                 refData_offset_nsc[trial][joints.index("pelvis_ty")] = (
                     refData_nsc[joints.index("pelvis_ty")] + 
                     offset_opt_nsc)
@@ -3053,13 +2159,10 @@ def run_tracking(
                                 refData_offset_nsc[trial][i:i+1,:].T * scale_angles, 
                                 c='black', label='experimental')
                         # simulated data
-                        if tracking_data == "coordinates":
-                            if (joints[i] in coordinates_toTrack_list):
-                                col_sim = 'orange'
-                            else:
-                                col_sim = 'blue'
+                        if (joints[i] in coordinates_toTrack_list):
+                            col_sim = 'orange'
                         else:
-                            col_sim = 'blue'                            
+                            col_sim = 'blue'                          
                         
                         ax.plot(tgridf[trial][0,:].T, 
                                 Qs_opt_nsc[trial][i:i+1,:].T * scale_angles, 
@@ -3087,13 +2190,10 @@ def run_tracking(
                                 refData_dot_nsc[trial][i:i+1,:].T * scale_angles, 
                                 c='black', label='experimental')
                         # simulated data
-                        if tracking_data == "coordinates":
-                            if (joints[i] in coordinates_toTrack_list):
-                                col_sim = 'orange'
-                            else:
-                                col_sim = 'blue'
+                        if (joints[i] in coordinates_toTrack_list):
+                            col_sim = 'orange'
                         else:
-                            col_sim = 'blue'                            
+                            col_sim = 'blue'                         
                         
                         ax.plot(tgridf[trial][0,:].T, 
                                 Qds_opt_nsc[trial][i:i+1,:].T * scale_angles, 
@@ -3121,13 +2221,10 @@ def run_tracking(
                                 refData_dotdot_nsc[trial][i:i+1,:].T * scale_angles, 
                                 c='black', label='experimental')
                         # simulated data
-                        if tracking_data == "coordinates":
-                            if (joints[i] in coordinates_toTrack_list):
-                                col_sim = 'orange'
-                            else:
-                                col_sim = 'blue'
+                        if (joints[i] in coordinates_toTrack_list):
+                            col_sim = 'orange'
                         else:
-                            col_sim = 'blue'                            
+                            col_sim = 'blue'                          
                         
                         ax.plot(tgridf[trial][0,:-1].T, 
                                 Qdds_col_opt_nsc[trial][i:i+1,:].T * scale_angles, 
@@ -3146,23 +2243,10 @@ def run_tracking(
                 fig.suptitle('Joint torques {}'.format(trial))                  
                 for i, ax in enumerate(axs.flat):
                     if i < nJoints:
-                        # # reference data
-                        if ID_toTrack:
-                            ax.plot(tgridf[trial][0,:-1].T, 
-                                    ID_toTrack[trial][i:i+1,:].T, 
-                                    c='black', label='experimental')
-                            
-                        # ax.plot(tgridf[trial][0,:-1].T, 
-                        #         dataToTrack_dotdot_nsc[trial][i:i+1,:].T * scale_angles, 
-                        #         c='black', label='experimental')
-                        # simulated data
-                        if tracking_data == "coordinates":
-                            if (joints[i] in coordinates_toTrack_list):
-                                col_sim = 'orange'
-                            else:
-                                col_sim = 'blue'
+                        if (joints[i] in coordinates_toTrack_list):
+                            col_sim = 'orange'
                         else:
-                            col_sim = 'blue'                            
+                            col_sim = 'blue'                         
                         
                         ax.plot(tgridf[trial][0,:-1].T, 
                                 torques_opt[trial][i:i+1,:].T, 
@@ -3181,22 +2265,6 @@ def run_tracking(
                 fig.suptitle('GRFs - {}'.format(trial))                  
                 for i, ax in enumerate(axs.flat):
                     if i < nJoints:
-                        # if joints[i] in rotationalJoints:
-                        #     scale_angles = 180 / np.pi
-                        # else:
-                        #     scale_angles = 1
-                        # reference data
-                        if GRF_toTrack:
-                            ax.plot(tgridf[trial][0,:-1].T, 
-                                    grfToTrack_nsc[trial][i:i+1,:].T, 
-                                    c='black', label='experimental')
-                        # simulated data
-                        # if tracking_data == "coordinates":
-                        #     if (joints[i] in coordinates_toTrack_list):
-                        #         col_sim = 'orange'
-                        #     else:
-                        #         col_sim = 'blue'
-                        # else:
                         col_sim = 'orange'                       
                         ax.plot(tgridf[trial][0,:-1].T, 
                                 GRF_all_opt['all'][trial][i:i+1,:].T, 
@@ -3215,22 +2283,6 @@ def run_tracking(
                 fig.suptitle('GRMs - {}'.format(trial))                  
                 for i, ax in enumerate(axs.flat):
                     if i < nJoints:
-                        # if joints[i] in rotationalJoints:
-                        #     scale_angles = 180 / np.pi
-                        # else:
-                        #     scale_angles = 1
-                        # reference data
-                        if GRF_toTrack:
-                            ax.plot(tgridf[trial][0,:-1].T, 
-                                    grmToTrack_nsc[trial][i:i+1,:].T, 
-                                    c='black', label='experimental')
-                        # simulated data
-                        # if tracking_data == "coordinates":
-                        #     if (joints[i] in coordinates_toTrack_list):
-                        #         col_sim = 'orange'
-                        #     else:
-                        #         col_sim = 'blue'
-                        # else:
                         col_sim = 'orange'                       
                         ax.plot(tgridf[trial][0,:-1].T, 
                                 GRM_all_opt['all'][trial][i:i+1,:].T, 
@@ -3262,8 +2314,6 @@ def run_tracking(
         activationTerm_opt_all = 0
         if withArms:
             armExcitationTerm_opt_all = 0
-        if withActiveMTP:
-            mtpExcitationTerm_opt_all = 0
         if withLumbarCoordinateActuators:    
             lumbarExcitationTerm_opt_all = 0
         if trackQdds:
@@ -3274,10 +2324,6 @@ def run_tracking(
         forceDtTerm_opt_all = 0
         positionTrackingTerm_opt_all = 0
         velocityTrackingTerm_opt_all = 0
-        if trackGRF:
-            grfTrackingTerm_opt_all = 0
-        if trackGRM:
-            grmTrackingTerm_opt_all = 0
         if reserveActuators:    
             reserveActuatorTerm_opt_all = 0
             
@@ -3311,8 +2357,6 @@ def run_tracking(
                 # aDtk_opt_nsc = aDt_opt_nsc[trial][:, k]
                 if withArms:
                     eArmk_opt = eArm_opt[trial][:, k]
-                if withActiveMTP:
-                    eMtpk_opt = eMtp_opt[trial][:, k]
                 if withLumbarCoordinateActuators:
                     eLumbark_opt = eLumbar_opt[trial][:, k]
                 if reserveActuators:
@@ -3372,12 +2416,7 @@ def run_tracking(
                             c_ma = [i - nSideMuscles for 
                                     i in momentArmIndices[joint]]
                             dMk_opt[joint] = dMk_opt_r[
-                                c_ma, rightPolynomialJoints.index(joint)]
-                # Trunk.
-                if model_type == 'gait2392':
-                    for joint in lumbarJoints:
-                        dMk_opt[joint] = dMk_opt_l[trunkMomentArmPolynomialIndices, 
-                                           leftPolynomialJoints.index(joint)]                        
+                                c_ma, rightPolynomialJoints.index(joint)]                   
                 
                 # Hill-equilibrium
                 [hillEqk_opt, Fk_opt, _, _,_, _, _, aFPk_opt, pFPk_opt] = (
@@ -3410,7 +2449,6 @@ def run_tracking(
                     jointAccelerationTerm_opt = f_nJointsSum2(Qddsk_opt)
                     activationDtTerm_opt = f_NMusclesSum2(aDtk_opt)
                     forceDtTerm_opt = f_NMusclesSum2(nFDtk_opt)
-                    # passiveTorqueTerm_opt = f_nPassiveTorqueJointsSum2(passiveTorquesj_opt)
                     positionTrackingTerm_opt = f_NQsToTrackWSum2(Qskj_opt[idx_coordinates_toTrack, 0], dataToTrack_nsc_offset_opt[trial][:, k], w_dataToTrack)                
                     velocityTrackingTerm_opt = f_NQsToTrackWSum2(Qdskj_opt[idx_coordinates_toTrack, 0], dataToTrack_dot_sc[trial][:, k], w_dataToTrack)
                     
@@ -3419,31 +2457,16 @@ def run_tracking(
                     activationTerm_opt_all += weights['activationTerm'] * activationTerm_opt * h * B[j + 1]
                     jointAccelerationTerm_opt_all += weights['jointAccelerationTerm'] * jointAccelerationTerm_opt * h * B[j + 1]
                     activationDtTerm_opt_all += weights['activationDtTerm'] * activationDtTerm_opt * h * B[j + 1]
-                    forceDtTerm_opt_all += weights['forceDtTerm'] * forceDtTerm_opt * h * B[j + 1] 
-                    # passiveTorqueTerm_opt_all += weights['passiveTorqueTerm'] * passiveTorqueTerm_opt * h * B[j + 1]
+                    forceDtTerm_opt_all += weights['forceDtTerm'] * forceDtTerm_opt * h * B[j + 1]
                     if withArms:
                         armExcitationTerm_opt = f_nArmJointsSum2(eArmk_opt) 
                         armExcitationTerm_opt_all += weights['armExcitationTerm'] * armExcitationTerm_opt * h * B[j + 1]
-                    if withActiveMTP:
-                        mtpExcitationTerm_opt = f_nMtpJointsSum2(eMtpk_opt) 
-                        mtpExcitationTerm_opt_all += weights['mtpExcitationTerm'] * mtpExcitationTerm_opt * h * B[j + 1]
                     if withLumbarCoordinateActuators:
                         lumbarExcitationTerm_opt = f_nLumbarJointsSum2(eLumbark_opt) 
                         lumbarExcitationTerm_opt_all += weights['lumbarExcitationTerm'] * lumbarExcitationTerm_opt * h * B[j + 1]
                     if trackQdds:
                         accelerationTrackingTerm_opt = f_NQsToTrackWSum2(Qddsk_opt[idx_coordinates_toTrack], dataToTrack_dotdot_sc[trial][:, k], w_dataToTrack)
                         accelerationTrackingTerm_opt_all += (weights['accelerationTrackingTerm'] * accelerationTrackingTerm_opt * h * B[j + 1])
-                        
-                    if trackGRF:                    
-                        grfTrackingTerm_opt = f_NGRToTrackSum2(
-                            (GRF_all_opt['all'][trial][:, k:k+1] / (scaling['GRF'][trial].to_numpy().T)) - 
-                            grfToTrack_sc[trial][:, k:k+1])
-                        grfTrackingTerm_opt_all += (weights['grfTrackingTerm'] * grfTrackingTerm_opt * h * B[j + 1])                  
-                    if trackGRM:
-                        grmTrackingTerm_opt = f_NGRToTrackSum2(
-                            (GRM_all_opt['all'][trial][:, k:k+1] / (scaling['GRM'][trial].to_numpy().T)) - 
-                            grmToTrack_sc[trial][:, k:k+1])
-                        grmTrackingTerm_opt_all += (weights['grmTrackingTerm'] * grmTrackingTerm_opt * h * B[j + 1])
                     if reserveActuators:
                         reserveActuatorTerm_opt = 0
                         for c_j in reserveActuatorJoints:                        
@@ -3468,8 +2491,6 @@ def run_tracking(
                       forceDtTerm_opt_all.full())             
         if withArms:                
             JMotor_opt += armExcitationTerm_opt_all.full()
-        if withActiveMTP:
-              JMotor_opt += mtpExcitationTerm_opt_all.full()
         if withLumbarCoordinateActuators:
             JMotor_opt += lumbarExcitationTerm_opt_all.full()
         if isSTSs_yCalcn_vGRF[trial] and not weights['vGRFRatioTerm'] == 0:
@@ -3479,10 +2500,6 @@ def run_tracking(
                       velocityTrackingTerm_opt_all.full())
         if trackQdds:
             JTrack_opt += accelerationTrackingTerm_opt_all.full()
-        if trackGRF:        
-            JTrack_opt += grfTrackingTerm_opt_all.full()
-        if trackGRM:   
-            JTrack_opt += grmTrackingTerm_opt_all.full()
         if reserveActuators:    
             JTrack_opt += reserveActuatorTerm_opt_all
             
@@ -3497,8 +2514,6 @@ def run_tracking(
         JTerms["activationTerm"] = activationTerm_opt_all.full()[0][0]
         if withArms:
             JTerms["armExcitationTerm"] = armExcitationTerm_opt_all.full()[0][0]
-        if withActiveMTP:
-            JTerms["mtpExcitationTerm"] = mtpExcitationTerm_opt_all.full()[0][0]
         if withLumbarCoordinateActuators:
             JTerms["lumbarExcitationTerm"] = lumbarExcitationTerm_opt_all.full()[0][0]
         JTerms["jointAccelerationTerm"] = jointAccelerationTerm_opt_all.full()[0][0]
@@ -3507,22 +2522,12 @@ def run_tracking(
         JTerms["positionTerm"] = positionTrackingTerm_opt_all.full()[0][0]
         JTerms["velocityTerm"] = velocityTrackingTerm_opt_all.full()[0][0]
         if trackQdds:
-            JTerms["accelerationTerm"] = accelerationTrackingTerm_opt_all.full()[0][0]    
-        if trackGRF:
-            JTerms["grfTerm"] = grfTrackingTerm_opt_all.full()[0][0]                
-        if trackGRM:
-            JTerms["grmTerm"] = grmTrackingTerm_opt_all.full()[0][0]                 
+            JTerms["accelerationTerm"] = accelerationTrackingTerm_opt_all.full()[0][0]       
         JTerms["activationTerm_sc"] = JTerms["activationTerm"] / JAll_opt[0][0]
         if withArms:
             JTerms["armExcitationTerm_sc"] = JTerms["armExcitationTerm"] / JAll_opt[0][0]
-        if withActiveMTP:
-            JTerms["mtpExcitationTerm_sc"] = JTerms["mtpExcitationTerm"] / JAll_opt[0][0]
         if withLumbarCoordinateActuators:
             JTerms["lumbarExcitationTerm_sc"] = JTerms["lumbarExcitationTerm"] / JAll_opt[0][0]
-        if trackGRF:
-            JTerms["grfTerm_sc"] = JTerms["grfTerm"] / JAll_opt[0][0]                
-        if trackGRM:
-            JTerms["grmTerm_sc"] = JTerms["grmTerm"] / JAll_opt[0][0]
         JTerms["jointAccelerationTerm_sc"] = JTerms["jointAccelerationTerm"] / JAll_opt[0][0]
         JTerms["activationDtTerm_sc"] = JTerms["activationDtTerm"] / JAll_opt[0][0]
         JTerms["forceDtTerm_sc"] = JTerms["forceDtTerm"] / JAll_opt[0][0]
@@ -3537,51 +2542,15 @@ def run_tracking(
             print("Arm Excitations: " + str(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)) + "%")
         if withLumbarCoordinateActuators:
             print("Lumbar Excitations: " + str(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)) + "%")
-        if withActiveMTP:
-            print("MTP Excitations: " + str(np.round(JTerms["mtpExcitationTerm_sc"] * 100, 2)) + "%")
         print("Joint Accelerations: " + str(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)) + "%")
         print("Muscle activations derivatives: " + str(np.round(JTerms["activationDtTerm_sc"] * 100, 2)) + "%")
         print("Muscle-tendon forces derivatives: " + str(np.round(JTerms["forceDtTerm_sc"] * 100, 2)) + "%")
         print("Position tracking: " + str(np.round(JTerms["positionTerm_sc"] * 100, 2)) + "%")
         print("Velocity tracking: " + str(np.round(JTerms["velocityTerm_sc"] * 100, 2)) + "%")
         if trackQdds:
-            print("Acceleration tracking: " + str(np.round(JTerms["accelerationTerm_sc"] * 100, 2)) + "%")
-        if trackGRF:
-            print("GRF tracking: " + str(np.round(JTerms["grfTerm_sc"] * 100, 2)) + "%")
-        if trackGRF:
-            print("GRM tracking: " + str(np.round(JTerms["grmTerm_sc"] * 100, 2)) + "%")
-            
+            print("Acceleration tracking: " + str(np.round(JTerms["accelerationTerm_sc"] * 100, 2)) + "%")            
         print("# Iterations: " + str(stats["iter_count"]))
-        print("\n")
-            
-        # # %% Print new model
-        # if optimizeContacts and printModel:            
-        #     import opensim             
-        #     model = opensim.Model(pathModelFile[:-5] + "_contacts.osim")           
-        #     contactGeometrySet = model.getContactGeometrySet()            
-            
-        #     if NContactParameters == 18 and parameter_to_optimize == "option1":             
-        #         for c_s in range(1, contactGeometrySet.getSize()):
-        #             c_sphere = contactGeometrySet.get(c_s)
-        #             cObj = opensim.ContactSphere.safeDownCast(c_sphere);
-        #             if c_s > 6:
-        #                 c_sphere.set_location(opensim.Vec3(p_opt_nsc[(c_s-6-1)*2], -0.01, -p_opt_nsc[(c_s-6-1)*2+1]))
-        #                 cObj.setRadius(p_opt_nsc[c_s-6+11])
-        #             else:
-        #                 c_sphere.set_location(opensim.Vec3(p_opt_nsc[(c_s-1)*2], -0.01, p_opt_nsc[(c_s-1)*2+1]))
-        #                 cObj.setRadius(p_opt_nsc[c_s+11])                         
-        #         # forceSet = model.getForceSet()
-        #         # for c_f in range(forceSet.getSize()): 
-        #         #     c_force_elt = forceSet.get(c_f)        
-        #         #     if c_force_elt.getConcreteClassName() == "SmoothSphereHalfSpaceForce":                    
-        #         #         c_force_elt_obj =  opensim.SmoothSphereHalfSpaceForce.safeDownCast(c_force_elt)                     
-        #         #         c_force_elt_obj.set_stiffness(p_opt_nsc[18])
-        #         #         c_force_elt_obj.set_dissipation(p_opt_nsc[19])  
-                        
-        #     model.finalizeConnections
-        #     model.initSystem()
-        #     model.printToXML(os.path.join(pathResults, "{}_contacts_optimized.osim".format(model_full_name)))
-            
+        print("\n")            
             
         # %% Compute KAM
         if computeKAM:            
@@ -3603,29 +2572,7 @@ def run_tracking(
                                    Qds=Qds_opt_nsc[trial].T)
                 KAM[trial] = np.concatenate(
                     (np.expand_dims(c_KAM['KAM_r'], axis=1),
-                     np.expand_dims(c_KAM['KAM_l'], axis=1)), axis=1).T                
-                # Experimental                
-                trial_exp =  trial
-                if 'videoAndMocap' in trial:
-                    trial_exp = trial[:-14]
-                IKPathMocap = os.path.join(pathIKFolderMocap, 
-                                           trial_exp + '.mot')
-                IDPathMocap = os.path.join(pathIDFolder, 
-                                           trial_exp + '.sto')
-                GRFPathMocap = os.path.join(pathGRFFolder, 
-                                            trial_exp + '_forces.mot')
-                c_KAM_ref = computeKAM(pathResults, pathModelFileMocap,
-                                       IDPathMocap, IKPathMocap, 
-                                       GRFPathMocap, grfType='experimental')
-                KAM_ref_r_interp = interpolateNumpyArray_time(
-                    c_KAM_ref['KAM_r'], c_KAM_ref['time'], 
-                    timeIntervals[trial][0], timeIntervals[trial][1], N[trial])
-                KAM_ref_l_interp = interpolateNumpyArray_time(
-                    c_KAM_ref['KAM_l'], c_KAM_ref['time'], 
-                    timeIntervals[trial][0], timeIntervals[trial][1], N[trial])
-                KAM_ref[trial] = np.concatenate(
-                    (np.expand_dims(KAM_ref_r_interp, axis=1),
-                     np.expand_dims(KAM_ref_l_interp, axis=1)), axis=1).T                
+                     np.expand_dims(c_KAM['KAM_l'], axis=1)), axis=1).T              
                 
         # %% Compute MCF
         if computeMCF:
@@ -3676,19 +2623,6 @@ def run_tracking(
                         assert np.alltrue(
                                 np.abs(torques_opt[trial][joints.index(c_j),:] - data_torques[c_j]) 
                                 < 10**(-4)), "error forces arm joints"
-                if withMTP:
-                    if withActiveMTP:
-                        raise ValueError("Not supported yet: TODO")                    
-                    for count_j, c_j in enumerate(mtpJoints):
-                        c_torque = linearPassiveTorqueMtp_opt[trial][count_j,:-1]
-                        if c_j in data_torques:
-                            data_torques[c_j] += c_torque
-                        else:
-                            labels_torques.append(c_j)
-                            data_torques.insert(data_torques.shape[1], c_j, c_torque)
-                        assert np.alltrue(
-                                np.abs(torques_opt[trial][joints.index(c_j),:] - data_torques[c_j]) 
-                                < 10**(-4)), "error forces mtp joints"
                 # Sanity check for muscle-driven joints
                 for count_j, c_j in enumerate(muscleDrivenJoints):
                     assert np.alltrue(
@@ -3726,24 +2660,6 @@ def run_tracking(
                 MCF[trial] = np.concatenate(
                     (np.expand_dims(c_MCF['MCF_r'], axis=1),
                      np.expand_dims(c_MCF['MCF_l'], axis=1)), axis=1).T
-                # Experimental from StaticOpt             
-                trial_exp =  trial
-                if 'videoAndMocap' in trial:
-                    trial_exp = trial[:-14]
-                pathJRAfromSO = os.path.join(
-                    pathJRAfromSOFolderMocap,
-                    trial_exp + '_JointReaction_ReactionLoads.sto')
-                c_MCF_ref = computeMCF(None,None,None,None,None,None,
-                                       pathJRAResults=pathJRAfromSO)                  
-                MCF_ref_r_interp = interpolateNumpyArray_time(
-                    c_MCF_ref['MCF_r'], c_MCF_ref['time'], 
-                    timeIntervals[trial][0], timeIntervals[trial][1], N[trial])
-                MCF_ref_l_interp = interpolateNumpyArray_time(
-                    c_MCF_ref['MCF_l'], c_MCF_ref['time'], 
-                    timeIntervals[trial][0], timeIntervals[trial][1], N[trial])
-                MCF_ref[trial] = np.concatenate(
-                    (np.expand_dims(MCF_ref_r_interp, axis=1),
-                     np.expand_dims(MCF_ref_l_interp, axis=1)), axis=1).T
                 
         # %% Filter GRFs
         # Cutoff frequency same as the one used to filter Qs.
@@ -3771,14 +2687,6 @@ def run_tracking(
             GRF_BW_all_opt_filt['all'][trial] = GRF_all_opt_filt['all'][trial] / BW * 100
             GRM_BWht_all_opt['all'][trial] = GRM_all_opt['all'][trial] / BW_ht * 100            
             torques_BWht_opt[trial] = torques_opt[trial] / BW_ht * 100
-            if GRF_toTrack:
-                grfToTrack_BW_nsc[trial] = grfToTrack_nsc[trial] / BW * 100
-                grmToTrack_BWht_nsc[trial] = grmToTrack_nsc[trial] / BW_ht * 100
-                GRF_peaks_BW[trial] = {}
-                for side in sides_all:
-                    GRF_peaks_BW[trial][side] = GRF_peaks[trial][side] / BW * 100
-            if ID_toTrack:
-                ID_BWht_toTrack[trial] = ID_toTrack[trial] / BW_ht * 100
             if computeKAM:
                 KAM_BWht[trial] = KAM[trial] / BW_ht * 100
                 KAM_BWht_ref[trial] = KAM_ref[trial] / BW_ht * 100
@@ -3822,21 +2730,7 @@ def run_tracking(
                 'active_muscle_torques': {trial: aMT_opt[trial]},
                 'passive_limit_torques': {trial: pT_opt[trial]},
                 'muscle_driven_joints': muscleDrivenJoints,
-                'limit_torques_joints': passiveTorqueJoints}
-            if GRF_toTrack:
-                optimaltrajectories[case]['GRF_ref'] = {trial: grfToTrack_nsc[trial]}
-                optimaltrajectories[case]['GRF_BW_ref'] = {trial: grfToTrack_BW_nsc[trial]}
-                optimaltrajectories[case]['GRM_ref'] = {trial: grmToTrack_nsc[trial]}
-                optimaltrajectories[case]['GRM_BWht_ref'] = {trial: grmToTrack_BWht_nsc[trial]}
-                optimaltrajectories[case]['GRF_ref_peaks'] = {trial: GRF_peaks[trial]}
-                optimaltrajectories[case]['GRF_BW_ref_peaks'] = {trial: GRF_peaks_BW[trial]}                
-            if ID_toTrack:
-                optimaltrajectories[case]['torques_ref'] = {trial: ID_toTrack[trial]}
-                optimaltrajectories[case]['torques_BWht_ref'] = {trial: ID_BWht_toTrack[trial]}
-            if Qs_mocap_ref:
-                optimaltrajectories[case]['coordinate_values_ref'] = {trial: Qs_mocap_ref[trial]}
-                optimaltrajectories[case]['coordinate_speeds_ref'] = {trial: Qds_mocap_ref[trial]}
-                optimaltrajectories[case]['coordinate_accelerations_ref'] = {trial: Qdds_mocap_ref[trial]}                
+                'limit_torques_joints': passiveTorqueJoints}             
             if computeKAM:
                 optimaltrajectories[case]['KAM'] = {trial: KAM[trial]}
                 optimaltrajectories[case]['KAM_BWht'] = {trial: KAM_BWht[trial]}
@@ -3849,10 +2743,6 @@ def run_tracking(
                 optimaltrajectories[case]['MCF_ref'] = {trial: MCF_ref[trial]}
                 optimaltrajectories[case]['MCF_BW_ref'] = {trial: MCF_BW_ref[trial]}
                 optimaltrajectories[case]['MCF_labels'] = {trial: MCF_labels}
-            if EMG_ref:
-                optimaltrajectories[case]['muscle_activations_ref'] = {trial: EMG_ref[trial]}
-            if SO_toTrack:
-                optimaltrajectories[case]['so_ref'] = {trial: SO_toTrack[trial]}
                 
         optimaltrajectories[case]['iter'] = stats['iter_count']
                 
@@ -3911,20 +2801,7 @@ def run_tracking(
                 uwp = uw['Qds'][trial].to_numpy().T
                 y = Qds_col_opt[trial]
                 title='Joint velocity at collocation points' 
-                plotVSBounds(y,lwp,uwp,title) 
-                if withActiveMTP:
-                    # Mtp activation at mesh points
-                    lwp = lw['MtpA'][trial].to_numpy().T
-                    uwp = uw['MtpA'][trial].to_numpy().T
-                    y = aMtp_opt[trial]
-                    title='Mtp activation at mesh points' 
-                    plotVSBounds(y,lwp,uwp,title) 
-                    # Mtp activation at collocation points
-                    lwp = lw['MtpA'][trial].to_numpy().T
-                    uwp = uw['MtpA'][trial].to_numpy().T
-                    y = aMtp_col_opt[trial]
-                    title='Mtp activation at collocation points' 
-                    plotVSBounds(y,lwp,uwp,title) 
+                plotVSBounds(y,lwp,uwp,title)
                 #######################################################################
                 # Controls
                 # Muscle activation derivative at mesh points
@@ -3932,14 +2809,7 @@ def run_tracking(
                 uwp = uw['ADt'][trial].to_numpy().T
                 y = aDt_opt[trial]
                 title='Muscle activation derivative at mesh points' 
-                plotVSBounds(y,lwp,uwp,title) 
-                if withActiveMTP:
-                    # Mtp excitation at mesh points
-                    lwp = lw['MtpE'][trial].to_numpy().T
-                    uwp = uw['MtpE'][trial].to_numpy().T
-                    y = eMtp_opt[trial]
-                    title='Mtp excitation at mesh points' 
-                    plotVSBounds(y,lwp,uwp,title)                
+                plotVSBounds(y,lwp,uwp,title)      
                 #######################################################################
                 # Slack controls
                 # Muscle force derivative at collocation points
@@ -3954,15 +2824,3 @@ def run_tracking(
                 y = Qdds_col_opt[trial]
                 title='Joint velocity derivative (acceleration) at collocation points' 
                 plotVSBounds(y,lwp,uwp,title)
-                
-                # if optimizeContacts:
-                #     from variousFunctions import scatterVSBounds
-                #     uwp = ((uw['ContactParameters'][trial] - 
-                #             scaling['ContactParameters_r'][trial]) / 
-                #            scaling['ContactParameters_v'][trial]).flatten()
-                #     lwp = ((lw['ContactParameters'][trial] - 
-                #             scaling['ContactParameters_r'][trial]) / 
-                #            scaling['ContactParameters_v'][trial]).flatten()
-                #     y = p_opt_nsc
-                #     title='Contact parameters'
-                #     scatterVSBounds(y,lwp,uwp,title)
