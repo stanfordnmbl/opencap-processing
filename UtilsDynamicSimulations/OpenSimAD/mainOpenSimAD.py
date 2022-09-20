@@ -19,7 +19,6 @@ import platform
 # %% Settings.
 plotPolynomials = False
 plotGuessVsBounds = False
-tol = 4
 d = 3
 dimensions = ['x', 'y', 'z']
 nContactSpheres = 6
@@ -91,11 +90,11 @@ def run_tracking(
     # Trials info.    
     trials = settings['trials']
     timeIntervals, timeElapsed, tgridf, N = {}, {}, {}, {}
-    isSquats, squatThresholds, squatContacts = {}, {}, {}
+    isSquats, squatThresholds = {}, {}
     filter_coordinates_toTracks, cutoff_freq_coords, splineQds = {}, {}, {}
     filter_Qds_toTracks, cutoff_freq_Qds = {}, {}
     filter_Qdds_toTracks, cutoff_freq_Qdds = {}, {}
-    isSTSs, stsThresholds, isSTSs_yCalcn, yCalcnThresholds = {}, {}, {}, {}
+    isSTSs, stsThresholds, yCalcnThresholds = {}, {}, {}
     isSTSs_yCalcn_vGRF, offset_vGRF_ratio = {}, {}
     yCalcnToes, yCalcnToesThresholds = {}, {}
     treadmill = {}
@@ -125,26 +124,25 @@ def run_tracking(
         if 'isSquat' in trials[trial]:
             isSquats[trial] = trials[trial]['isSquat']
         if isSquats[trial]:
+            # If squatThresholds is larger than 0, a constraint will enforce
+            # that the contact spheres on the model's heels generate a vertical
+            # ground reaction force larger than squatThresholds. This is used
+            # to force the model to keep its heels in contact with the ground.
             squatThresholds[trial] = 5
             if 'squatThreshold' in trials[trial]:
                 squatThresholds[trial] = trials[trial]['squatThreshold']
-            squatContacts[trial] = 1 # heel sphere in contact
-            if 'squatContacts' in trials[trial]:
-                squatContacts[trial] = trials[trial]['squatContacts']
-                
+              
+        # Sit-to-stand-like motion.
         isSTSs[trial] = False
         if 'isSTS' in trials[trial]:
             isSTSs[trial] = trials[trial]['isSTS']
                 
-        isSTSs_yCalcn[trial] = False
-        if 'isSTSs_yCalcn' in trials[trial]:
-            isSTSs_yCalcn[trial] = trials[trial]['isSTSs_yCalcn']           
-                
+        # TODO: clean up
         isSTSs_yCalcn_vGRF[trial] = False
         if 'isSTSs_yCalcn_vGRF' in trials[trial]:
             isSTSs_yCalcn_vGRF[trial] = trials[trial]['isSTSs_yCalcn_vGRF']
             
-        if isSTSs_yCalcn[trial] or isSTSs_yCalcn_vGRF[trial]:
+        if isSTSs_yCalcn_vGRF[trial]:
             yCalcnThresholds[trial] = 0.015
             if 'yCalcnThresholds' in trials[trial]:
                 yCalcnThresholds[trial] = trials[trial]['yCalcnThresholds'] 
@@ -157,16 +155,22 @@ def run_tracking(
             stsThresholds[trial] = 0
             if 'stsThresholds' in trials[trial]:
                 stsThresholds[trial] = trials[trial]['stsThresholds']
-                
+              
+        # If yCalcnToes is set to True, then a constraint will enforce the 
+        # vertical position of the origin of the calcaneus and toe segments
+        # to be larger than yCalcnToesThresholds. This is used to prevent the
+        # model to penetrate the ground, which might otherwise occur at the
+        # begnning of the trial.
         yCalcnToes[trial] = False
         if 'yCalcnToes' in trials[trial]:
-            yCalcnToes[trial] = trials[trial]['yCalcnToes']
-            
+            yCalcnToes[trial] = trials[trial]['yCalcnToes']            
         if yCalcnToes[trial] :
             yCalcnToesThresholds[trial] = 0.015
             if 'yCalcnToesThresholds' in trials[trial]:
                 yCalcnToesThresholds[trial] = trials[trial]['yCalcnToesThresholds'] 
                 
+        # Set filter_coordinates_toTracks to True to filter the coordinate
+        # values to be tracked with a cutoff frequency of cutoff_freq_coords.
         filter_coordinates_toTracks[trial] = True
         if 'filter_coordinates_toTrack' in trials[trial]:
             filter_coordinates_toTracks[trial] = (
@@ -175,7 +179,9 @@ def run_tracking(
             cutoff_freq_coords[trial] = 30
             if 'cutoff_freq_coord' in trials[trial]:
                 cutoff_freq_coords[trial] = trials[trial]['cutoff_freq_coord']
-                
+             
+        # Set filter_Qds_toTracks to True to filter the coordinate speeds to be
+        # tracked with a cutoff frequency of cutoff_freq_Qds.
         filter_Qds_toTracks[trial] = False
         if 'filter_Qds_toTracks' in trials[trial]:
             filter_Qds_toTracks[trial] = (
@@ -184,7 +190,10 @@ def run_tracking(
             cutoff_freq_Qds[trial] = 30
             if 'cutoff_freq_Qds' in trials[trial]:
                 cutoff_freq_Qds[trial] = trials[trial]['cutoff_freq_Qds']
-                
+          
+        # Set filter_Qdds_toTracks to True to filter the coordinate
+        # accelerations to be tracked with a cutoff frequency of
+        # cutoff_freq_Qdds.
         filter_Qdds_toTracks[trial] = False
         if 'filter_Qdds_toTracks' in trials[trial]:
             filter_Qdds_toTracks[trial] = (
@@ -193,7 +202,13 @@ def run_tracking(
             cutoff_freq_Qdds[trial] = 30
             if 'cutoff_freq_Qdds' in trials[trial]:
                 cutoff_freq_Qdds[trial] = trials[trial]['cutoff_freq_Qdds']
-                
+             
+        # Set splineQds to True to compute the coordinate accelerations by
+        # first splining the coordinate speeds and then taking the derivative.
+        # The default approach is to spline the coordinate values and then 
+        # take the second derivative. It might be useful to first filter the
+        # coordinate speeds using filter_Qds_toTracks and then set splineQds
+        # to True to obtain smoother coordinate accelerations.
         splineQds[trial] = False
         if 'splineQds' in trials[trial]:
             splineQds[trial] = trials[trial]['splineQds']
@@ -241,6 +256,10 @@ def run_tracking(
     type_guess = "dataDriven"
     if 'type_guess' in settings:
         type_guess = settings['type_guess']
+        
+    ipopt_tolerance = 4
+    if 'ipopt_tolerance' in settings:
+        ipopt_tolerance = settings['ipopt_tolerance']
 
     # %% Paths and dirs.
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
@@ -497,14 +516,19 @@ def run_tracking(
     elif platform.system() == 'Linux':
         ext_F = '.so'
     else:
-        raise ValueError("Platform not supported.")       
+        raise ValueError("Platform not supported.")
+    suff_tread = ''
+    if treadmill[trial]:
+        suff_tread = '_treadmill'
     
     F, F_map = {}, {}
     for trial in trials:
         F[trial] = ca.external(
-            'F', os.path.join(pathExternalFunctionFolder, 'F' + ext_F))
+            'F', os.path.join(
+                pathExternalFunctionFolder, 'F' + suff_tread + ext_F))
         F_map[trial] = np.load(
-            os.path.join(pathExternalFunctionFolder, 'F_map.npy'), 
+            os.path.join(pathExternalFunctionFolder, 
+                         'F' + suff_tread + '_map.npy'), 
             allow_pickle=True).item()
 
     # Example of how to call F with numerical values.
@@ -518,24 +542,23 @@ def run_tracking(
         if isSquats[trial]:
             idx_vGRF_heel = [F_map[trial]['GRFs']['Sphere_0'][1],
                              F_map[trial]['GRFs']['Sphere_6'][1]]
-        if isSTSs_yCalcn[trial] or isSTSs_yCalcn_vGRF[trial]:
+        if isSTSs_yCalcn_vGRF[trial]:
             idx_yCalcn = [F_map[trial]['body_origins']['calcn_l'][1],
                           F_map[trial]['body_origins']['calcn_r'][1]]
-            if isSTSs_yCalcn_vGRF[trial]:
-                idx_vGRF = []
-                for contactSphere in range(2*nContactSpheres):
-                    idx_vGRF.append(F_map[trial]['GRFs'][
-                        'Sphere_{}'.format(contactSphere)][1])
-                idx_vGRF_heel_l = [idx_vGRF[0+nContactSpheres], 
-                                   idx_vGRF[3+nContactSpheres]]
-                idx_vGRF_front_l = [idx_vGRF[1+nContactSpheres], 
-                                    idx_vGRF[2+nContactSpheres], 
-                                    idx_vGRF[4+nContactSpheres], 
-                                    idx_vGRF[5+nContactSpheres]]
-                idx_vGRF_heel_r = [idx_vGRF[0], idx_vGRF[3]]
-                idx_vGRF_front_r = [idx_vGRF[1], idx_vGRF[2], 
-                                    idx_vGRF[4], idx_vGRF[5]]
-                idx_vGRF_heel_lr = [idx_vGRF[0+nContactSpheres], idx_vGRF[0]]
+            idx_vGRF = []
+            for contactSphere in range(2*nContactSpheres):
+                idx_vGRF.append(F_map[trial]['GRFs'][
+                    'Sphere_{}'.format(contactSphere)][1])
+            idx_vGRF_heel_l = [idx_vGRF[0+nContactSpheres], 
+                               idx_vGRF[3+nContactSpheres]]
+            idx_vGRF_front_l = [idx_vGRF[1+nContactSpheres], 
+                                idx_vGRF[2+nContactSpheres], 
+                                idx_vGRF[4+nContactSpheres], 
+                                idx_vGRF[5+nContactSpheres]]
+            idx_vGRF_heel_r = [idx_vGRF[0], idx_vGRF[3]]
+            idx_vGRF_front_r = [idx_vGRF[1], idx_vGRF[2], 
+                                idx_vGRF[4], idx_vGRF[5]]
+            idx_vGRF_heel_lr = [idx_vGRF[0+nContactSpheres], idx_vGRF[0]]
         if yCalcnToes[trial]:            
             idx_yCalcnToes = [F_map[trial]['body_origins']['calcn_l'][1],
                               F_map[trial]['body_origins']['calcn_r'][1],
@@ -1693,22 +1716,31 @@ def run_tracking(
                                     ca.mtimes(aLumbarkj, D))
                     
                 ###############################################################
-                # Squat-specific constraints
+                # Motion-specific constraints
                 ###############################################################
+                # TODO: deprecated doc
                 # We want all contact spheres to be in contact with the ground
                 # at all time. This is specific to squats and corresponds to
                 # instructions that would be given to subjets: "keep you feet
                 # flat on the gound". Without such constraints, the model tends
                 # to lean forward, likely to reduce quadriceps loads.
-                if isSquats[trial]:
+                
+                # During squats, we want the model's heels to remain in contact
+                # with the ground. We do that here by enforcing that the
+                # vertical ground reaction force of the heel contact spheres is
+                # larger than squatThresholds.
+                if isSquats[trial] and squatThresholds[trial] > 0:
                     vGRFk = Tk[idx_vGRF_heel]
                     opti.subject_to(vGRFk > squatThresholds[trial])
-                if isSTSs_yCalcn[trial] or isSTSs_yCalcn_vGRF[trial]:
+                    
+                    
+                if isSTSs_yCalcn_vGRF[trial]:
                     yCalcnk = Tk[idx_yCalcn]
                     opti.subject_to(yCalcnk > yCalcnThresholds[trial])
                     if stsThresholds[trial] > 0:
                         vGRFk = Tk[idx_vGRF_heel_lr]
                         opti.subject_to(vGRFk > stsThresholds[trial])
+                        
                 if yCalcnToes[trial]:
                     yCalcnToesk = Tk[idx_yCalcnToes]
                     opti.subject_to(yCalcnToesk > yCalcnToesThresholds[trial])
@@ -1762,7 +1794,7 @@ def run_tracking(
         
         # Solve problem
         from utilsOpenSimAD import solve_with_bounds
-        w_opt, stats = solve_with_bounds(opti, tol)             
+        w_opt, stats = solve_with_bounds(opti, ipopt_tolerance)             
         np.save(os.path.join(pathResults, 'w_opt_{}.npy'.format(case)), w_opt)
         np.save(os.path.join(pathResults, 'stats_{}.npy'.format(case)), stats)
         
@@ -2001,10 +2033,10 @@ def run_tracking(
                             scaling['ArmE'][trial].iloc[0][joint])                
             # Sanity checks.
             if stats['success'] and withArms:
-                assert np.alltrue(np.abs(armT) < 10**(-tol)), (
+                assert np.alltrue(np.abs(armT) < 10**(-ipopt_tolerance)), (
                     "Error arm torques balance")                    
             if stats['success'] and withMTP:
-                assert np.alltrue(np.abs(mtpT) < 10**(-tol)), (
+                assert np.alltrue(np.abs(mtpT) < 10**(-ipopt_tolerance)), (
                     "Error mtp torques balance")
                 
             for side in sides:

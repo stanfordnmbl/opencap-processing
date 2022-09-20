@@ -371,16 +371,16 @@ def get_default_setup(motion_type):
 
 def get_trial_setup(settings, motion_type, trialName):
     
-    if motion_type == 'running':  
+    if motion_type == 'running':        
         settings['trials'], settings['trials'][trialName] = {}, {}
         settings['trials'][trialName]['filter_coordinates_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_coord'] = 20
+        settings['trials'][trialName]['cutoff_freq_coord'] = 12
         settings['trials'][trialName]['filter_Qds_toTracks'] = True
-        settings['trials'][trialName]['cutoff_freq_Qds'] = 20
+        settings['trials'][trialName]['cutoff_freq_Qds'] = 12
         settings['trials'][trialName]['filter_Qdds_toTracks'] = True
-        settings['trials'][trialName]['cutoff_freq_Qdds'] = 20
+        settings['trials'][trialName]['cutoff_freq_Qdds'] = 12
         settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['meshDensity'] = 50
+        settings['trials'][trialName]['meshDensity'] = 100
         settings['trials'][trialName]['yCalcnToes'] = True
         
     elif motion_type == 'jumping':  
@@ -399,7 +399,7 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'], settings['trials'][trialName] = {}, {}
         settings['trials'][trialName]['filter_coordinates_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_coord'] = 6
-        settings['trials'][trialName]['meshDensity'] = 50
+        settings['trials'][trialName]['meshDensity'] = 100
         
     elif motion_type == 'drop_jump':  
         settings['trials'], settings['trials'][trialName] = {}, {}
