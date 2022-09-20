@@ -73,10 +73,10 @@ def run_tracking(
     if 'scaleIsometricMuscleForce' in settings: 
         scaleIsometricMuscleForce = settings['scaleIsometricMuscleForce']
     
-    reserveActuators = False # include reserve actuators.
-    if 'reserveActuators' in settings: 
-        reserveActuators = settings['reserveActuators']
-    if reserveActuators:
+    withReserveActuators = False # include reserve actuators.
+    if 'withReserveActuators' in settings: 
+        withReserveActuators = settings['withReserveActuators']
+    if withReserveActuators:
         reserveActuatorJoints = settings['reserveActuatorJoints']
         weights['reserveActuatorTerm'] = settings['weights']['reserveActuatorTerm']
     
@@ -100,9 +100,12 @@ def run_tracking(
     yCalcnToes, yCalcnToesThresholds = {}, {}
     treadmill = {}
     for trial in trials:
+        
+        # Time interval.
         timeIntervals[trial] = trials[trial]['timeInterval']
         timeElapsed[trial] = timeIntervals[trial][1] - timeIntervals[trial][0]
         
+        # Mesh intervals / density.
         if 'N' in trials[trial]: # number of mesh intervals.
             N[trial] = trials[trial]['N']
         else:
@@ -111,11 +114,13 @@ def run_tracking(
                 meshDensity = trials[trial]['meshDensity']
             N[trial] = int(round(timeElapsed[trial] * meshDensity, 2))
             
+        # Discretized time interval.
         tgrid = np.linspace(timeIntervals[trial][0],  
                             timeIntervals[trial][1], N[trial]+1)
         tgridf[trial] = np.zeros((1, N[trial]+1))
         tgridf[trial][:,:] = tgrid.T
         
+        # Squat-like motion.
         isSquats[trial] = False
         if 'isSquat' in trials[trial]:
             isSquats[trial] = trials[trial]['isSquat']
@@ -755,7 +760,7 @@ def run_tracking(
     if offset_ty:
         uw['Offset'], lw['Offset'], scaling['Offset'] = {}, {}, {}
         uw['Offsetk'], lw['Offsetk'], scaling['Offsetk'] = {}, {}, {}
-    if reserveActuators:
+    if withReserveActuators:
         uw['rAct'], lw['rAct'], scaling['rAct'] = {}, {}, {}
         uw['rActk'], lw['rActk']= {}, {}
         
@@ -831,7 +836,7 @@ def run_tracking(
         uw['Qddsk'][trial] = ca.vec(uw['Qdds'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
         lw['Qddsk'][trial] = ca.vec(lw['Qdds'][trial].to_numpy().T * np.ones((1, N[trial]))).full()
         # Reserve actuators
-        if reserveActuators:
+        if withReserveActuators:
             uw['rAct'][trial], lw['rAct'][trial], scaling['rAct'][trial] = {}, {}, {}
             uw['rActk'][trial], lw['rActk'][trial], = {}, {}
             for c_j in reserveActuatorJoints:
@@ -868,7 +873,7 @@ def run_tracking(
     w0['Qdds'] = {}
     if offset_ty:
         w0['Offset'] = {}
-    if reserveActuators:
+    if withReserveActuators:
         w0['rAct'] = {}        
     # Loop over trials 
     for trial in trials:
@@ -917,7 +922,7 @@ def run_tracking(
         # Joint velocity derivatives (accelerations)
         w0['Qdds'][trial] = guess.getGuessAcceleration(scaling['Qdds'][trial])
         # Reserve actuators
-        if reserveActuators:
+        if withReserveActuators:
             w0['rAct'][trial] = {}
             for c_j in reserveActuatorJoints:
                 w0['rAct'][trial][c_j] = guess.getGuessReserveActuators(c_j)            
@@ -1102,7 +1107,7 @@ def run_tracking(
         if withLumbarCoordinateActuators:
             aLumbar, aLumbar_col, eLumbar = {}, {}, {}            
         aDt, nFDt, Qdds = {}, {}, {}
-        if reserveActuators:
+        if withReserveActuators:
             rAct = {}        
         # Loop over trials.
         for trial in trials:        
@@ -1227,7 +1232,7 @@ def run_tracking(
             assert np.alltrue(lw['Qddsk'][trial] <= ca.vec(w0['Qdds'][trial].to_numpy().T).full()), "lw Joint velocity derivative"
             assert np.alltrue(uw['Qddsk'][trial] >= ca.vec(w0['Qdds'][trial].to_numpy().T).full()), "uw Joint velocity derivative"
             # Reserve actuator at mesh points
-            if reserveActuators:
+            if withReserveActuators:
                 rAct[trial] = {}
                 for c_j in reserveActuatorJoints:                    
                     rAct[trial][c_j] = opti.variable(1, N[trial])
@@ -1363,7 +1368,7 @@ def run_tracking(
             aDt_nsc = aDt[trial] * (scaling['ADt'][trial].to_numpy().T * np.ones((1, N[trial])))
             Qdds_nsc = Qdds[trial] * (scaling['Qdds'][trial].to_numpy().T * np.ones((1, N[trial])))
             nFDt_nsc = nFDt[trial] * (scaling['FDt'][trial].to_numpy().T * np.ones((1, N[trial])))
-            if reserveActuators:
+            if withReserveActuators:
                 rAct_nsc = {}
                 for c_j in reserveActuatorJoints:
                     rAct_nsc[c_j] = rAct[trial][c_j] * (scaling['rAct'][trial][c_j].to_numpy().T * np.ones((1, N[trial])))
@@ -1410,7 +1415,7 @@ def run_tracking(
                     eArmk = eArm[trial][:, k]
                 if withLumbarCoordinateActuators:
                     eLumbark = eLumbar[trial][:, k]
-                if reserveActuators:
+                if withReserveActuators:
                     rActk = {}
                     rActk_nsc = {}
                     for c_j in reserveActuatorJoints:
@@ -1591,7 +1596,7 @@ def run_tracking(
                             w_dataToTrack)
                         J += (weights['accelerationTrackingTerm'] * 
                               accelerationTrackingTerm * h * B[j + 1])                    
-                    if reserveActuators:
+                    if withReserveActuators:
                         reserveActuatorTerm = 0
                         for c_j in reserveActuatorJoints:                        
                             reserveActuatorTerm += ca.sumsqr(rActk[c_j])                            
@@ -1621,7 +1626,7 @@ def run_tracking(
                 for joint in muscleDrivenJoints:                
                     Fk_joint = Fk[momentArmIndices[joint]]
                     mTk_joint = ca.sum1(dMk[joint]*Fk_joint)
-                    if reserveActuators and joint in reserveActuatorJoints:
+                    if withReserveActuators and joint in reserveActuatorJoints:
                         mTk_joint += rActk_nsc[joint]
                     diffTk_joint = f_diffTorques(
                         Tk[F_map[trial]['residuals'][joint] ], mTk_joint,
@@ -1795,7 +1800,7 @@ def run_tracking(
         aDt_opt = {}
         nFDt_col_opt = {}
         Qdds_col_opt = {}
-        if reserveActuators:
+        if withReserveActuators:
             rAct_opt = {} 
         for trial in trials:
             a_opt[trial] = (
@@ -1870,7 +1875,7 @@ def run_tracking(
                 np.reshape(w_opt[starti:starti+nJoints*(N[trial])],
                            (N[trial], nJoints))).T
             starti = starti + nJoints*(N[trial])
-            if reserveActuators:
+            if withReserveActuators:
                 rAct_opt[trial] = {}
                 for c_j in reserveActuatorJoints:
                     rAct_opt[trial][c_j] = (
@@ -1886,7 +1891,7 @@ def run_tracking(
         aDt_opt_nsc = {}
         Qdds_col_opt_nsc = {}
         nFDt_col_opt_nsc = {}
-        if reserveActuators:
+        if withReserveActuators:
             rAct_opt_nsc = {}
         for trial in trials:
             nF_opt_nsc[trial] = nF_opt[trial] * (scaling['F'][trial].to_numpy().T * np.ones((1, N[trial]+1)))
@@ -1898,7 +1903,7 @@ def run_tracking(
             aDt_opt_nsc[trial] = aDt_opt[trial] * (scaling['ADt'][trial].to_numpy().T * np.ones((1, N[trial])))
             Qdds_col_opt_nsc[trial] = Qdds_col_opt[trial] * (scaling['Qdds'][trial].to_numpy().T * np.ones((1, N[trial])))
             nFDt_col_opt_nsc[trial] = nFDt_col_opt[trial] * (scaling['FDt'][trial].to_numpy().T * np.ones((1, N[trial])))
-            if reserveActuators:
+            if withReserveActuators:
                 rAct_opt_nsc[trial] = {}
                 for c_j in reserveActuatorJoints:
                     rAct_opt_nsc[trial][c_j] = rAct_opt[trial][c_j] * (scaling['rAct'][trial][c_j].to_numpy().T * np.ones((1, N[trial])))
@@ -2334,7 +2339,7 @@ def run_tracking(
         forceDtTerm_opt_all = 0
         positionTrackingTerm_opt_all = 0
         velocityTrackingTerm_opt_all = 0
-        if reserveActuators:    
+        if withReserveActuators:    
             reserveActuatorTerm_opt_all = 0
             
         vGRFRatioTerm_opt_all = 0
@@ -2369,7 +2374,7 @@ def run_tracking(
                     eArmk_opt = eArm_opt[trial][:, k]
                 if withLumbarCoordinateActuators:
                     eLumbark_opt = eLumbar_opt[trial][:, k]
-                if reserveActuators:
+                if withReserveActuators:
                     rActk_opt = {}
                     for c_j in reserveActuatorJoints:
                         rActk_opt[c_j] = rAct_opt[trial][c_j][:, k]
@@ -2477,7 +2482,7 @@ def run_tracking(
                     if trackQdds:
                         accelerationTrackingTerm_opt = f_NQsToTrackWSum2(Qddsk_opt[idx_coordinates_toTrack], dataToTrack_dotdot_sc[trial][:, k], w_dataToTrack)
                         accelerationTrackingTerm_opt_all += (weights['accelerationTrackingTerm'] * accelerationTrackingTerm_opt * h * B[j + 1])
-                    if reserveActuators:
+                    if withReserveActuators:
                         reserveActuatorTerm_opt = 0
                         for c_j in reserveActuatorJoints:                        
                             reserveActuatorTerm_opt += ca.sumsqr(rActk_opt[c_j])                            
@@ -2510,7 +2515,7 @@ def run_tracking(
                       velocityTrackingTerm_opt_all.full())
         if trackQdds:
             JTrack_opt += accelerationTrackingTerm_opt_all.full()
-        if reserveActuators:    
+        if withReserveActuators:    
             JTrack_opt += reserveActuatorTerm_opt_all
             
         # Combined term
@@ -2596,7 +2601,7 @@ def run_tracking(
                 # torques for torque-driven muscles, passive torques).
                 labels_torques = []
                 data_torques = pd.DataFrame()
-                if reserveActuators:
+                if withReserveActuators:
                     for count_j, c_j in enumerate(reserveActuatorJoints):                    
                         if c_j in data_torques:
                             data_torques[c_j] += rAct_opt_nsc[trial][c_j]

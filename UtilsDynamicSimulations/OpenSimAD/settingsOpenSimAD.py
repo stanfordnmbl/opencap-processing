@@ -202,7 +202,7 @@ def get_default_setup(motion_type):
     #     'coordinate_constraints': {
     #         'pelvis_ty': {"env_bound": 0.1},
     #         'pelvis_tx': {"env_bound": 0.1}},       
-    #     'reserveActuators': True,
+    #     'withReserveActuators': True,
     #     'reserveActuatorJoints': {
     #         'hip_rotation_l': 30, 'hip_rotation_r': 30},
     #     'ignorePassiveFiberForce': True}
@@ -256,7 +256,7 @@ def get_default_setup(motion_type):
         'coordinate_constraints': {
             'pelvis_ty': {"env_bound": 0.1},
             'pelvis_tx': {"env_bound": 0.1}},       
-        'reserveActuators': True,
+        'withReserveActuators': True,
         'reserveActuatorJoints': {
             'hip_rotation_l': 30, 'hip_rotation_r': 30},
         'periodicConstraints': {'Qs': ['lowerLimbJoints']},
@@ -309,7 +309,7 @@ def get_default_setup(motion_type):
         'coordinate_constraints': {
             'pelvis_ty': {"env_bound": 0.1},
             'pelvis_tx': {"env_bound": 0.1}},
-        'reserveActuators': True,
+        'withReserveActuators': True,
         'reserveActuatorJoints': {
             'hip_rotation_l': 30, 'hip_rotation_r': 30},
         'periodicConstraints': {'Qs': ['lowerLimbJoints'],

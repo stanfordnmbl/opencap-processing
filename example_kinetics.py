@@ -98,7 +98,7 @@ case = '0'
 # Predefined settings.
 if session_type == 'overground':
     session_id = "ef516897-f0b2-493e-9927-3022db2d2ac3"
-    trial_name = 'Gait' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
+    trial_name = 'Squats' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
     if trial_name == 'Gait': # Walking example
         motion_type = 'walking'
         time_window = [2.5, 4.0]
@@ -118,6 +118,7 @@ elif session_type == 'treadmill':
         motion_type = 'running'
         time_window = [6.6, 7.2]
         treadmill_speed = 2.67
+    
 # Set to True to solve the optimal control problem.
 solveProblem = True
 # Set to True to analyze the results of the optimal control problem. If you
