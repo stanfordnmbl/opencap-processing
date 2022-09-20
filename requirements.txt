@@ -1,8 +1,7 @@
 scipy
-pandas==1.4.0
+pandas
 matplotlib
 ipython
-numpy==1.20
 python-decouple
 maskpass==0.3.6
 requests
