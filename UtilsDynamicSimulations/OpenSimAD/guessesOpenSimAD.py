@@ -323,7 +323,7 @@ class dataDrivenGuess_tracking:
         
     
     # Mesh points
-    def getGuessPosition(self, scaling, zeroMTP=False):
+    def getGuessPosition(self, scaling):
         self.splineQs()
         self.guessPosition = pd.DataFrame()  
         g = [0] * (self.N)
@@ -338,7 +338,7 @@ class dataDrivenGuess_tracking:
         
         return self.guessPosition
     
-    def getGuessVelocity(self, scaling, zeroMTP=False):
+    def getGuessVelocity(self, scaling):
         self.splineQs()
         self.guessVelocity = pd.DataFrame()  
         g = [0] * (self.N)
@@ -351,8 +351,7 @@ class dataDrivenGuess_tracking:
                                           scaling.iloc[0][joint])       
         return self.guessVelocity
     
-    def getGuessAcceleration(self, scaling, zeroAcceleration=False, 
-                                     zeroMTP=False):
+    def getGuessAcceleration(self, scaling, zeroAcceleration=False):
         self.splineQs()
         self.guessAcceleration = pd.DataFrame()  
         g = [0] * self.N
@@ -371,8 +370,7 @@ class dataDrivenGuess_tracking:
                     
         return self.guessAcceleration
     
-    def getGuessAccelerationFiltered(self, scaling, zeroAcceleration=False, 
-                                     zeroMTP=False):
+    def getGuessAccelerationFiltered(self, scaling, zeroAcceleration=False):
         self.splineQs()
         self.guessAcceleration = pd.DataFrame()  
         g = [0] * self.N

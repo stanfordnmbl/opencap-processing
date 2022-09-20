@@ -143,7 +143,7 @@ def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table, idxSlice):
 # save them such that we do not need to do the fitting again.
 def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='', 
                       pathMotionFile4Polynomials='', joints=[],
-                      muscles=[], type_bounds_polynomials='', side='',
+                      muscles=[], type_bounds_polynomials='default', side='',
                       nThreads=None, overwritedata4PolynomialFitting=False):
     
     pathPolynomialData = os.path.join(
@@ -436,15 +436,6 @@ def passiveJointTorqueData_3D(joint, model_type='rajagopal2016'):
         thetaAll['knee_angle_l'] = [-0.13, 2.4]
         thetaAll['mtp_angle_r'] = [-1.134464013796314, 0]
         thetaAll['mtp_angle_l'] = [-1.134464013796314, 0]
-    elif model_type=='gait2392':
-        kAll['knee_angle_r'] = [-6.09, 33.94, 11.03, -11.33]
-        kAll['knee_angle_l'] = [-6.09, 33.94, 11.03, -11.33]
-        kAll['mtp_angle_r'] = [-0.9, 14.87, 0.18, -70.08]
-        kAll['mtp_angle_l'] = [-0.9, 14.87, 0.18, -70.08] 
-        thetaAll['knee_angle_r'] = [-2.4, 0.13]
-        thetaAll['knee_angle_l'] = [-2.4, 0.13]
-        thetaAll['mtp_angle_r'] = [0, 1.134464013796314]
-        thetaAll['mtp_angle_l'] = [0, 1.134464013796314]
     else:
         raise ValueError("Model type unkown: passive torques")    
     
