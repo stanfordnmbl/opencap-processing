@@ -9,7 +9,6 @@ def get_default_setup(motion_type):
 
     setups = {}    
     setups['running'] = {
-        'ipopt_tolerance': 3,
         'weights': {
             'positionTrackingTerm': 100,
             'velocityTrackingTerm': 10,
