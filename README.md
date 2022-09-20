@@ -2,7 +2,7 @@
 # Install requirements
 - Open Anaconda prompt
 - Create environment (python 3.9 recommended): `conda create -n opencap-processing python=3.9`
-- Activate environment: `activate opencap-processing`
+- Activate environment: `conda activate opencap-processing`
 - Install OpenSim: `conda install -c opensim-org opensim`
     - During the installation, verify that the python version of your conda package matches the package name before proceeding (eg, for python 3.9, the package name is py39np120).
         - In case of mismatch, specify the package name when installing OpenSim `conda install -c opensim-org opensim=4.4=py39np120`
