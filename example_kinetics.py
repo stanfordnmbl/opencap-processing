@@ -93,16 +93,16 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 
 # We provide a few examples for overground and treadmill activities.
 # Select which example you would like to run.
-session_type = 'treadmill' # Options are 'overground' and 'treadmill'.
+session_type = 'overground' # Options are 'overground' and 'treadmill'.
 case = '0'
 # Predefined settings.
 if session_type == 'overground':
-    session_id = "ef516897-f0b2-493e-9927-3022db2d2ac3"
-    trial_name = 'Squats' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
+    session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
+    trial_name = 'squat' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
     if trial_name == 'Gait': # Walking example
         motion_type = 'walking'
         time_window = [2.5, 4.0]
-    elif trial_name == 'Squats': # Squat example
+    elif trial_name == 'squat': # Squat example
         motion_type = 'squats'
         repetition = 1
     elif trial_name == 'DJ': # Drop jump example
@@ -112,12 +112,20 @@ if session_type == 'overground':
         motion_type = 'sit_to_stand'
         repetition = 0
 elif session_type == 'treadmill':
-    session_id = "2174d76b-2646-4099-b11e-6ccdc96d82bf"
-    trial_name = 'running_natural_backwards1'
-    if trial_name == 'running_natural_backwards1': # Running example
+    session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
+    trial_name = 'run_2_5ms'
+    if trial_name == 'walk_1_25ms': # Walking example, 1.25 m/s
+        motion_type = 'walking'
+        time_window = [1.0, 2.5]
+        treadmill_speed = 1.25
+    elif trial_name == 'run_2_5ms': # Running example, 2.5 m/s
         motion_type = 'running'
-        time_window = [6.6, 7.2]
-        treadmill_speed = 2.67
+        time_window = [1.4, 2.6]
+        treadmill_speed = 2.5
+    elif trial_name == 'run_4ms': # Running example, 4.0 m/s
+        motion_type = 'running'
+        time_window = [2.6, 3.6]
+        treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
 solveProblem = True
@@ -126,7 +134,7 @@ solveProblem = True
 # can set solveProblem to False and run this script with analyzeResults set to
 # True. This is useful if you do additional post-processing but do not need to
 # re-run the problem.
-analyzeResults = True
+analyzeResults = False
 
 # %% Paths.
 dataFolder =  os.path.join(baseDir, 'Data')
@@ -147,4 +155,5 @@ run_tracking(baseDir, dataFolder, session_id, settings, case=case,
              solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
-plotResultsDC(dataFolder, session_id, trial_name, cases=[case], rep=repetition)
+# TODO repetition.
+plotResultsDC(dataFolder, session_id, trial_name, cases=['0', '1'], rep=repetition)

@@ -490,6 +490,8 @@ def generateExternalFunction(
     pathOutputExternalFunctionFolder = os.path.join(pathModelFolder,
                                                     "ExternalFunction")
     os.makedirs(pathOutputExternalFunctionFolder, exist_ok=True)
+    if treadmill:
+        externalFunctionName += '_treadmill'    
     pathOutputFile = os.path.join(pathOutputExternalFunctionFolder, 
                                   externalFunctionName + ".cpp")
     pathOutputMap = os.path.join(pathOutputExternalFunctionFolder, 
