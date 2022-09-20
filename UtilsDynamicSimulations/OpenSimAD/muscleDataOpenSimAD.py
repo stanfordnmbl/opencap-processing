@@ -143,7 +143,7 @@ def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table, idxSlice):
 # save them such that we do not need to do the fitting again.
 def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='', 
                       pathMotionFile4Polynomials='', joints=[],
-                      muscles=[], type_bounds_polynomials='', side='',
+                      muscles=[], type_bounds_polynomials='default', side='',
                       nThreads=None, overwritedata4PolynomialFitting=False):
     
     pathPolynomialData = os.path.join(

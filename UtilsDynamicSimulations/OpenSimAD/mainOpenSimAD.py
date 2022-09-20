@@ -25,12 +25,14 @@ dimensions = ['x', 'y', 'z']
 nContactSpheres = 6
 
 def run_tracking(
-        baseDir, dataDir, subject, settings, case='default', solveProblem=True, 
+        baseDir, dataDir, subject, settings, case='0', solveProblem=True, 
         analyzeResults=True, writeGUI=True, visualizeTracking=False, 
-        visualizeResultsAgainstBounds=False, printModel=False, computeKAM=False,
-        computeMCF=False, processResults=False):
-    import copy
+        visualizeResultsBounds=False, computeKAM=False, computeMCF=False):
     
+    
+    import copy # TODO
+    
+    # %% Settings.
     # Cost function weights.
     weights = {
         'activationTerm': settings['weights']['activationTerm'],
@@ -46,36 +48,45 @@ def run_tracking(
     if 'OpenSimModel' in settings:  
         OpenSimModel = settings['OpenSimModel']
     model_full_name = OpenSimModel + "_scaled_adjusted"
-    withMTP = True
+    
+    withMTP = True # include metatarshophalangeal joints.
     if 'withMTP' in settings:  
-        withMTP = settings['withMTP']  
-    withArms = True  
+        withMTP = settings['withMTP']
+    
+    withArms = True  # include arm joints.
     if "withArms" in settings:
          withArms = settings['withArms']
-    withLumbarCoordinateActuators = True
+    
+    withLumbarCoordinateActuators = True # torque-driven lumbar coordinates.
     if "withLumbarCoordinateActuators" in settings:
-         withLumbarCoordinateActuators = (
-             settings['withLumbarCoordinateActuators'])
+         withLumbarCoordinateActuators = settings['withLumbarCoordinateActuators']
     if withLumbarCoordinateActuators:   
          weights['lumbarExcitationTerm'] = 1
          if 'lumbarExcitationTerm' in settings['weights']:
-            weights['lumbarExcitationTerm'] = (
-                settings['weights']['lumbarExcitationTerm'])
-    withKA = False
+            weights['lumbarExcitationTerm'] = settings['weights']['lumbarExcitationTerm']
+    
+    withKA = False # include knee adduction angles.
     if 'withKA' in settings:  
         withKA = settings['withKA']
-    scaleIsometricMuscleForce = 1
+    
+    scaleIsometricMuscleForce = 1 # scale isometric muscle forces.
     if 'scaleIsometricMuscleForce' in settings: 
         scaleIsometricMuscleForce = settings['scaleIsometricMuscleForce']
-    reserveActuators = False
+    
+    reserveActuators = False # include reserve actuators.
     if 'reserveActuators' in settings: 
         reserveActuators = settings['reserveActuators']
     if reserveActuators:
         reserveActuatorJoints = settings['reserveActuatorJoints']
         weights['reserveActuatorTerm'] = settings['weights']['reserveActuatorTerm']
-    ignorePassiveFiberForce = False
+    
+    ignorePassiveFiberForce = False # ignore passive muscle forces.
     if 'ignorePassiveFiberForce' in settings: 
         ignorePassiveFiberForce = settings['ignorePassiveFiberForce']
+        
+    lb_activation = 0.01 # lower bound muscle activations.
+    if 'lb_activation' in settings:
+        lb_activation = settings['lb_activation']
         
     # Trials info.    
     trials = settings['trials']
@@ -91,13 +102,15 @@ def run_tracking(
     for trial in trials:
         timeIntervals[trial] = trials[trial]['timeInterval']
         timeElapsed[trial] = timeIntervals[trial][1] - timeIntervals[trial][0]
-        if 'N' in trials[trial]:
+        
+        if 'N' in trials[trial]: # number of mesh intervals.
             N[trial] = trials[trial]['N']
         else:
             meshDensity = 100 # default is N=100 for t=1s
             if 'meshDensity' in trials[trial]:
                 meshDensity = trials[trial]['meshDensity']
             N[trial] = int(round(timeElapsed[trial] * meshDensity, 2))
+            
         tgrid = np.linspace(timeIntervals[trial][0],  
                             timeIntervals[trial][1], N[trial]+1)
         tgridf[trial] = np.zeros((1, N[trial]+1))
@@ -184,26 +197,21 @@ def run_tracking(
         if trials[trial]['treadmill_speed'] != 0:
             treadmill[trial] = True
     
-    # Guess info.
-    type_guess = "dataDriven"
-    if 'type_guess' in settings:
-        type_guess = settings['type_guess']
-            
-    lb_activation = 0.01
-    if 'lb_activation' in settings:
-        lb_activation = settings['lb_activation']
-    
     # Problem info.
     coordinates_toTrack = settings['coordinates_toTrack']
+    
     offset_ty = True
     if 'offset_ty' in settings:
         offset_ty = settings['offset_ty']
+        
     enableLimitTorques = False
     if 'enableLimitTorques' in settings:
         enableLimitTorques = settings['enableLimitTorques']    
+        
     periodicConstraints = False
     if 'periodicConstraints' in settings:
         periodicConstraints = settings['periodicConstraints']
+        
     trackQdds = True
     if 'trackQdds' in settings:
         trackQdds = settings['trackQdds']
@@ -212,35 +220,39 @@ def run_tracking(
         if 'accelerationTrackingTerm' in settings['weights']:
             weights['accelerationTrackingTerm'] = (
                 settings['weights']['accelerationTrackingTerm'])
+            
     powActivations = 2
     if 'powActivations' in settings:
-        powActivations = settings['powActivations']  
+        powActivations = settings['powActivations']
+        
     volumeScaling = False
     if 'volumeScaling' in settings:
-        volumeScaling = settings['volumeScaling']    
+        volumeScaling = settings['volumeScaling']
+        
     coordinate_constraints = {}
     if 'coordinate_constraints' in settings:
         coordinate_constraints = settings['coordinate_constraints']
+        
+    type_guess = "dataDriven"
+    if 'type_guess' in settings:
+        type_guess = settings['type_guess']
 
     # %% Paths and dirs.
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
     pathModelFolder = os.path.join(pathOSData, 'Model')
     pathModelFile = os.path.join(pathModelFolder, model_full_name + ".osim")
-    nameMA = "default"
-    if not withMTP:
-        nameMA = "default_weldMTP"
     pathExternalFunctionFolder = os.path.join(pathModelFolder, 'ExternalFunction')
     pathIKFolder = os.path.join(pathOSData, 'Kinematics')
     trials_list = [trial for trial in trials]
     listToStr = '_'.join([str(elem) for elem in trials_list])
     pathResults = os.path.join(pathOSData, 'Dynamics', listToStr)
     if 'repetition' in settings:
-        pathResults = os.path.join(pathOSData, 'Dynamics', listToStr + '_rep' + str(settings['repetition']))     
+        pathResults = os.path.join(pathOSData, 'Dynamics', 
+                                   listToStr + '_rep' + str(settings['repetition']))     
     os.makedirs(pathResults, exist_ok=True)
     pathSettings = os.path.join(pathResults, 'Setup_{}.yaml'.format(case))
-    if not processResults:
-        with open(pathSettings, 'w') as file:
-            yaml.dump(settings, file)
+    with open(pathSettings, 'w') as file:
+        yaml.dump(settings, file)
     
     # %% Muscles.
     muscles = [
@@ -580,21 +592,19 @@ def run_tracking(
                                    'DummyMotion.mot')
     loadPolynomialData = True
     if (not os.path.exists(os.path.join(
-            pathModelFolder, model_full_name + '_polynomial_r_' + 
-            nameMA +'.npy'))
+            pathModelFolder, model_full_name + '_polynomial_r_default.npy'))
             or not os.path.exists(os.path.join(
-            pathModelFolder, model_full_name + '_polynomial_l_' + 
-            nameMA +'.npy'))):
+            pathModelFolder, model_full_name + '_polynomial_l_default.npy'))):
         loadPolynomialData = False
         
     from muscleDataOpenSimAD import getPolynomialData
     polynomialData = {}
     polynomialData['r'] = getPolynomialData(
         loadPolynomialData, pathModelFolder, model_full_name, pathDummyMotion, 
-        rightPolynomialJoints, muscles, nameMA, side='r')
+        rightPolynomialJoints, muscles, side='r')
     polynomialData['l'] = getPolynomialData(
         loadPolynomialData, pathModelFolder, model_full_name, pathDummyMotion, 
-        leftPolynomialJoints, leftSideMuscles, nameMA, side='l')
+        leftPolynomialJoints, leftSideMuscles, side='l')
      
     if loadPolynomialData:
         polynomialData['r'] = polynomialData['r'].item()
@@ -2750,7 +2760,7 @@ def run_tracking(
                 optimaltrajectories)
             
         # %% Visualize results against bounds
-        if visualizeResultsAgainstBounds:
+        if visualizeResultsBounds:
             from utilsOpenSimAD import plotVSBounds
             for trial in trials:
                 # States
