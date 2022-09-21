@@ -22,6 +22,11 @@ import os
 import requests
 import urllib.request
 import shutil
+import yaml
+import pickle
+import glob
+import zipfile
+import platform
 
 from utilsAPI import get_api_url
 from utilsAuthentication import get_token
@@ -71,6 +76,33 @@ def get_neutral_trial_id(session_id):
         raise Exception('No neutral trial in session.')
     
     return neutralID 
+ 
+
+def get_calibration_trial_id(session_id):
+    session = get_session_json(session_id)
+    
+    calib_ids = [t['id'] for t in session['trials'] if t['name'] == 'calibration']
+                                                          
+    if len(calib_ids)>0:
+        calibID = calib_ids[-1]
+    elif session['meta']['sessionWithCalibration']:
+        calibID = get_calibration_trial_id(session['meta']['sessionWithCalibration']['id'])
+    else:
+        raise Exception('No calibration trial in session.')
+    
+    return calibID
+
+def get_camera_mapping(session_id, session_path):
+    calibration_id = get_calibration_trial_id(session_id)
+    trial = get_trial_json(calibration_id)
+    resultTags = [res['tag'] for res in trial['results']]
+
+    mappingPath = os.path.join(session_path,'Videos','mappingCamDevice.pickle')
+    os.makedirs(os.path.join(session_path,'Videos'), exist_ok=True)
+    if not os.path.exists(mappingPath):
+        mappingURL = trial['results'][resultTags.index('camera_mapping')]['media']
+        download_file(mappingURL, mappingPath)
+    
 
 def get_model_and_metadata(session_id, session_path):
     neutral_id = get_neutral_trial_id(session_id)
@@ -92,6 +124,9 @@ def get_model_and_metadata(session_id, session_path):
         os.makedirs(modelFolder, exist_ok=True)
         download_file(modelURL, modelPath)
         
+    return modelName
+        
+        
 def get_motion_data(trial_id, session_path):
     trial = get_trial_json(trial_id)
     trial_name = trial['name']
@@ -112,6 +147,7 @@ def get_motion_data(trial_id, session_path):
         os.makedirs(ikFolder, exist_ok=True)
         ikURL = trial['results'][resultTags.index('ik_results')]['media']
         download_file(ikURL, ikPath)
+        
         
 def get_geometries(session_path,
                    modelName='LaiArnoldModified2017_poly_withArms_weldHand_scaled'):
@@ -154,6 +190,7 @@ def get_geometries(session_path,
     except:
         pass
     
+    
 def download_kinematics(session_id, folder=None, trialNames=None):
     
     # Login to access opencap data from server. 
@@ -166,7 +203,7 @@ def download_kinematics(session_id, folder=None, trialNames=None):
     # Model and metadata.
     neutral_id = get_neutral_trial_id(session_id)
     get_motion_data(neutral_id, folder)
-    get_model_and_metadata(session_id, folder)
+    _ = get_model_and_metadata(session_id, folder)
     
     # Session trial names.
     sessionJson = get_session_json(session_id)
@@ -191,3 +228,238 @@ def download_kinematics(session_id, folder=None, trialNames=None):
     get_geometries(folder)
         
     return loadedTrialNames
+
+
+def download_videos_from_server(session_id,trial_id,
+                             isCalibration=False, isStaticPose=False,
+                             trial_name= None, session_path = None):
+    
+    if session_path is None:
+        data_dir = os.getcwd() 
+        session_path = os.path.join(data_dir,'Data', session_id)  
+    if not os.path.exists(session_path): 
+        os.makedirs(session_path, exist_ok=True)
+    
+    resp = requests.get("{}trials/{}/".format(API_URL,trial_id),
+                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    trial = resp.json()
+    if trial_name is None:
+        trial_name = trial['name']
+    trial_name = trial_name.replace(' ', '')
+
+    print("\nDownloading {}".format(trial_name))
+
+    # The videos are not always organized in the same order. Here, we save
+    # the order during the first trial processed in the session such that we
+    # can use the same order for the other trials.
+    if not os.path.exists(os.path.join(session_path, "Videos", 'mappingCamDevice.pickle')):
+        mappingCamDevice = {}
+        for k, video in enumerate(trial["videos"]):
+            os.makedirs(os.path.join(session_path, "Videos", "Cam{}".format(k), "InputMedia", trial_name), exist_ok=True)
+            video_path = os.path.join(session_path, "Videos", "Cam{}".format(k), "InputMedia", trial_name, trial_name + ".mov")
+            download_file(video["video"], video_path)                
+            mappingCamDevice[video["device_id"].replace('-', '').upper()] = k
+        with open(os.path.join(session_path, "Videos", 'mappingCamDevice.pickle'), 'wb') as handle:
+            pickle.dump(mappingCamDevice, handle)
+    else:
+        with open(os.path.join(session_path, "Videos", 'mappingCamDevice.pickle'), 'rb') as handle:
+            mappingCamDevice = pickle.load(handle) 
+            # ensure upper on deviceID
+            for dID in mappingCamDevice.keys():
+                mappingCamDevice[dID.upper()] = mappingCamDevice.pop(dID)
+        for video in trial["videos"]:            
+            k = mappingCamDevice[video["device_id"].replace('-', '').upper()] 
+            videoDir = os.path.join(session_path, "Videos", "Cam{}".format(k), "InputMedia", trial_name)
+            os.makedirs(videoDir, exist_ok=True)
+            video_path = os.path.join(videoDir, trial_name + ".mov")
+            if not os.path.exists(video_path):
+                if video['video'] :
+                    download_file(video["video"], video_path)
+              
+    return trial_name
+   
+    
+def get_calibration(session_id,session_path):
+    calibration_id = get_calibration_trial_id(session_id)
+
+    resp = requests.get("{}trials/{}/".format(API_URL,calibration_id),
+                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    trial = resp.json()
+    calibResultTags = [res['tag'] for res in trial['results']]
+   
+    videoFolder = os.path.join(session_path,'Videos')
+    os.makedirs(videoFolder, exist_ok=True)
+    
+    if trial['status'] != 'done':
+        return
+    
+    mapURL = trial['results'][calibResultTags.index('camera_mapping')]['media']
+    mapLocalPath = os.path.join(videoFolder,'mappingCamDevice.pickle')
+
+    download_and_switch_calibration(session_id,session_path,calibTrialID=calibration_id)
+    
+    # Download mapping
+    if len(glob.glob(mapLocalPath)) == 0:
+        download_file(mapURL,mapLocalPath)
+                        
+
+def download_and_switch_calibration(session_id,session_path,calibTrialID = None):
+    if calibTrialID == None:
+        calibTrialID = get_calibration_trial_id(session_id)
+    resp = requests.get("https://api.opencap.ai/trials/{}/".format(calibTrialID),
+                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    trial = resp.json()
+       
+    calibURLs = {t['device_id']:t['media'] for t in trial['results'] if t['tag'] == 'calibration_parameters_options'}
+    calibImgURLs = {t['device_id']:t['media'] for t in trial['results'] if t['tag'] == 'calibration-img'}
+    _,imgExtension = os.path.splitext(calibImgURLs[list(calibImgURLs.keys())[0]])
+    lastIdx = imgExtension.find('?') 
+    if lastIdx >0:
+        imgExtension = imgExtension[:lastIdx]
+    
+    if 'meta' in trial.keys() and trial['meta'] is not None and 'calibration' in trial['meta'].keys():
+        calibDict = trial['meta']['calibration']
+        calibImgFolder = os.path.join(session_path,'CalibrationImages')
+        os.makedirs(calibImgFolder,exist_ok=True)
+        for cam,calibNum in calibDict.items():
+            camDir = os.path.join(session_path,'Videos',cam)
+            os.makedirs(camDir,exist_ok=True)
+            file_name = os.path.join(camDir,'cameraIntrinsicsExtrinsics.pickle')
+            img_fileName = os.path.join(calibImgFolder,'calib_img' + cam + imgExtension)
+            if calibNum == 0:
+                download_file(calibURLs[cam+'_soln0'], file_name)
+                download_file(calibImgURLs[cam],img_fileName)
+            elif calibNum == 1:
+                download_file(calibURLs[cam+'_soln1'], file_name) 
+                download_file(calibImgURLs[cam + '_altSoln'],img_fileName)
+                
+            
+def post_file_to_trial(filePath,trial_id,tag,device_id):
+    files = {'media': open(filePath, 'rb')}
+    data = {
+        "trial": trial_id,
+        "tag": tag,
+        "device_id" : device_id
+    }
+
+    requests.post("{}results/".format(API_URL), files=files, data=data,
+                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    files["media"].close()
+    
+
+def get_syncd_videos(trial_id,session_path):
+    trial = requests.get("{}trials/{}/".format(API_URL,trial_id),
+                         headers = {"Authorization": "Token {}".format(API_TOKEN)}).json()
+    trial_name = trial['name']
+    
+    if trial['results']:
+        for result in trial['results']:
+            if result['tag'] == 'video-sync':
+                url = result['media']
+                cam,suff = os.path.splitext(url[url.rfind('_')+1:])
+                lastIdx = suff.find('?') 
+                if lastIdx >0:
+                    suff = suff[:lastIdx]
+                
+                syncVideoPath = os.path.join(session_path,'Videos',cam,'InputMedia',trial_name,trial_name + '_sync' + suff)
+                download_file(url,syncVideoPath)
+        
+        
+def download_session(session_id, sessionBasePath= None,zipFolder=False,writeToDB=False):
+    print('\nDownloading {}'.format(session_id))
+    
+    if sessionBasePath is None:
+        sessionBasePath = os.path.join(os.getcwd(),'Data')
+    
+    session = get_session_json(session_id)
+    session_path = os.path.join(sessionBasePath,'OpenCapData_' + session_id) 
+    
+    calib_id = get_calibration_trial_id(session_id)
+    neutral_id = get_neutral_trial_id(session_id)
+    dynamic_ids = [t['id'] for t in session['trials'] if (t['name'] != 'calibration' and t['name'] !='neutral')]  
+    
+    # Calibration
+    try:
+        get_camera_mapping(session_id, session_path)
+        download_videos_from_server(session_id,calib_id,
+                             isCalibration=True,isStaticPose=False,
+                             session_path = session_path) 
+
+        get_calibration(session_id,session_path)
+    except:
+        pass
+    
+    # Neutral
+    try:
+        modelName = get_model_and_metadata(session_id,session_path)
+        get_motion_data(neutral_id,session_path)
+        download_videos_from_server(session_id,neutral_id,
+                         isCalibration=False,isStaticPose=True,
+                         session_path = session_path)
+
+        get_syncd_videos(neutral_id,session_path)
+    except:
+        pass
+
+    # Dynamic
+    for dynamic_id in dynamic_ids:
+        try:
+            get_motion_data(dynamic_id,session_path)
+            download_videos_from_server(session_id,dynamic_id,
+                     isCalibration=False,isStaticPose=False,
+                     session_path = session_path)
+
+            get_syncd_videos(dynamic_id,session_path)
+        except:
+            pass
+        
+    repoDir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Readme  
+    try:        
+        pathReadme = os.path.join(repoDir, 'Resources', 'README.txt')
+        pathReadmeEnd = os.path.join(session_path, 'README.txt')
+        shutil.copy2(pathReadme, pathReadmeEnd)
+    except:
+        pass
+        
+    # Geometry
+    try:
+        if 'LaiArnold' in modelName:
+            modelType = 'LaiArnold'
+        else:
+            raise ValueError("Geometries not available for this model, please contact us")
+        if platform.system() == 'Windows':
+            geometryDir = os.path.join(repoDir, 'tmp', modelType, 'Geometry')
+        else:
+            geometryDir = "/tmp/{}/Geometry".format(modelType)
+        # If not in cache, download from s3.
+        if not os.path.exists(geometryDir):
+            os.makedirs(geometryDir, exist_ok=True)
+            get_geometries(session_path,
+                           modelName='LaiArnoldModified2017_poly_withArms_weldHand_scaled')
+        geometryDirEnd = os.path.join(session_path, 'OpenSimData', 'Model', 'Geometry')
+        shutil.copytree(geometryDir, geometryDirEnd)
+    except:
+        pass
+    
+    # Zip   
+    def zipdir(path, ziph):
+        # ziph is zipfile handle
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                ziph.write(os.path.join(root, file), 
+                           os.path.relpath(os.path.join(root, file), 
+                                           os.path.join(path, '..')))    
+    session_zip = '{}.zip'.format(session_path)
+    if os.path.isfile(session_zip):
+        os.remove(session_zip)  
+    if zipFolder:
+        zipf = zipfile.ZipFile(session_zip, 'w', zipfile.ZIP_DEFLATED)
+        zipdir(session_path, zipf)
+        zipf.close()
+    
+    # Write zip as a result to last trial for now
+    if writeToDB:
+        post_file_to_trial(session_zip,dynamic_ids[-1],tag='session_zip',
+                           device_id='all')    
