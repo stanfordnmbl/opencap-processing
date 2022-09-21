@@ -113,6 +113,8 @@ def get_model_and_metadata(session_id, session_path):
         os.makedirs(modelFolder, exist_ok=True)
         download_file(modelURL, modelPath)
         
+    return modelName
+        
         
 def get_motion_data(trial_id, session_path):
     trial = get_trial_json(trial_id)
@@ -190,7 +192,7 @@ def download_kinematics(session_id, folder=None, trialNames=None):
     # Model and metadata.
     neutral_id = get_neutral_trial_id(session_id)
     get_motion_data(neutral_id, folder)
-    get_model_and_metadata(session_id, folder)
+    _ = get_model_and_metadata(session_id, folder)
     
     # Session trial names.
     sessionJson = get_session_json(session_id)
@@ -369,8 +371,8 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
     # Calibration
     try:
         download_videos_from_server(session_id,calib_id,
-                             isCalibration=True,isStaticPose=False,
-                             session_name=session_name) 
+                                    isCalibration=True,isStaticPose=False,
+                                    session_name=session_name) 
         get_calibration(session_id,session_path)
     except:
         pass
@@ -380,7 +382,8 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
         modelName = get_model_and_metadata(session_id,session_path)
         get_motion_data(neutral_id,session_path)
         download_videos_from_server(session_id,neutral_id,
-                         isCalibration=False,isStaticPose=True,session_name=session_name)
+                                    isCalibration=False,isStaticPose=True,
+                                    session_name=session_name)
         get_syncd_videos(neutral_id,session_path)
     except:
         pass
@@ -390,7 +393,8 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
         try:
             get_motion_data(dynamic_id,session_path)
             download_videos_from_server(session_id,dynamic_id,
-                     isCalibration=False,isStaticPose=False,session_name=session_name)
+                                        isCalibration=False,isStaticPose=False,
+                                        session_name=session_name)
             get_syncd_videos(dynamic_id,session_path)
         except:
             pass
@@ -399,7 +403,7 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
     
     # Readme  
     try:        
-        pathReadme = os.path.join(repoDir, 'data', 'README.txt')
+        pathReadme = os.path.join(repoDir, 'Resources', 'README.txt')
         pathReadmeEnd = os.path.join(session_path, 'README.txt')
         shutil.copy2(pathReadme, pathReadmeEnd)
     except:
@@ -419,7 +423,7 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
         if not os.path.exists(geometryDir):
             os.makedirs(geometryDir, exist_ok=True)
             get_geometries(session_path,
-                               modelName='LaiArnoldModified2017_poly_withArms_weldHand_scaled')
+                           modelName='LaiArnoldModified2017_poly_withArms_weldHand_scaled')
         geometryDirEnd = os.path.join(session_path, 'OpenSimData', 'Model', 'Geometry')
         shutil.copytree(geometryDir, geometryDirEnd)
     except:
@@ -432,18 +436,16 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
             for file in files:
                 ziph.write(os.path.join(root, file), 
                            os.path.relpath(os.path.join(root, file), 
-                                           os.path.join(path, '..')))
-    
+                                           os.path.join(path, '..')))    
     session_zip = '{}.zip'.format(session_path)
-
     if os.path.isfile(session_zip):
-        os.remove(session_zip)
-  
+        os.remove(session_zip)  
     if zipFolder:
         zipf = zipfile.ZipFile(session_zip, 'w', zipfile.ZIP_DEFLATED)
         zipdir(session_path, zipf)
         zipf.close()
     
-    # write zip as a result to last trial for now
+    # Write zip as a result to last trial for now
     if writeToDB:
-        post_file_to_trial(session_zip,dynamic_ids[-1],tag='session_zip',device_id='all')    
+        post_file_to_trial(session_zip,dynamic_ids[-1],tag='session_zip',
+                           device_id='all')    

@@ -1,6 +1,6 @@
 '''
     ---------------------------------------------------------------------------
-    OpenCap processing: utilsKinematics.py
+    OpenCap processing: batchDownload.py
     ---------------------------------------------------------------------------
 
     Copyright 2022 Stanford University and the Authors
