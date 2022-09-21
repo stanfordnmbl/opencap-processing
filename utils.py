@@ -92,6 +92,17 @@ def get_calibration_trial_id(session_id):
     
     return calibID
 
+def get_camera_mapping(session_id, session_path):
+    calibration_id = get_calibration_trial_id(session_id)
+    trial = get_trial_json(calibration_id)
+    resultTags = [res['tag'] for res in trial['results']]
+
+    mappingPath = os.path.join(session_path,'Videos','mappingCamDevice.pickle')
+    os.makedirs(os.path.join(session_path,'Videos'), exist_ok=True)
+    if not os.path.exists(mappingPath):
+        mappingURL = trial['results'][resultTags.index('camera_mapping')]['media']
+        download_file(mappingURL, mappingPath)
+    
 
 def get_model_and_metadata(session_id, session_path):
     neutral_id = get_neutral_trial_id(session_id)
@@ -219,12 +230,11 @@ def download_kinematics(session_id, folder=None, trialNames=None):
 
 def download_videos_from_server(session_id,trial_id,
                              isCalibration=False, isStaticPose=False,
-                             trial_name= None, session_name = None):
+                             trial_name= None, session_path = None):
     
-    if session_name is None:
-        session_name = session_id
-    data_dir = os.getcwd() 
-    session_path = os.path.join(data_dir,'Data', session_name)  
+    if session_path is None:
+        data_dir = os.getcwd() 
+        session_path = os.path.join(data_dir,'Data', session_id)  
     if not os.path.exists(session_path): 
         os.makedirs(session_path, exist_ok=True)
     
@@ -353,14 +363,14 @@ def get_syncd_videos(trial_id,session_path):
                 download_file(url,syncVideoPath)
         
         
-def download_session(session_id,zipFolder=False,writeToDB=False):
+def download_session(session_id, sessionBasePath= None,zipFolder=False,writeToDB=False):
     print('\nDownloading {}'.format(session_id))
     
-    data_dir = os.getcwd()
+    if sessionBasePath is None:
+        sessionBasePath = os.path.join(os.getcwd(),'Data')
     
     session = get_session_json(session_id)
-    session_name = 'OpenCapData_' + session_id
-    session_path = os.path.join(data_dir,'Data',session_name) 
+    session_path = os.path.join(sessionBasePath,'OpenCapData_' + session_id) 
     
     calib_id = get_calibration_trial_id(session_id)
     neutral_id = get_neutral_trial_id(session_id)
@@ -368,9 +378,10 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
     
     # Calibration
     try:
+        get_camera_mapping(session_id, session_path)
         download_videos_from_server(session_id,calib_id,
                              isCalibration=True,isStaticPose=False,
-                             session_name=session_name) 
+                             session_path = session_path) 
         get_calibration(session_id,session_path)
     except:
         pass
@@ -380,7 +391,7 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
         modelName = get_model_and_metadata(session_id,session_path)
         get_motion_data(neutral_id,session_path)
         download_videos_from_server(session_id,neutral_id,
-                         isCalibration=False,isStaticPose=True,session_name=session_name)
+                         isCalibration=False,isStaticPose=True,session_path = session_path)
         get_syncd_videos(neutral_id,session_path)
     except:
         pass
@@ -390,7 +401,7 @@ def download_session(session_id,zipFolder=False,writeToDB=False):
         try:
             get_motion_data(dynamic_id,session_path)
             download_videos_from_server(session_id,dynamic_id,
-                     isCalibration=False,isStaticPose=False,session_name=session_name)
+                     isCalibration=False,isStaticPose=False,session_path = session_path)
             get_syncd_videos(dynamic_id,session_path)
         except:
             pass
