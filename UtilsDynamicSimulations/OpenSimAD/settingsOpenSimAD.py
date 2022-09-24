@@ -9,6 +9,7 @@ def get_default_setup(motion_type):
 
     setups = {}    
     setups['running'] = {
+        'ipopt_tolerance': 3,
         'weights': {
             'positionTrackingTerm': 100,
             'velocityTrackingTerm': 10,
@@ -56,6 +57,7 @@ def get_default_setup(motion_type):
         'ignorePassiveFiberForce': True}
     
     setups['walking'] = {
+        'ipopt_tolerance': 3,
         'weights': {
             'positionTrackingTerm': 10,
             'velocityTrackingTerm': 10,
@@ -208,6 +210,7 @@ def get_default_setup(motion_type):
     #     'ignorePassiveFiberForce': True}
     
     setups['sit_to_stand'] = {
+        'ipopt_tolerance': 3,
         'weights': {
             'positionTrackingTerm': 50,
             'velocityTrackingTerm': 10,
@@ -263,6 +266,7 @@ def get_default_setup(motion_type):
         'ignorePassiveFiberForce': True}
     
     setups['squats'] = {
+        'ipopt_tolerance': 3,
         'weights': {
             'positionTrackingTerm': 50,
             'velocityTrackingTerm': 10,
@@ -422,7 +426,7 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 4
         settings['trials'][trialName]['splineQds'] = True
         # settings['trials'][trialName]['isSTSs_yCalcn_vGRF'] = True
-        settings['trials'][trialName]['yCalcnThresholds'] = 0.015
+        # settings['trials'][trialName]['yCalcnThresholds'] = 0.015
         # settings['trials'][trialName]['stsThresholds'] = 0
         settings['trials'][trialName]['meshDensity'] = 50
         

@@ -182,12 +182,14 @@ def checkQsWithinPolynomialBounds(data, bounds, coordinates, trials):
                 c_idc = coordinates.index(coord)
                 c_data = data[trial][c_idc, :]
                 # Small margin to account for filtering.                
-                if not np.all(c_data * 180 / np.pi <= bounds[coord]['max'] + 3):
-                    print('error ub polynomial {}: {} >= {}'.format(coord, np.round(np.max(c_data), 2), np.round(bounds[coord]['max'] * np.pi / 180, 2)))
+                if not np.all(c_data * 180 / np.pi <= bounds[coord]['max'] + 1):
+                    print('WARNING: coordinate values to track has values above upper bound ROM for polynomial fitting - {}: {} >= {}'.format(coord, np.round(np.max(c_data), 2), np.round(bounds[coord]['max'] * np.pi / 180, 2)))
                     success = False
-                if not np.all(c_data * 180 / np.pi >= bounds[coord]['min'] - 3):
-                    print('error lb polynomial {}: {} <= {}'.format(coord, np.round(np.min(c_data), 2), np.round(bounds[coord]['min'] * np.pi / 180, 2)))
-                    success = False                    
+                if not np.all(c_data * 180 / np.pi >= bounds[coord]['min'] - 1):
+                    print('WARNING: coordinate values to track has values below lower bound ROM for polynomial fitting-  {}: {} <= {}'.format(coord, np.round(np.min(c_data), 2), np.round(bounds[coord]['min'] * np.pi / 180, 2)))
+                    success = False   
+                if not success:
+                    print('Make sure that the motion to track looks realistic; if so consider adjusting the ROM for the polynomial fitting, see OpenSimPipeline\MuscleAnalysis\DummyMotion.mot')
     return success
 
 # %% Extract from storage file.
@@ -1646,14 +1648,14 @@ def download_file(url, file_name):
     
 # %% Plot results simulations.
 # TODO: simplify and clean up.
-def plotResultsDC(dataDir, subject, motion_filename, cases=['default'],
-                  mainPlots=False, rep=None):
+def plotResultsDC(dataDir, subject, motion_filename, settings, 
+                  cases=['default'], mainPlots=False):
     
     # %% Load optimal trajectories
-    pathOSData = os.path.join(dataDir, subject, 'OpenSimData')        
+    pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
     suff_path = ''
-    if not rep is None:
-        suff_path = '_rep' + str(rep)
+    if 'repetition' in settings:
+        suff_path = '_rep' + str(settings['repetition'])
     c_pathResults = os.path.join(pathOSData, 'Dynamics', 
                                  motion_filename + suff_path)    
     c_tr = np.load(os.path.join(c_pathResults, 'optimalTrajectories.npy'),
