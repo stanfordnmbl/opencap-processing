@@ -15,14 +15,17 @@
     See the License for the specific language governing permissions and
     limitations under the License.
     
-    This code make use of CasADi, which is licensed under LGPL, Version 3.0;
+    This code makes use of CasADi, which is licensed under LGPL, Version 3.0;
     https://github.com/casadi/casadi/blob/master/LICENSE.txt.
     
     Install requirements:
-        CMake: https://cmake.org/download/
-        Visual studio: https://visualstudio.microsoft.com/downloads/
-            - Make sure you install C++ support
-            - This code was tested with Visual Studio Community 2017-2019-2022
+        - Visit https://github.com/stanfordnmbl/opencap-processing for details.        
+        - Third-party software packages:
+            - CMake: https://cmake.org/download/.
+            - (Windows only)
+                - Visual studio: https://visualstudio.microsoft.com/downloads/.
+                    - Make sure you install C++ support.
+                    - Code tested with community editions 2017-2019-2022.
             
     Please contact us for any questions: https://www.opencap.ai/#contact
 '''
@@ -50,12 +53,11 @@ Please provide:
                     find all trial names after loading a session.
                     
     motion_type:    This is the type of activity you want to simulate. Options
-                    are 'running', 'walking', 'drop_jump', 'sit-to-stand', 
-                    'squats', and 'other'. We provide pre-defined settings that
-                    worked well for this set of activities (except for other).
-                    If your activity is different, select 'other' to use
-                    generic settings or set your own settings in
-                    settingsOpenSimAD.
+                    are 'running', 'walking', 'drop_jump', 'sit-to-stand', and
+                    'squats'. We provide pre-defined settings that worked well
+                    for this set of activities. If your activity is different,
+                    select 'other' to use generic settings or set your own
+                    settings in settingsOpenSimAD.
                     
     time_window:    This is the time interval you want to simulate. It is
                     recommended to simulate trials shorter than 2s. Set to []
@@ -74,7 +76,7 @@ Please provide:
                     problems, and it is common to have to play with some
                     settings to get the problem to converge or converge to a
                     meaningful solution. It is useful to keep track of which
-                    solution corresponsd to which settings; you can then easily
+                    solution corresponds to which settings; you can then easily
                     compare results generated with different settings.
                     
     (optional)
@@ -82,11 +84,11 @@ Please provide:
                     the treadmill in m/s. A positive value indicates that the
                     subject is moving forward. You should ignore this parameter
                     or set it to 0 if the trial was not measured on a
-                    treadmill. By default, treadmill_speed=0.
+                    treadmill. By default, treadmill_speed is set to 0.
     
 See example inputs below for different activities. Please note that we did not
 verify the biomechanical validity of the results; we only made sure the
-simulations converge to kinematic solutions that were visually reasonable.
+simulations converged to kinematic solutions that were visually reasonable.
 
 Please contact us for any questions: https://www.opencap.ai/#contact
 '''
@@ -94,28 +96,17 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 # We provide a few examples for overground and treadmill activities.
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
-case = '0'
-# Predefined settings.
-if session_type == 'overground':
-    session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-    trial_name = 'DJ' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
+session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
+case = '0' # Change this to compare across settings.
+if session_type == 'overground':    
+    trial_name = 'squat' # Options are 'squat' and 'STS'.
     if trial_name == 'squat': # Squat example
         motion_type = 'squats'
         repetition = 1
-    elif trial_name == 'DJ': # Drop jump example
-        motion_type = 'drop_jump'
-        time_window = [2.5, 3.3]
-    elif trial_name == 'SLDJ': # Drop jump example
-        motion_type = 'drop_jump'
-        time_window = [2.55, 3.5]
     elif trial_name == 'STS': # Sit-to-stand example
         motion_type = 'sit_to_stand'
         repetition = 1
-    elif trial_name == 'jump': # Sit-to-stand example
-        motion_type = 'sit_to_stand'
-        repetition = 0
 elif session_type == 'treadmill':
-    session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
     trial_name = 'walk_1_25ms'
     if trial_name == 'walk_1_25ms': # Walking example, 1.25 m/s
         motion_type = 'walking'
@@ -139,8 +130,8 @@ solveProblem = True
 # re-run the problem.
 analyzeResults = True
 
-# %% Paths.
-dataFolder =  os.path.join(baseDir, 'Data')
+# Path to where you want the data to be downloaded.
+dataFolder = os.path.join(baseDir, 'Data')
 
 # %% Setup. 
 if not 'time_window' in locals():
@@ -155,7 +146,7 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
 
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-              solveProblem=solveProblem, analyzeResults=analyzeResults)
+             solveProblem=solveProblem, analyzeResults=analyzeResults)
 
-# # %% Plots.
-# plotResultsDC(dataFolder, session_id, trial_name, settings, cases=['0', '1'])
+# %% Plots.
+plotResultsDC(dataFolder, session_id, trial_name, settings, cases=['0'])
