@@ -88,7 +88,7 @@ def hillEquilibrium(mtParameters, tendonCompliance, tendonShift,
     
     return f_hillEquilibrium
 
-def armActivationDynamics(NArmJoints):
+def coordinateActuatorDynamics(NArmJoints):
     t = 0.035 # time constant       
     
     eArm = ca.SX.sym('eArm',NArmJoints)
@@ -476,7 +476,7 @@ def jointMechanicalWorkRate(NJoints):
 #print(fiberVelocityT)
 
 # Test f_armActivationDynamics
-#f_armActivationDynamics = armActivationDynamics(3)
+#f_armActivationDynamics = coordinateActuatorDynamics(3)
 #eArmT = [0.8, 0.6, 0.4]
 #aArmT = [0.5, 0.4, 0.3]
 #aArmDtT = f_armActivationDynamics(eArmT, aArmT)
