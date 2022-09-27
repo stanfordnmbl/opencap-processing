@@ -204,67 +204,6 @@ class quasiRandomGuess:
         
         return guessOffset
     
-class contactParameterGuess:
-    
-    def getGuessContactParameters(self, NContactSpheres, 
-                                  parameter_to_optimize, 
-                                  scaling_v, scaling_r):
-        
-        if NContactSpheres == 6:
-        
-            location_s1 = np.array([0.00215773306688716053,   -0.00434269152195360195])
-            location_s2 = np.array([0.16841223157345971972,   -0.03258850869005603529])
-            location_s3 = np.array([0.15095065283989317351,    0.05860493716970469752])
-            location_s4 = np.array([0.07517351958454182581,    0.02992219727974926649])
-            location_s5 = np.array([0.06809743951165971032,   -0.02129214951175864221])
-            location_s6 = np.array([0.05107307963374478621,    0.07020500618327656095])
-            
-            radius_s1 = 0.032
-            radius_s2 = 0.032
-            radius_s3 = 0.032
-            radius_s4 = 0.032
-            radius_s5 = 0.032
-            radius_s6 = 0.032
-            
-            if parameter_to_optimize == 'option1' :           
-                contactParameters_unsc = np.concatenate((location_s1, location_s2, location_s3, location_s4, location_s5, location_s6, [radius_s1], [radius_s2], [radius_s3], [radius_s4], [radius_s5], [radius_s6]))
-        
-        guessContactParameters = contactParameters_unsc * scaling_v + scaling_r
-                
-        return guessContactParameters    
-    
-    # def getGuessContactParameters_6s_option2(self, scaling_v, scaling_r):
-        
-    #     location_s1 = np.array([-0.000452297523548588,   -0.0053620734121204309])
-    #     location_s2 = np.array([0.064380934268635601,    0.021461384438449679])
-    #     location_s3 = np.array([0.17704756923874793,     0.0227296888435418])
-    #     location_s4 = np.array([0.17704756923874793,     -0.010730155711439269]) 
-    #     location_s5 = np.array([0.057035069668584286,    -0.0036668161112701409])   
-    #     location_s6 = np.array([1.8650083642052589e-06,  0.023921809143082704])
-        
-    #     radius_s1 = 0.032320
-    #     radius_s2 = 0.032320
-    #     radius_s3 = 0.023374
-    #     radius_s4 = 0.020508
-    #     radius_s5 = 0.016244
-    #     radius_s6 = 0.018414
-        
-    #     stiffness = 1e6        
-    #     dissipation = 2
-        
-    #     staticFriction =  0.8
-    #     dynamicFriction = 0.8       
-    #     viscousFriction = 0.5       
-    #     transitionVelocity = 0.2
-        
-    #     contactParameters_unsc = np.concatenate(
-    #         (location_s1, location_s2, location_s3, location_s4, location_s5, location_s6,
-    #          [radius_s1], [radius_s2], [radius_s3], [radius_s4], [radius_s5], [radius_s6],
-    #          [stiffness], [dissipation], [staticFriction], [dynamicFriction], [viscousFriction], [transitionVelocity]))
-    #     guessContactParameters = contactParameters_unsc * scaling_v + scaling_r
-                
-    #     return guessContactParameters
-    
 # %% Data-driven initial guess    
 class dataDrivenGuess_tracking:    
     def __init__(self, Qs, N, d, joints, muscles):        
@@ -300,27 +239,7 @@ class dataDrivenGuess_tracking:
                                  padtype='odd', padlen=3*(max(len(b),len(a))-1))    
         output = pd.DataFrame(data=output, columns=self.joints)
         self.Qdotdots_spline_filter = pd.concat([pd.DataFrame(data=self.Qdotdots_spline['time'], columns=['time']), 
-                            output], axis=1) 
-            
-    # def interpQs(self):
-    #     self.splineQs()            
-    #     tOut = np.linspace(self.Qs['time'].iloc[0], 
-    #                        self.Qs['time'].iloc[-1], 
-    #                        self.N + 1)    
-        
-    #     self.Qs_spline_interp = pd.DataFrame()  
-    #     self.Qdots_spline_interp = pd.DataFrame()  
-    #     self.Qdotdots_spline_interp = pd.DataFrame()  
-    #     for count, joint in enumerate(self.joints):  
-    #         set_interp = interp1d(self.Qs['time'], self.Qs_spline[joint])
-    #         self.Qs_spline_interp.insert(count, joint, set_interp(tOut))
-            
-    #         set_interp = interp1d(self.Qs['time'], self.Qdots_spline[joint])
-    #         self.Qdots_spline_interp.insert(count, joint, set_interp(tOut))
-            
-    #         set_interp = interp1d(self.Qs['time'], self.Qdotdots_spline[joint])
-    #         self.Qdotdots_spline_interp.insert(count, joint, set_interp(tOut))
-        
+                            output], axis=1)       
     
     # Mesh points
     def getGuessPosition(self, scaling):
