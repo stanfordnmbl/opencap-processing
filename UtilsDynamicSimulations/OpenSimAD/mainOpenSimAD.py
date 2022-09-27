@@ -23,11 +23,10 @@ d = 3
 dimensions = ['x', 'y', 'z']
 nContactSpheres = 6
 
-def run_tracking(
-        baseDir, dataDir, subject, settings, case='0', solveProblem=True, 
-        analyzeResults=True, writeGUI=True, visualizeTracking=False, 
-        visualizeResultsBounds=False, computeKAM=False, computeMCF=False):
-    
+def run_tracking(baseDir, dataDir, subject, settings, case='0',
+                 solveProblem=True, analyzeResults=True, writeGUI=True,
+                 visualizeTracking=False, visualizeResultsBounds=False,
+                 computeKAM=False, computeMCF=False):
     
     import copy # TODO
     
