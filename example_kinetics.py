@@ -98,22 +98,25 @@ case = '0'
 # Predefined settings.
 if session_type == 'overground':
     session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-    trial_name = 'squat' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
-    if trial_name == 'Gait': # Walking example
-        motion_type = 'walking'
-        time_window = [2.5, 4.0]
-    elif trial_name == 'squat': # Squat example
+    trial_name = 'DJ' # Options are 'Gait', 'Squats', 'DJ', 'STS'.
+    if trial_name == 'squat': # Squat example
         motion_type = 'squats'
         repetition = 1
     elif trial_name == 'DJ': # Drop jump example
         motion_type = 'drop_jump'
-        time_window = [1.55, 2.35]
+        time_window = [2.5, 3.3]
+    elif trial_name == 'SLDJ': # Drop jump example
+        motion_type = 'drop_jump'
+        time_window = [2.55, 3.5]
     elif trial_name == 'STS': # Sit-to-stand example
+        motion_type = 'sit_to_stand'
+        repetition = 1
+    elif trial_name == 'jump': # Sit-to-stand example
         motion_type = 'sit_to_stand'
         repetition = 0
 elif session_type == 'treadmill':
     session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-    trial_name = 'run_2_5ms'
+    trial_name = 'walk_1_25ms'
     if trial_name == 'walk_1_25ms': # Walking example, 1.25 m/s
         motion_type = 'walking'
         time_window = [1.0, 2.5]
@@ -132,9 +135,9 @@ solveProblem = True
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
-# True. This is useful if you do additional post-processing but do not need to
+# True. This is useful if you do additional post-processing but do not want to
 # re-run the problem.
-analyzeResults = False
+analyzeResults = True
 
 # %% Paths.
 dataFolder =  os.path.join(baseDir, 'Data')
@@ -152,8 +155,7 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
 
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-             solveProblem=solveProblem, analyzeResults=analyzeResults)
+              solveProblem=solveProblem, analyzeResults=analyzeResults)
 
-# %% Plots.
-# TODO repetition.
-plotResultsDC(dataFolder, session_id, trial_name, cases=['0', '1'], rep=repetition)
+# # %% Plots.
+# plotResultsDC(dataFolder, session_id, trial_name, settings, cases=['0', '1'])
