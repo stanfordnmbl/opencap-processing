@@ -1,9 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun  1 14:21:40 2022
-
-@author: antoi
-"""
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: settingsOpenSimAD.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
 
 def get_default_setup(motion_type):
 
@@ -155,60 +166,6 @@ def get_default_setup(motion_type):
             'pelvis_tz': {"env_bound": 0.02}},
         'ignorePassiveFiberForce': True}
     
-    # setups['sit_to_stand'] = {
-    #     'weights': {
-    #         'positionTrackingTerm': 50,
-    #         'velocityTrackingTerm': 10,
-    #         'accelerationTrackingTerm': 50,
-    #         'activationTerm': 100,
-    #         'armExcitationTerm': 0.001,
-    #         'lumbarExcitationTerm': 0.001,
-    #         'jointAccelerationTerm': 0.001,
-    #         'activationDtTerm': 0.001,
-    #         'forceDtTerm': 0.001,
-    #         'reserveActuatorTerm': 0.001,
-    #         # 'vGRFRatioTerm': 0.1
-    #         },            
-    #     'coordinates_toTrack': {
-    #         'pelvis_tilt': {"weight": 100},
-    #         'pelvis_list': {"weight": 10},
-    #         'pelvis_rotation': {"weight": 1},
-    #         'pelvis_tx': {"weight": 100},
-    #         'pelvis_ty': {"weight": 10},
-    #         'pelvis_tz': {"weight": 100}, 
-    #         'hip_flexion_l': {"weight": 100},
-    #         'hip_adduction_l': {"weight": 20},
-    #         'hip_rotation_l': {"weight": 1},
-    #         'hip_flexion_r': {"weight": 100},
-    #         'hip_adduction_r': {"weight": 20},
-    #         'hip_rotation_r': {"weight": 1},
-    #         'knee_angle_l': {"weight": 100},
-    #         'knee_angle_r': {"weight": 100},
-    #         'ankle_angle_l': {"weight": 100},
-    #         'ankle_angle_r': {"weight": 100},
-    #         'subtalar_angle_l': {"weight": 20},
-    #         'subtalar_angle_r': {"weight": 20},
-    #         'lumbar_extension': {"weight": 100},
-    #         'lumbar_bending': {"weight": 20},
-    #         'lumbar_rotation': {"weight": 20},
-    #         'arm_flex_l': {"weight": 50},
-    #         'arm_add_l': {"weight": 10},
-    #         'arm_rot_l': {"weight": 10},
-    #         'arm_flex_r': {"weight": 50},
-    #         'arm_add_r': {"weight": 10},
-    #         'arm_rot_r': {"weight": 10},
-    #         'elbow_flex_l': {"weight": 10},
-    #         'elbow_flex_r': {"weight": 10},
-    #         'pro_sup_l': {"weight": 10},
-    #         'pro_sup_r': {"weight": 10}},            
-    #     'coordinate_constraints': {
-    #         'pelvis_ty': {"env_bound": 0.1},
-    #         'pelvis_tx': {"env_bound": 0.1}},       
-    #     'withReserveActuators': True,
-    #     'reserveActuatorJoints': {
-    #         'hip_rotation_l': 30, 'hip_rotation_r': 30},
-    #     'ignorePassiveFiberForce': True}
-    
     setups['sit_to_stand'] = {
         'ipopt_tolerance': 3,
         'weights': {
@@ -222,7 +179,6 @@ def get_default_setup(motion_type):
             'activationDtTerm': 0.001,
             'forceDtTerm': 0.001,
             'reserveActuatorTerm': 0.001,
-            # 'vGRFRatioTerm': 0.1
             },            
         'coordinates_toTrack': {
             'pelvis_tilt': {"weight": 100},
@@ -260,7 +216,7 @@ def get_default_setup(motion_type):
             'pelvis_ty': {"env_bound": 0.1},
             'pelvis_tx': {"env_bound": 0.1}},       
         'withReserveActuators': True,
-        'reserveActuatorJoints': {
+        'reserveActuatorCoordinates': {
             'hip_rotation_l': 30, 'hip_rotation_r': 30},
         'periodicConstraints': {'Qs': ['lowerLimbJoints']},
         'ignorePassiveFiberForce': True}
@@ -314,7 +270,7 @@ def get_default_setup(motion_type):
             'pelvis_ty': {"env_bound": 0.1},
             'pelvis_tx': {"env_bound": 0.1}},
         'withReserveActuators': True,
-        'reserveActuatorJoints': {
+        'reserveActuatorCoordinates': {
             'hip_rotation_l': 30, 'hip_rotation_r': 30},
         'periodicConstraints': {'Qs': ['lowerLimbJoints'],
                                 'Qds': ['lowerLimbJoints'],
@@ -377,11 +333,11 @@ def get_trial_setup(settings, motion_type, trialName):
     
     if motion_type == 'running':        
         settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_coordinates_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_coord'] = 12
-        settings['trials'][trialName]['filter_Qds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qs_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qs'] = 12
+        settings['trials'][trialName]['filter_Qds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qds'] = 12
-        settings['trials'][trialName]['filter_Qdds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 12
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['meshDensity'] = 100
@@ -389,11 +345,11 @@ def get_trial_setup(settings, motion_type, trialName):
         
     elif motion_type == 'jumping':  
         settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_coordinates_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_coord'] = 20
-        settings['trials'][trialName]['filter_Qds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qs_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qs'] = 20
+        settings['trials'][trialName]['filter_Qds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qds'] = 20
-        settings['trials'][trialName]['filter_Qdds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 20
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['meshDensity'] = 50
@@ -401,46 +357,42 @@ def get_trial_setup(settings, motion_type, trialName):
         
     elif motion_type == 'walking':  
         settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_coordinates_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_coord'] = 6
+        settings['trials'][trialName]['filter_Qs_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qs'] = 6
         settings['trials'][trialName]['meshDensity'] = 100
         
     elif motion_type == 'drop_jump':  
         settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_coordinates_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_coord'] = 30
-        settings['trials'][trialName]['filter_Qds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qs_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qs'] = 30
+        settings['trials'][trialName]['filter_Qds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qds'] = 30
-        settings['trials'][trialName]['filter_Qdds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 30
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['meshDensity'] = 100
         
-    elif motion_type == 'sit_to_stand':  
+    elif motion_type == 'sit_to_stand':
         settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_coordinates_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_coord'] = 4
-        settings['trials'][trialName]['filter_Qds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qs_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qs'] = 4
+        settings['trials'][trialName]['filter_Qds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qds'] = 4
-        settings['trials'][trialName]['filter_Qdds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 4
         settings['trials'][trialName]['splineQds'] = True
-        # settings['trials'][trialName]['isSTSs_yCalcn_vGRF'] = True
-        # settings['trials'][trialName]['yCalcnThresholds'] = 0.015
-        # settings['trials'][trialName]['stsThresholds'] = 0
         settings['trials'][trialName]['meshDensity'] = 50
         
     elif motion_type == 'squats':  
         settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_coordinates_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_coord'] = 4
-        settings['trials'][trialName]['filter_Qds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qs_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qs'] = 4
+        settings['trials'][trialName]['filter_Qds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qds'] = 4
-        settings['trials'][trialName]['filter_Qdds_toTracks'] = True
+        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 4
         settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['isSquat'] = True
-        settings['trials'][trialName]['squatThreshold'] = 5
-        settings['trials'][trialName]['meshDensity'] = 50
+        settings['trials'][trialName]['heel_vGRF_threshold'] = 5
+        settings['trials'][trialName]['meshDensity'] = 100
         
     return settings

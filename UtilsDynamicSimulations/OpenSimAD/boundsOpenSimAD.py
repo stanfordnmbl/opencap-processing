@@ -1,3 +1,21 @@
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: boundsOpenSimAD.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
+
 import scipy.interpolate as interpolate
 from scipy import signal
 import pandas as pd
@@ -9,10 +27,7 @@ class bounds_tracking:
         
         self.Qs = Qs
         self.joints = joints
-        # self.targetSpeed = targetSpeed
         self.muscles = muscles
-        # self.armJoints = armJoints
-        # self.mtpJoints = mtpJoints
         
     def splineQs(self):
         
@@ -35,280 +50,16 @@ class bounds_tracking:
         order = 4
         w = fc / (fs / 2) # Normalize the frequency
         b, a = signal.butter(order/2, w, 'low')  
-        output = signal.filtfilt(b, a, self.Qdotdots_spline.loc[:, self.Qdotdots_spline.columns != 'time'], axis=0, 
-                                 padtype='odd', padlen=3*(max(len(b),len(a))-1))    
+        output = signal.filtfilt(
+            b, a, 
+            self.Qdotdots_spline.loc[:, self.Qdotdots_spline.columns!='time'],
+            axis=0, padtype='odd', padlen=3*(max(len(b),len(a))-1))    
         output = pd.DataFrame(data=output, columns=self.joints)
-        self.Qdotdots_spline_filter = pd.concat([pd.DataFrame(data=self.Qdotdots_spline['time'], columns=['time']), 
-                            output], axis=1)  
+        self.Qdotdots_spline_filter = pd.concat(
+            [pd.DataFrame(data=self.Qdotdots_spline['time'], columns=['time']), 
+             output], axis=1)
     
     def getBoundsPosition(self):
-        self.splineQs()
-        upperBoundsPosition = pd.DataFrame()   
-        lowerBoundsPosition = pd.DataFrame() 
-        scalingPosition = pd.DataFrame() 
-        for count, joint in enumerate(self.joints):             
-            if (self.joints.count(joint[:-1] + 'l')) == 1:        
-                ub = max(max(self.Qs_spline[joint[:-1] + 'l']), 
-                         max(self.Qs_spline[joint[:-1] + 'r']))
-                lb = min(min(self.Qs_spline[joint[:-1] + 'l']), 
-                         min(self.Qs_spline[joint[:-1] + 'r']))                              
-            else:
-                ub = max(self.Qs_spline[joint])
-                lb = min(self.Qs_spline[joint])
-            r = abs(ub - lb)
-            ub = ub + r
-            lb = lb - r                        
-            upperBoundsPosition.insert(count, joint, [ub])
-            lowerBoundsPosition.insert(count, joint, [lb]) 
-            # Special cases
-            if joint == 'mtp_angle_l' or joint == 'mtp_angle_r':
-                upperBoundsPosition[joint] = [0.52359878000000004]
-                lowerBoundsPosition[joint] = [-0.7853981633974483]
-                
-            # Scaling
-            s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
-                                 abs(lowerBoundsPosition[joint])[0]]))
-            scalingPosition.insert(count, joint, [s])
-            lowerBoundsPosition[joint] /= scalingPosition[joint]
-            upperBoundsPosition[joint] /= scalingPosition[joint]
-                
-        return upperBoundsPosition, lowerBoundsPosition, scalingPosition
-    
-    
-    # For the mocap data, the bounds should be extended. Ideally, we should do
-    # that too for the video data but simulations were already generated data
-    # to track were within the video-bounds.
-    def getBoundsPosition_fixed(self, data_type='Video'):
-        self.splineQs()
-        
-        upperBoundsPosition_all = {}
-        lowerBoundsPosition_all = {}
-       
-        if data_type == 'Mocap':            
-            upperBoundsPosition_all['hip_flexion_l'] = [120 * np.pi / 180]
-            upperBoundsPosition_all['hip_flexion_r'] = [120 * np.pi / 180]
-            upperBoundsPosition_all['hip_adduction_l'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['hip_adduction_r'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['hip_rotation_l'] = [30 * np.pi / 180]
-            upperBoundsPosition_all['hip_rotation_r'] = [30 * np.pi / 180]  
-            upperBoundsPosition_all['knee_angle_l'] = [125 * np.pi / 180]
-            upperBoundsPosition_all['knee_angle_r'] = [125 * np.pi / 180]
-            upperBoundsPosition_all['knee_adduction_l'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['knee_adduction_r'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['ankle_angle_l'] = [50 * np.pi / 180]
-            upperBoundsPosition_all['ankle_angle_r'] = [50 * np.pi / 180]
-            upperBoundsPosition_all['subtalar_angle_l'] = [35 * np.pi / 180] 
-            upperBoundsPosition_all['subtalar_angle_r'] = [35 * np.pi / 180] 
-            upperBoundsPosition_all['mtp_angle_l'] = [5 * np.pi / 180]
-            upperBoundsPosition_all['mtp_angle_r'] = [5 * np.pi / 180]        
-          
-            lowerBoundsPosition_all['hip_flexion_l'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['hip_flexion_r'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['hip_adduction_l'] = [-40 * np.pi / 180]
-            lowerBoundsPosition_all['hip_adduction_r'] = [-40 * np.pi / 180]
-            lowerBoundsPosition_all['hip_rotation_l'] = [-40 * np.pi / 180]
-            lowerBoundsPosition_all['hip_rotation_r'] = [-40 * np.pi / 180]       
-            lowerBoundsPosition_all['knee_angle_l'] = [0 * np.pi / 180]
-            lowerBoundsPosition_all['knee_angle_r'] = [0 * np.pi / 180]        
-            lowerBoundsPosition_all['knee_adduction_l'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['knee_adduction_r'] = [-30 * np.pi / 180]        
-            lowerBoundsPosition_all['ankle_angle_l'] = [-50 * np.pi / 180]
-            lowerBoundsPosition_all['ankle_angle_r'] = [-50 * np.pi / 180]        
-            lowerBoundsPosition_all['subtalar_angle_l'] = [-35 * np.pi / 180] 
-            lowerBoundsPosition_all['subtalar_angle_r'] = [-35 * np.pi / 180]        
-            lowerBoundsPosition_all['mtp_angle_l'] = [-45 * np.pi / 180]
-            lowerBoundsPosition_all['mtp_angle_r'] = [-45 * np.pi / 180]   
-            
-        elif data_type == 'Video':       
-            upperBoundsPosition_all['hip_flexion_l'] = [120 * np.pi / 180]
-            upperBoundsPosition_all['hip_flexion_r'] = [120 * np.pi / 180]
-            upperBoundsPosition_all['hip_adduction_l'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['hip_adduction_r'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['hip_rotation_l'] = [25 * np.pi / 180]
-            upperBoundsPosition_all['hip_rotation_r'] = [25 * np.pi / 180]  
-            upperBoundsPosition_all['knee_angle_l'] = [120 * np.pi / 180]
-            upperBoundsPosition_all['knee_angle_r'] = [120 * np.pi / 180]
-            upperBoundsPosition_all['knee_adduction_l'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['knee_adduction_r'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['ankle_angle_l'] = [50 * np.pi / 180]
-            upperBoundsPosition_all['ankle_angle_r'] = [50 * np.pi / 180]
-            upperBoundsPosition_all['subtalar_angle_l'] = [20 * np.pi / 180] 
-            upperBoundsPosition_all['subtalar_angle_r'] = [20 * np.pi / 180] 
-            upperBoundsPosition_all['mtp_angle_l'] = [5 * np.pi / 180]
-            upperBoundsPosition_all['mtp_angle_r'] = [5 * np.pi / 180]        
-          
-            lowerBoundsPosition_all['hip_flexion_l'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['hip_flexion_r'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['hip_adduction_l'] = [-35 * np.pi / 180]
-            lowerBoundsPosition_all['hip_adduction_r'] = [-35 * np.pi / 180]
-            lowerBoundsPosition_all['hip_rotation_l'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['hip_rotation_r'] = [-30 * np.pi / 180]       
-            lowerBoundsPosition_all['knee_angle_l'] = [0 * np.pi / 180]
-            lowerBoundsPosition_all['knee_angle_r'] = [0 * np.pi / 180]        
-            lowerBoundsPosition_all['knee_adduction_l'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['knee_adduction_r'] = [-30 * np.pi / 180]        
-            lowerBoundsPosition_all['ankle_angle_l'] = [-40 * np.pi / 180]
-            lowerBoundsPosition_all['ankle_angle_r'] = [-40 * np.pi / 180]        
-            lowerBoundsPosition_all['subtalar_angle_l'] = [-35 * np.pi / 180] 
-            lowerBoundsPosition_all['subtalar_angle_r'] = [-35 * np.pi / 180]        
-            lowerBoundsPosition_all['mtp_angle_l'] = [-45 * np.pi / 180]
-            lowerBoundsPosition_all['mtp_angle_r'] = [-45 * np.pi / 180]        
-        
-        upperBoundsPosition = pd.DataFrame()   
-        lowerBoundsPosition = pd.DataFrame() 
-        scalingPosition = pd.DataFrame() 
-        for count, joint in enumerate(self.joints):             
-            if (self.joints.count(joint[:-1] + 'l')) == 1:        
-                ub = max(max(self.Qs_spline[joint[:-1] + 'l']), 
-                         max(self.Qs_spline[joint[:-1] + 'r']))
-                lb = min(min(self.Qs_spline[joint[:-1] + 'l']), 
-                         min(self.Qs_spline[joint[:-1] + 'r']))                              
-            else:
-                ub = max(self.Qs_spline[joint])
-                lb = min(self.Qs_spline[joint])
-                
-            r = abs(ub - lb)
-            ub = ub + r
-            lb = lb - r
-            
-            if joint in upperBoundsPosition_all: 
-                ub = min(ub, upperBoundsPosition_all[joint][0])
-                lb = max(lb, lowerBoundsPosition_all[joint][0])
-            
-            upperBoundsPosition.insert(count, joint, [ub])
-            lowerBoundsPosition.insert(count, joint, [lb]) 
-            # Special cases
-            if joint == 'mtp_angle_l' or joint == 'mtp_angle_r':
-                upperBoundsPosition[joint] = [5 * np.pi / 180]
-                lowerBoundsPosition[joint] = [-45 * np.pi / 180]
-                
-            # Scaling
-            s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
-                                 abs(lowerBoundsPosition[joint])[0]]))
-            scalingPosition.insert(count, joint, [s])
-            lowerBoundsPosition[joint] /= scalingPosition[joint]
-            upperBoundsPosition[joint] /= scalingPosition[joint]
-                
-        return upperBoundsPosition, lowerBoundsPosition, scalingPosition
-    
-    # For the mocap data, the bounds should be extended. Ideally, we should do
-    # that too for the video data but simulations were already generated data
-    # to track were within the video-bounds.
-    def getBoundsPosition_fixed_update1(self, data_type='Video'):
-        self.splineQs()
-        
-        upperBoundsPosition_all = {}
-        lowerBoundsPosition_all = {}
-       
-        if data_type == 'Mocap': 
-            raise ValueError("Not supported")
-            # upperBoundsPosition_all['hip_flexion_l'] = [120 * np.pi / 180]
-            # upperBoundsPosition_all['hip_flexion_r'] = [120 * np.pi / 180]
-            # upperBoundsPosition_all['hip_adduction_l'] = [20 * np.pi / 180]
-            # upperBoundsPosition_all['hip_adduction_r'] = [20 * np.pi / 180]
-            # upperBoundsPosition_all['hip_rotation_l'] = [30 * np.pi / 180]
-            # upperBoundsPosition_all['hip_rotation_r'] = [30 * np.pi / 180]  
-            # upperBoundsPosition_all['knee_angle_l'] = [125 * np.pi / 180]
-            # upperBoundsPosition_all['knee_angle_r'] = [125 * np.pi / 180]
-            # upperBoundsPosition_all['knee_adduction_l'] = [20 * np.pi / 180]
-            # upperBoundsPosition_all['knee_adduction_r'] = [20 * np.pi / 180]
-            # upperBoundsPosition_all['ankle_angle_l'] = [50 * np.pi / 180]
-            # upperBoundsPosition_all['ankle_angle_r'] = [50 * np.pi / 180]
-            # upperBoundsPosition_all['subtalar_angle_l'] = [35 * np.pi / 180] 
-            # upperBoundsPosition_all['subtalar_angle_r'] = [35 * np.pi / 180] 
-            # upperBoundsPosition_all['mtp_angle_l'] = [5 * np.pi / 180]
-            # upperBoundsPosition_all['mtp_angle_r'] = [5 * np.pi / 180]        
-          
-            # lowerBoundsPosition_all['hip_flexion_l'] = [-30 * np.pi / 180]
-            # lowerBoundsPosition_all['hip_flexion_r'] = [-30 * np.pi / 180]
-            # lowerBoundsPosition_all['hip_adduction_l'] = [-40 * np.pi / 180]
-            # lowerBoundsPosition_all['hip_adduction_r'] = [-40 * np.pi / 180]
-            # lowerBoundsPosition_all['hip_rotation_l'] = [-40 * np.pi / 180]
-            # lowerBoundsPosition_all['hip_rotation_r'] = [-40 * np.pi / 180]       
-            # lowerBoundsPosition_all['knee_angle_l'] = [0 * np.pi / 180]
-            # lowerBoundsPosition_all['knee_angle_r'] = [0 * np.pi / 180]        
-            # lowerBoundsPosition_all['knee_adduction_l'] = [-30 * np.pi / 180]
-            # lowerBoundsPosition_all['knee_adduction_r'] = [-30 * np.pi / 180]        
-            # lowerBoundsPosition_all['ankle_angle_l'] = [-50 * np.pi / 180]
-            # lowerBoundsPosition_all['ankle_angle_r'] = [-50 * np.pi / 180]        
-            # lowerBoundsPosition_all['subtalar_angle_l'] = [-35 * np.pi / 180] 
-            # lowerBoundsPosition_all['subtalar_angle_r'] = [-35 * np.pi / 180]        
-            # lowerBoundsPosition_all['mtp_angle_l'] = [-45 * np.pi / 180]
-            # lowerBoundsPosition_all['mtp_angle_r'] = [-45 * np.pi / 180]   
-            
-        elif data_type == 'Video':       
-            upperBoundsPosition_all['hip_flexion_l'] = [120 * np.pi / 180]
-            upperBoundsPosition_all['hip_flexion_r'] = [120 * np.pi / 180]
-            upperBoundsPosition_all['hip_adduction_l'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['hip_adduction_r'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['hip_rotation_l'] = [30 * np.pi / 180]
-            upperBoundsPosition_all['hip_rotation_r'] = [30 * np.pi / 180]  
-            upperBoundsPosition_all['knee_angle_l'] = [125 * np.pi / 180]
-            upperBoundsPosition_all['knee_angle_r'] = [125 * np.pi / 180]
-            upperBoundsPosition_all['knee_adduction_l'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['knee_adduction_r'] = [20 * np.pi / 180]
-            upperBoundsPosition_all['ankle_angle_l'] = [50 * np.pi / 180]
-            upperBoundsPosition_all['ankle_angle_r'] = [50 * np.pi / 180]
-            upperBoundsPosition_all['subtalar_angle_l'] = [35 * np.pi / 180] 
-            upperBoundsPosition_all['subtalar_angle_r'] = [35 * np.pi / 180] 
-            upperBoundsPosition_all['mtp_angle_l'] = [5 * np.pi / 180]
-            upperBoundsPosition_all['mtp_angle_r'] = [5 * np.pi / 180]        
-          
-            lowerBoundsPosition_all['hip_flexion_l'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['hip_flexion_r'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['hip_adduction_l'] = [-40 * np.pi / 180]
-            lowerBoundsPosition_all['hip_adduction_r'] = [-40 * np.pi / 180]
-            lowerBoundsPosition_all['hip_rotation_l'] = [-40 * np.pi / 180]
-            lowerBoundsPosition_all['hip_rotation_r'] = [-40 * np.pi / 180]       
-            lowerBoundsPosition_all['knee_angle_l'] = [0 * np.pi / 180]
-            lowerBoundsPosition_all['knee_angle_r'] = [0 * np.pi / 180]        
-            lowerBoundsPosition_all['knee_adduction_l'] = [-30 * np.pi / 180]
-            lowerBoundsPosition_all['knee_adduction_r'] = [-30 * np.pi / 180]        
-            lowerBoundsPosition_all['ankle_angle_l'] = [-50 * np.pi / 180]
-            lowerBoundsPosition_all['ankle_angle_r'] = [-50 * np.pi / 180]        
-            lowerBoundsPosition_all['subtalar_angle_l'] = [-35 * np.pi / 180] 
-            lowerBoundsPosition_all['subtalar_angle_r'] = [-35 * np.pi / 180]        
-            lowerBoundsPosition_all['mtp_angle_l'] = [-45 * np.pi / 180]
-            lowerBoundsPosition_all['mtp_angle_r'] = [-45 * np.pi / 180]        
-        
-        upperBoundsPosition = pd.DataFrame()   
-        lowerBoundsPosition = pd.DataFrame() 
-        scalingPosition = pd.DataFrame() 
-        for count, joint in enumerate(self.joints):             
-            if (self.joints.count(joint[:-1] + 'l')) == 1:        
-                ub = max(max(self.Qs_spline[joint[:-1] + 'l']), 
-                         max(self.Qs_spline[joint[:-1] + 'r']))
-                lb = min(min(self.Qs_spline[joint[:-1] + 'l']), 
-                         min(self.Qs_spline[joint[:-1] + 'r']))                              
-            else:
-                ub = max(self.Qs_spline[joint])
-                lb = min(self.Qs_spline[joint])
-                
-            r = abs(ub - lb)
-            ub = ub + r
-            lb = lb - r
-            
-            if joint in upperBoundsPosition_all: 
-                ub = min(ub, upperBoundsPosition_all[joint][0])
-                lb = max(lb, lowerBoundsPosition_all[joint][0])
-            
-            upperBoundsPosition.insert(count, joint, [ub])
-            lowerBoundsPosition.insert(count, joint, [lb]) 
-            # Special cases
-            if joint == 'mtp_angle_l' or joint == 'mtp_angle_r':
-                upperBoundsPosition[joint] = [5 * np.pi / 180]
-                lowerBoundsPosition[joint] = [-45 * np.pi / 180]
-                
-            # Scaling            
-            s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
-                                 abs(lowerBoundsPosition[joint])[0]]))
-            scalingPosition.insert(count, joint, [s])
-            lowerBoundsPosition[joint] /= scalingPosition[joint]
-            upperBoundsPosition[joint] /= scalingPosition[joint]
-                
-        return upperBoundsPosition, lowerBoundsPosition, scalingPosition
-    
-    def getBoundsPosition_fixed_update2(self):
         self.splineQs()
         
         upperBoundsPosition_all = {}
@@ -485,7 +236,7 @@ class bounds_tracking:
         return (upperBoundsAcceleration, lowerBoundsAcceleration, 
                 scalingAcceleration)
     
-    def getBoundsActivation(self, lb_activation=0.05):
+    def getBoundsActivation(self, lb_activation=0.01):
         lb = [lb_activation] 
         lb_vec = lb * len(self.muscles)
         ub = [1]
@@ -541,9 +292,8 @@ class bounds_tracking:
         
         return upperBoundsForce, lowerBoundsForce, scalingForce
     
-    def getBoundsActivationDerivative(self):
-        activationTimeConstant = 0.015
-        deactivationTimeConstant = 0.06
+    def getBoundsActivationDerivative(self, activationTimeConstant=0.015,
+                                      deactivationTimeConstant=0.06):
         lb = [-1 / deactivationTimeConstant] 
         lb_vec = lb * len(self.muscles)
         ub = [1 / activationTimeConstant]
@@ -709,14 +459,6 @@ class bounds_tracking:
     
     def getBoundsReserveActuators(self, joint, value):
         
-        # max_value = {}
-        # max_value['hip_flexion_l'] = 20
-        # max_value['hip_flexion_r'] = 20
-        # max_value['hip_adduction_l'] = 20
-        # max_value['hip_adduction_r'] = 20
-        # max_value['hip_rotation_l'] = 20
-        # max_value['hip_rotation_r'] = 20
-        
         lb = [-1] 
         lb_vec = lb
         ub = [1]
@@ -737,93 +479,3 @@ class bounds_tracking:
         lowerBoundsOffset = pd.DataFrame([-0.5 / scaling], columns=['offset_y'])
         
         return upperBoundsOffset, lowerBoundsOffset
-    
-    def getBoundsContactParameters(self, NContactSpheres, 
-                                   parameter_to_optimize):
-        
-        
-        # lbRadius = 0.022        
-        # ubRadius = 0.042
-        
-        lbRadius = 0.01        
-        ubRadius = 0.04
-        
-        if NContactSpheres == 6:
-            
-            lbLocation_s1 = np.array([-0.01, -0.015]) - 0.005
-            lbLocation_s2 = np.array([0.14,  -0.035]) - 0.005
-            lbLocation_s3 = np.array([0.12,   0]) - 0.005
-            lbLocation_s4 = np.array([0.04,  -0.03]) - 0.005
-            lbLocation_s5 = np.array([0.0,   -0.03]) - 0.005
-            lbLocation_s6 = np.array([0.0,   -0.02]) - 0.005
-            # lbLocation_s5 = np.array([0.0,   -0.03])
-            # lbLocation_s6 = np.array([0.05,   -0.02])
-            
-            ubLocation_s1 = np.array([0.05,  0.01]) + 0.005
-            ubLocation_s2 = np.array([0.185, 0.01]) + 0.005
-            ubLocation_s3 = np.array([0.165, 0.05]) + 0.005
-            ubLocation_s4 = np.array([0.12,  0.03]) + 0.005
-            ubLocation_s5 = np.array([0.07,  0.03]) + 0.005
-            ubLocation_s6 = np.array([0.052, 0.05]) + 0.005
-            # ubLocation_s5 = np.array([0.04,  0.03])
-            # ubLocation_s6 = np.array([0.07, 0.02])
-            
-            # lbLocation_s1 = np.array([0.00215773306688716053,   -0.00434269152195360195]) - 0.03
-            # lbLocation_s2 = np.array([0.16841223157345971972,   -0.03258850869005603529]) - 0.03
-            # lbLocation_s3 = np.array([0.15095065283989317351,    0.05860493716970469752]) - 0.03
-            # lbLocation_s4 = np.array([0.07517351958454182581,    0.02992219727974926649]) - 0.03
-            # lbLocation_s5 = np.array([0.06809743951165971032,   -0.02129214951175864221]) - 0.03
-            # lbLocation_s6 = np.array([0.05107307963374478621,    0.07020500618327656095]) - 0.03
-            
-            # ubLocation_s1 = np.array([0.00215773306688716053,   -0.00434269152195360195]) + 0.03
-            # ubLocation_s2 = np.array([0.16841223157345971972,   -0.03258850869005603529]) + 0.03
-            # ubLocation_s3 = np.array([0.15095065283989317351,    0.05860493716970469752]) + 0.03
-            # ubLocation_s4 = np.array([0.07517351958454182581,    0.02992219727974926649]) + 0.03
-            # ubLocation_s5 = np.array([0.06809743951165971032,   -0.02129214951175864221]) + 0.03
-            # ubLocation_s6 = np.array([0.05107307963374478621,    0.07020500618327656095]) + 0.03
-        
-            if parameter_to_optimize == 'option1':  
-        
-                lbContactParameters_unsc = np.concatenate((lbLocation_s1, lbLocation_s2, lbLocation_s3, lbLocation_s4, lbLocation_s5, lbLocation_s6, [lbRadius], [lbRadius], [lbRadius], [lbRadius], [lbRadius], [lbRadius]))
-                ubContactParameters_unsc = np.concatenate((ubLocation_s1, ubLocation_s2, ubLocation_s3, ubLocation_s4, ubLocation_s5, ubLocation_s6, [ubRadius], [ubRadius], [ubRadius], [ubRadius], [ubRadius], [ubRadius]))
-        
-        scalingContactParameters_v = 1 / (ubContactParameters_unsc - lbContactParameters_unsc)
-        scalingContactParameters_r = 0.5 - ubContactParameters_unsc / (ubContactParameters_unsc - lbContactParameters_unsc)
-        
-        lowerBoundsContactParameters = -0.5 * np.ones((1, len(lbContactParameters_unsc)))
-        upperBoundsContactParameters = 0.5 * np.ones((1, len(ubContactParameters_unsc)))
-        
-        return upperBoundsContactParameters, lowerBoundsContactParameters, scalingContactParameters_v, scalingContactParameters_r
-    
-    def getBoundsGR(self, GR, headers):
-        upperBoundsGR = pd.DataFrame()   
-        lowerBoundsGR = pd.DataFrame() 
-        scalingGR = pd.DataFrame() 
-        for count, header in enumerate(headers):             
-            if (header[0] == 'R' or header[0] == 'L'):        
-                ub = max(max(GR['R' + header[1:]]), 
-                         max(GR['L' + header[1:]]))
-                lb = min(min(GR['R' + header[1:]]), 
-                         min(GR['L' + header[1:]]))                              
-            else:
-                raise ValueError("Problem bounds GR")
-            r = abs(ub - lb)
-            ub = ub + r
-            lb = lb - r                        
-            upperBoundsGR.insert(count, header, [ub])
-            lowerBoundsGR.insert(count, header, [lb]) 
-                
-            # Scaling                       
-            s = pd.concat([abs(upperBoundsGR[header]), 
-                           abs(lowerBoundsGR[header])]).max(level=0)
-            scalingGR.insert(count, header, s)
-            lowerBoundsGR[header] /= scalingGR[header]
-            upperBoundsGR[header] /= scalingGR[header]
-                
-        return upperBoundsGR, lowerBoundsGR, scalingGR
-    
-    # def getBoundsFinalTime(self):
-    #     upperBoundsFinalTime = pd.DataFrame([1], columns=['time'])   
-    #     lowerBoundsFinalTime = pd.DataFrame([0.1], columns=['time'])  
-        
-    #     return upperBoundsFinalTime, lowerBoundsFinalTime
