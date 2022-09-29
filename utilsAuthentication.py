@@ -42,8 +42,8 @@ def get_token(saveEnvPath=None):
                 print('Login with credentials used at app.opencap.ai.\nVisit the website to make an account if you do not have one.\n')
                 
                 if isSpyder:
-                    un = maskpass.advpass(prompt="Enter Username:\n")
-                    pw = maskpass.advpass(prompt="Enter Password:\n")
+                    un = maskpass.advpass(prompt="Enter Username:\n",ide=True)
+                    pw = maskpass.advpass(prompt="Enter Password:\n",ide=True)
                 elif isPycharm:
                     print('Warning, you are in Pycharm, so the password will show up in the console.\n To avoid this, run createAuthenticationEnvFile.py from the terminal,\nthen re-open PyCharm.')
                     un = input("Enter Username:")
