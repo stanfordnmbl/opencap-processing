@@ -1,6 +1,6 @@
 '''
     ---------------------------------------------------------------------------
-    OpenCap processing: functionOpenSimAD.py
+    OpenCap processing: functionCasADiOpenSimAD.py
     ---------------------------------------------------------------------------
     Copyright 2022 Stanford University and the Authors
     
