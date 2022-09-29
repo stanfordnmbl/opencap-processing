@@ -298,13 +298,6 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     if 'coordinate_constraints' in settings:
         coordinate_constraints = settings['coordinate_constraints']
         
-    # Type of initial guesses. Options are dataDriven and quasiRandom (TODO 
-    # not used in a long time, not sure still working). We recommed using
-    # dataDriven, which is default.
-    type_guess = "dataDriven"
-    if 'type_guess' in settings:
-        type_guess = settings['type_guess']
-        
     # Convergence tolerance of ipopt: 
     # See https://coin-or.github.io/Ipopt/OPTIONS.html for more details.
     # We recommend testing different tolerances to make sure the results are 
@@ -531,22 +524,22 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             f_lumbarDynamics = coordinateActuatorDynamics(nLumbarJoints)
     
     # %% Passive/limit torques.
-    from functionCasADiOpenSimAD import limitTorque, passiveTorque
+    from functionCasADiOpenSimAD import limitPassiveTorque, linarPassiveTorque
     from muscleDataOpenSimAD import passiveJointTorqueData
     damping = 0.1
     f_passiveTorque = {}
     for joint in passiveTorqueJoints:
-        f_passiveTorque[joint] = limitTorque(
+        f_passiveTorque[joint] = limitPassiveTorque(
             passiveJointTorqueData(joint)[0],
             passiveJointTorqueData(joint)[1], damping)    
     if withMTP:
         stiffnessMtp = 25
         dampingMtp = 2
-        f_linearPassiveMtpTorque = passiveTorque(stiffnessMtp, dampingMtp)        
+        f_linearPassiveMtpTorque = linarPassiveTorque(stiffnessMtp, dampingMtp)        
     if withArms:
         stiffnessArm = 0
         dampingArm = 0.1
-        f_linearPassiveArmTorque = passiveTorque(stiffnessArm, dampingArm)
+        f_linearPassiveArmTorque = linarPassiveTorque(stiffnessArm, dampingArm)
         
     # %% Polynomial approximations.
     # Muscle-tendon lengths, velocities, and moment arms are estimated based
@@ -903,10 +896,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             lw['Offsetk'][trial] = lw['Offset'][trial].to_numpy()
     
     # %% Initial guess of the optimal control problem.
-    if type_guess == "dataDriven":         
-        from guessesOpenSimAD import dataDrivenGuess_tracking
-    elif type_guess == "quasiRandom": 
-        from guessesOpenSimAD import quasiRandomGuess
+    from initialGuessOpenSimAD import dataDrivenGuess_tracking
     # Pre-allocations.
     w0, w0['A'], w0['Aj'], w0['F'], w0['Fj'] = {}, {}, {}, {}, {}
     w0['Qs'], w0['Qsj'], w0['Qds'], w0['Qdsj'] = {}, {}, {}, {}
@@ -920,13 +910,9 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     if withReserveActuators:
         w0['rAct'] = {}        
     # Loop over trials .
-    for trial in trials:
-        if type_guess == "dataDriven":         
-            guess = dataDrivenGuess_tracking(
-                Qs_toTrack[trial], N[trial], d, joints, bothSidesMuscles)    
-        elif type_guess == "quasiRandom": 
-            guess = quasiRandomGuess(N[trial], d, joints, bothSidesMuscles,
-                                     timeElapsed, Qs_toTrack[trial])
+    for trial in trials:    
+        guess = dataDrivenGuess_tracking(
+            Qs_toTrack[trial], N[trial], d, joints, bothSidesMuscles)
         # States.
         # Muscle activations.
         w0['A'][trial] = guess.getGuessActivation(scaling['A'][trial])

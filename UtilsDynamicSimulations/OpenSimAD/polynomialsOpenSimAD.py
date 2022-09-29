@@ -14,6 +14,10 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+    
+    This script contains classes and functions to support the approximation of
+    muscle-tendon lengths, velocities, and moment arms using polynomial
+    approximations of joint positions and velocities.
 '''
 
 import numpy as np
@@ -332,14 +336,11 @@ def getPolynomialCoefficients(data4PolynomialFitting, joints,
         
     if removeBadHipFlexionEntries:
         
-        # In some cases, the moment arms are bad. This is because
-        # of issues with scaling the wrapping surfaces. We want to identify
-        # those entries and remove them for the polynomial fitting.
-        
-        # Correction for the 3 'glut_max_r' and 'iliacus_r'
-        # 'glut_max_r' should always be - (hip extensor)
-        # 'iliacus_r' should always be + (hip flexor)
-        # Identify entires.
+        # In some cases, the moment arms are bad. This is because of issues
+        # with scaling wrapping surfaces. We want to identify those entries 
+        # and remove them for the polynomial fitting.
+
+        # Hip flexion     
         idx_hip_flexion = joints.index('hip_flexion_' + side)
         idx_glmax1 = muscles.index('glmax1_' + side)
         idx_glmax2 = muscles.index('glmax2_' + side)
@@ -362,11 +363,6 @@ def getPolynomialCoefficients(data4PolynomialFitting, joints,
         momentArms_hip_add_glmax1 = momentArms[:,idx_glmax1, idx_hip_add]  
         idx_bad_hip_add_glmax1a = np.where(momentArms_hip_add_glmax1 >= -0.005)[0]
         idx_bad_hip_add_glmax1b = np.where(momentArms_hip_add_glmax1 <= -0.07)[0]
-        
-        # momentArms_hip_add_glmax2 = momentArms[:,idx_glmax2, idx_hip_add]  
-        # idx_bad_hip_add_glmax2 = np.where(momentArms_hip_add_glmax2 >= 0.02)[0]
-        # momentArms_hip_add_glmax3 = momentArms[:,idx_glmax3, idx_hip_add]  
-        # idx_bad_hip_add_glmax3 = np.where(momentArms_hip_add_glmax3 < 0)[0]
         momentArms_hip_add_iliacus = momentArms[:,idx_iliacus, idx_hip_add]    
         idx_bad_hip_add_iliacus = np.where(momentArms_hip_add_iliacus <= -0.02)[0]  
         idx_bad_hip_add = np.concatenate((idx_bad_hip_add_glmax1a,
@@ -386,7 +382,7 @@ def getPolynomialCoefficients(data4PolynomialFitting, joints,
                                       idx_bad_hip_add,
                                       idx_bad_hip_rot))
         
-        # Ankle angle
+        # Ankle flexion.
         # The edl becomes a plantaflexor in some cases, should not happen.
         idx_ankle_angle = joints.index('ankle_angle_' + side)
         idx_eld = muscles.index('edl_' + side)
@@ -430,15 +426,15 @@ hip and ankle moment arms - mostly because of bad scaling of wrapping surfaces".
             A = np.concatenate((mat,diff_mat_sq),axis=0)            
             B = np.concatenate((muscle_muscleTendonLengths,(muscle_momentArms.T).flatten()))
             
-            # Solve least-square problem    
+            # Solve least-square problem.
             coefficients = np.linalg.lstsq(A,B,rcond=None)[0]
             
-            # Compute difference with model data
-            # Muscle-tendon lengths
+            # Compute difference with model data.
+            # Muscle-tendon lengths.
             muscle_muscleTendonLengths_poly = np.matmul(mat,coefficients)
             muscleTendonLengths_diff_rms = np.sqrt(np.mean(
                     muscle_muscleTendonLengths - muscle_muscleTendonLengths_poly)**2)
-            # Moment-arms
+            # Moment-arms.
             muscle_momentArms_poly = np.zeros((jointCoordinates.shape[0], muscle_dimension))    
             for j in range(muscle_dimension):        
                 muscle_momentArms_poly[:,j] = np.matmul(
@@ -447,7 +443,7 @@ hip and ankle moment arms - mostly because of bad scaling of wrapping surfaces".
             momentArms_diff_rms = np.sqrt(np.mean((
                     muscle_momentArms - muscle_momentArms_poly)**2, axis=0))
             
-            # Check if criterion is satisfied
+            # Check if criterion is satisfied.
             if (muscleTendonLengths_diff_rms <= threshold and np.max(momentArms_diff_rms) <= threshold):
                 is_fullfilled = True
             elif order == order_max:
@@ -574,5 +570,4 @@ def testPolynomials(data4PolynomialFitting, joints, muscles,
                     ax.scatter(jointCoordinates[:,x1],jointCoordinates[:,x2],momentArms[:,trunkMomentArmPolynomialIndices[j],i],c='r')
                 ax.set_title(muscle_obj)
                 ax.set_xlabel(joints[x1])
-                ax.set_ylabel(joints[x2])                  
-            
+                ax.set_ylabel(joints[x2])

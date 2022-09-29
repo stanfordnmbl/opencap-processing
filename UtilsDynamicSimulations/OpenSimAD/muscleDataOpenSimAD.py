@@ -119,7 +119,7 @@ def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table,
     nCoordinates = coordinateSet.getSize()
     coordinates = [coordinateSet.get(i).getName() for i in range(nCoordinates)]
     
-    # TODO: hard coded
+    # TODO: hard coded to make run faster.
     rootCoordinates = [
         'pelvis_tilt', 'pelvis_list', 'pelvis_rotation',
         'pelvis_tx', 'pelvis_ty', 'pelvis_tz']
@@ -170,9 +170,12 @@ def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table,
                         
     return [lMT, dM]
 
-# %% Import data from polynomial approximations.
+# %% Fit polynomial coefficients.
 # We fit the polynomial coefficients if no polynomial data exist yet, and we
 # save them such that we do not need to do the fitting again.
+# Note: this code leverages parallel computing. We recommend running the code
+# in the terminal as parallel computing might not be leveraged in IDEs like
+# Spyder.
 def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='', 
                       pathMotionFile4Polynomials='', joints=[],
                       muscles=[], type_bounds_polynomials='default', side='',
@@ -187,25 +190,25 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
     else:
         path_data4PolynomialFitting = os.path.join(
             pathModelFolder, 'data4PolynomialFitting_{}.npy'.format(modelName))
-        # Generate polynomial data
+        # Generate polynomial data.
         if (not os.path.exists(path_data4PolynomialFitting) or 
             overwritedata4PolynomialFitting):
             import opensim
             from joblib import Parallel, delayed
             import multiprocessing
-            # Get training data from motion file
+            # Get training data from motion file.
             table = opensim.TimeSeriesTable(pathMotionFile4Polynomials)
             coordinates_table = list(table.getColumnLabels()) # w/ jointset/...
             data = table.getMatrix().to_numpy() # data in degrees w/o time
             pathModel = os.path.join(pathModelFolder, modelName + '.osim')
-            # Set number of threads
+            # Set number of threads.
             if nThreads == None:
                 nThreads = multiprocessing.cpu_count()-2 # default
             if nThreads < 1:
                 nThreads = 1
             elif nThreads > multiprocessing.cpu_count():
                 nThreads = multiprocessing.cpu_count()                
-            # Generate muscle tendon lengths and moment arms (in parallel)
+            # Generate muscle tendon lengths and moment arms (in parallel).
             slice_size = int(np.floor(data.shape[0]/nThreads))
             rest = data.shape[0] % nThreads
             outputs = Parallel(n_jobs=nThreads)(
@@ -219,7 +222,7 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
             for file in os.listdir(pathModelFolder):
                 if 'motion4MA_' in file:
                     os.remove(os.path.join(pathModelFolder, file))                
-            # Gather data
+            # Gather data.
             lMT = np.zeros((data.shape[0], outputs[0][1].shape[1]))
             dM =  np.zeros((data.shape[0], outputs[0][1].shape[1], 
                             outputs[0][1].shape[2]))
@@ -229,8 +232,8 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
             if rest != 0:
                 lMT[-rest:, :] = output_last[0]
                 dM[-rest:, :, :] = output_last[1]
-            # Put data in dict
-            # muscles as ordered in model
+            # Put data in dict.
+            # Muscles as ordered in model.
             opensim.Logger.setLevelString('error')
             model = opensim.Model(pathModel)  
             allMuscles = []
@@ -247,12 +250,12 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
             data4PolynomialFitting['coordinate_names'] = [
                 label.split('/')[-2] for label in coordinates_table]
             data4PolynomialFitting['coordinate_values'] = data
-            # Save data
+            # Save data.
             np.save(path_data4PolynomialFitting, data4PolynomialFitting)
         else:
             data4PolynomialFitting = np.load(path_data4PolynomialFitting, 
                                              allow_pickle=True).item()
-        # Fit polynomial coefficients
+        # Fit polynomial coefficients.
         from polynomialsOpenSimAD import getPolynomialCoefficients
         polynomialData = getPolynomialCoefficients(
             data4PolynomialFitting, joints, muscles, side=side)
@@ -261,7 +264,7 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
            
     return polynomialData
 
-# %% Tendon stiffness
+# %% Tendon stiffness.
 # Default value is 35.
 def tendonCompliance(NSideMuscles):
     tendonCompliance = np.full((1, NSideMuscles), 35)

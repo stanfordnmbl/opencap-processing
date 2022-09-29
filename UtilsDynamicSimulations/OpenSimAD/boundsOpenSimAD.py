@@ -17,7 +17,6 @@
 '''
 
 import scipy.interpolate as interpolate
-from scipy import signal
 import pandas as pd
 import numpy as np
 
@@ -34,34 +33,18 @@ class bounds_tracking:
         self.Qs_spline = self.Qs.copy()
         self.Qdots_spline = self.Qs.copy()
         self.Qdotdots_spline = self.Qs.copy()
-
         for joint in self.joints:
-            spline = interpolate.InterpolatedUnivariateSpline(self.Qs['time'], 
-                                                              self.Qs[joint],
-                                                              k=3)
+            spline = interpolate.InterpolatedUnivariateSpline(
+                self.Qs['time'], self.Qs[joint], k=3)
             self.Qs_spline[joint] = spline(self.Qs['time'])
             splineD1 = spline.derivative(n=1)
             self.Qdots_spline[joint] = splineD1(self.Qs['time'])
             splineD2 = spline.derivative(n=2)
             self.Qdotdots_spline[joint] = splineD2(self.Qs['time'])
-            
-        fs=1/np.mean(np.diff(self.Qdotdots_spline['time']))    
-        fc = 10  # Cut-off frequency of the filter
-        order = 4
-        w = fc / (fs / 2) # Normalize the frequency
-        b, a = signal.butter(order/2, w, 'low')  
-        output = signal.filtfilt(
-            b, a, 
-            self.Qdotdots_spline.loc[:, self.Qdotdots_spline.columns!='time'],
-            axis=0, padtype='odd', padlen=3*(max(len(b),len(a))-1))    
-        output = pd.DataFrame(data=output, columns=self.joints)
-        self.Qdotdots_spline_filter = pd.concat(
-            [pd.DataFrame(data=self.Qdotdots_spline['time'], columns=['time']), 
-             output], axis=1)
     
     def getBoundsPosition(self):
-        self.splineQs()
         
+        self.splineQs()        
         upperBoundsPosition_all = {}
         lowerBoundsPosition_all = {}      
         upperBoundsPosition_all['hip_flexion_l'] = [120 * np.pi / 180]
@@ -109,24 +92,20 @@ class bounds_tracking:
                          min(self.Qs_spline[joint[:-1] + 'r']))                              
             else:
                 ub = max(self.Qs_spline[joint])
-                lb = min(self.Qs_spline[joint])
-                
+                lb = min(self.Qs_spline[joint])                
             r = abs(ub - lb)
             ub = ub + r
-            lb = lb - r
-            
+            lb = lb - r            
             if joint in upperBoundsPosition_all: 
                 ub = min(ub, upperBoundsPosition_all[joint][0])
-                lb = max(lb, lowerBoundsPosition_all[joint][0])
-            
+                lb = max(lb, lowerBoundsPosition_all[joint][0])            
             upperBoundsPosition.insert(count, joint, [ub])
             lowerBoundsPosition.insert(count, joint, [lb]) 
-            # Special cases
+            # Special cases.
             if joint == 'mtp_angle_l' or joint == 'mtp_angle_r':
                 upperBoundsPosition[joint] = [5 * np.pi / 180]
-                lowerBoundsPosition[joint] = [-45 * np.pi / 180]
-                
-            # Scaling                       
+                lowerBoundsPosition[joint] = [-45 * np.pi / 180]                
+            # Scaling.               
             s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
                                  abs(lowerBoundsPosition[joint])[0]]))
             scalingPosition.insert(count, joint, [s])
@@ -136,7 +115,8 @@ class bounds_tracking:
         return upperBoundsPosition, lowerBoundsPosition, scalingPosition
     
     def getBoundsVelocity(self):
-        self.splineQs()
+        
+        self.splineQs()        
         upperBoundsVelocity = pd.DataFrame()   
         lowerBoundsVelocity = pd.DataFrame() 
         scalingVelocity = pd.DataFrame() 
@@ -154,12 +134,11 @@ class bounds_tracking:
             lb = lb - r                        
             upperBoundsVelocity.insert(count, joint, [ub])
             lowerBoundsVelocity.insert(count, joint, [lb])
-            # Special cases
+            # Special cases.
             if joint == 'mtp_angle_l' or joint == 'mtp_angle_r':
                 upperBoundsVelocity[joint] = [50]
                 lowerBoundsVelocity[joint] = [-50]
-
-            # Scaling                       
+            # Scaling.             
             s = np.max(np.array([abs(upperBoundsVelocity[joint])[0],
                                  abs(lowerBoundsVelocity[joint])[0]]))
             scalingVelocity.insert(count, joint, [s])
@@ -169,7 +148,8 @@ class bounds_tracking:
         return upperBoundsVelocity, lowerBoundsVelocity, scalingVelocity
     
     def getBoundsAcceleration(self):
-        self.splineQs()
+        
+        self.splineQs()        
         upperBoundsAcceleration = pd.DataFrame()   
         lowerBoundsAcceleration = pd.DataFrame() 
         scalingAcceleration = pd.DataFrame() 
@@ -187,46 +167,11 @@ class bounds_tracking:
             lb = lb - r                        
             upperBoundsAcceleration.insert(count, joint, [ub])
             lowerBoundsAcceleration.insert(count, joint, [lb])   
-            # Special cases
+            # Special cases.
             if joint == 'mtp_angle_l' or joint == 'mtp_angle_r':
                 upperBoundsAcceleration[joint] = [1000]
-                lowerBoundsAcceleration[joint] = [-1000]
-        
-            # Scaling                       
-            s = np.max(np.array([abs(upperBoundsAcceleration[joint])[0],
-                                 abs(lowerBoundsAcceleration[joint])[0]]))
-            scalingAcceleration.insert(count, joint, [s])
-            upperBoundsAcceleration[joint] /= scalingAcceleration[joint]
-            lowerBoundsAcceleration[joint] /= scalingAcceleration[joint]
-
-        return (upperBoundsAcceleration, lowerBoundsAcceleration, 
-                scalingAcceleration)
-    
-    def getBoundsAccelerationFiltered(self):
-        self.splineQs()
-        upperBoundsAcceleration = pd.DataFrame()   
-        lowerBoundsAcceleration = pd.DataFrame() 
-        scalingAcceleration = pd.DataFrame() 
-        for count, joint in enumerate(self.joints):
-            if (self.joints.count(joint[:-1] + 'l')) == 1:        
-                ub = max(max(self.Qdotdots_spline_filter[joint[:-1] + 'l']), 
-                          max(self.Qdotdots_spline_filter[joint[:-1] + 'r']))
-                lb = min(min(self.Qdotdots_spline_filter[joint[:-1] + 'l']), 
-                          min(self.Qdotdots_spline_filter[joint[:-1] + 'r']))                              
-            else:
-                ub = max(self.Qdotdots_spline_filter[joint])
-                lb = min(self.Qdotdots_spline_filter[joint])
-            r = abs(ub - lb)
-            ub = ub + r
-            lb = lb - r                        
-            upperBoundsAcceleration.insert(count, joint, [ub])
-            lowerBoundsAcceleration.insert(count, joint, [lb])
-            # Special cases
-            if joint == 'mtp_l' or joint == 'mtp_r':
-                upperBoundsAcceleration[joint] = [500]
-                lowerBoundsAcceleration[joint] = [-500]
-        
-            # Scaling                       
+                lowerBoundsAcceleration[joint] = [-1000]        
+            # Scaling.   
             s = np.max(np.array([abs(upperBoundsAcceleration[joint])[0],
                                  abs(lowerBoundsAcceleration[joint])[0]]))
             scalingAcceleration.insert(count, joint, [s])
@@ -237,6 +182,7 @@ class bounds_tracking:
                 scalingAcceleration)
     
     def getBoundsActivation(self, lb_activation=0.01):
+        
         lb = [lb_activation] 
         lb_vec = lb * len(self.muscles)
         ub = [1]
@@ -253,8 +199,7 @@ class bounds_tracking:
                                           muscle[:-1] + 'l', ub)
             lowerBoundsActivation.insert(count + len(self.muscles), 
                                           muscle[:-1] + 'l', lb)  
-
-            # Scaling                       
+            # Scaling.
             scalingActivation.insert(count + len(self.muscles), 
                                       muscle[:-1] + 'l', s)  
             upperBoundsActivation[
@@ -265,6 +210,7 @@ class bounds_tracking:
         return upperBoundsActivation, lowerBoundsActivation, scalingActivation
     
     def getBoundsForce(self):
+        
         lb = [0] 
         lb_vec = lb * len(self.muscles)
         ub = [5]
@@ -280,9 +226,8 @@ class bounds_tracking:
             upperBoundsForce.insert(count + len(self.muscles), 
                                     muscle[:-1] + 'l', ub)
             lowerBoundsForce.insert(count + len(self.muscles), 
-                                    muscle[:-1] + 'l', lb)  
-
-            # Scaling                       
+                                    muscle[:-1] + 'l', lb)
+            # Scaling.                   
             scalingForce.insert(count + len(self.muscles), 
                                           muscle[:-1] + 'l', s)   
             upperBoundsForce[
@@ -294,6 +239,7 @@ class bounds_tracking:
     
     def getBoundsActivationDerivative(self, activationTimeConstant=0.015,
                                       deactivationTimeConstant=0.06):
+        
         lb = [-1 / deactivationTimeConstant] 
         lb_vec = lb * len(self.muscles)
         ub = [1 / activationTimeConstant]
@@ -314,9 +260,8 @@ class bounds_tracking:
             upperBoundsActivationDerivative.insert(count + len(self.muscles), 
                                                     muscle[:-1] + 'l', ub)
             lowerBoundsActivationDerivative.insert(count + len(self.muscles), 
-                                                    muscle[:-1] + 'l', lb) 
-
-            # Scaling                       
+                                                    muscle[:-1] + 'l', lb)
+            # Scaling.
             scalingActivationDerivative.insert(count + len(self.muscles), 
                                                 muscle[:-1] + 'l', s)  
             upperBoundsActivationDerivative[muscle[:-1] + 'l'] /= (
@@ -328,6 +273,7 @@ class bounds_tracking:
                 lowerBoundsActivationDerivative, scalingActivationDerivative)
     
     def getBoundsForceDerivative(self):
+        
         lb = [-100] 
         lb_vec = lb * len(self.muscles)
         ub = [100]
@@ -339,7 +285,7 @@ class bounds_tracking:
         lowerBoundsForceDerivative = pd.DataFrame([lb_vec], 
                                                   columns=self.muscles) 
         scalingForceDerivative = pd.DataFrame([s_vec], 
-                                                    columns=self.muscles)
+                                              columns=self.muscles)
         upperBoundsForceDerivative = upperBoundsForceDerivative.div(
                 scalingForceDerivative)
         lowerBoundsForceDerivative = lowerBoundsForceDerivative.div(
@@ -348,9 +294,8 @@ class bounds_tracking:
             upperBoundsForceDerivative.insert(count + len(self.muscles), 
                                               muscle[:-1] + 'l', ub)
             lowerBoundsForceDerivative.insert(count + len(self.muscles), 
-                                              muscle[:-1] + 'l', lb)   
-            
-            # Scaling                       
+                                              muscle[:-1] + 'l', lb)            
+            # Scaling.
             scalingForceDerivative.insert(count + len(self.muscles), 
                                                 muscle[:-1] + 'l', s)  
             upperBoundsForceDerivative[muscle[:-1] + 'l'] /= (
@@ -362,6 +307,7 @@ class bounds_tracking:
                 scalingForceDerivative)
     
     def getBoundsArmExcitation(self, armJoints):
+        
         lb = [-1] 
         lb_vec = lb * len(armJoints)
         ub = [1]
@@ -378,6 +324,7 @@ class bounds_tracking:
                 scalingArmExcitation)
     
     def getBoundsArmActivation(self, armJoints):
+        
         lb = [-1] 
         lb_vec = lb * len(armJoints)
         ub = [1]
@@ -392,40 +339,9 @@ class bounds_tracking:
         
         return (upperBoundsArmActivation, lowerBoundsArmActivation, 
                 scalingArmActivation)
-        
-    def getBoundsMtpExcitation(self, mtpJoints):
-        lb = [-1] 
-        lb_vec = lb * len(mtpJoints)
-        ub = [1]
-        ub_vec = ub * len(mtpJoints)
-        s = [100]
-        s_vec = s * len(mtpJoints)
-        upperBoundsMtpExcitation = pd.DataFrame([ub_vec], 
-                                                columns=mtpJoints)   
-        lowerBoundsMtpExcitation = pd.DataFrame([lb_vec], 
-                                                columns=mtpJoints)            
-        scalingMtpExcitation = pd.DataFrame([s_vec], columns=mtpJoints)
-        
-        return (upperBoundsMtpExcitation, lowerBoundsMtpExcitation,
-                scalingMtpExcitation)
-    
-    def getBoundsMtpActivation(self, mtpJoints):
-        lb = [-1] 
-        lb_vec = lb * len(mtpJoints)
-        ub = [1]
-        ub_vec = ub * len(mtpJoints)
-        s = [100]
-        s_vec = s * len(mtpJoints)
-        upperBoundsMtpActivation = pd.DataFrame([ub_vec], 
-                                                columns=mtpJoints)   
-        lowerBoundsMtpActivation = pd.DataFrame([lb_vec], 
-                                                columns=mtpJoints) 
-        scalingMtpActivation = pd.DataFrame([s_vec], columns=mtpJoints)                  
-        
-        return (upperBoundsMtpActivation, lowerBoundsMtpActivation, 
-                scalingMtpActivation)
     
     def getBoundsLumbarExcitation(self, lumbarJoints):
+        
         lb = [-1] 
         lb_vec = lb * len(lumbarJoints)
         ub = [1]
@@ -433,15 +349,16 @@ class bounds_tracking:
         s = [300]
         s_vec = s * len(lumbarJoints)
         upperBoundsLumbarExcitation = pd.DataFrame([ub_vec], 
-                                                columns=lumbarJoints)   
+                                                   columns=lumbarJoints)   
         lowerBoundsLumbarExcitation = pd.DataFrame([lb_vec], 
-                                                columns=lumbarJoints)            
+                                                   columns=lumbarJoints)            
         scalingLumbarExcitation = pd.DataFrame([s_vec], columns=lumbarJoints)
         
         return (upperBoundsLumbarExcitation, lowerBoundsLumbarExcitation,
                 scalingLumbarExcitation)
     
     def getBoundsLumbarActivation(self, lumbarJoints):
+        
         lb = [-1] 
         lb_vec = lb * len(lumbarJoints)
         ub = [1]
@@ -449,9 +366,9 @@ class bounds_tracking:
         s = [300]
         s_vec = s * len(lumbarJoints)
         upperBoundsLumbarActivation = pd.DataFrame([ub_vec], 
-                                                columns=lumbarJoints)   
+                                                   columns=lumbarJoints)   
         lowerBoundsLumbarActivation = pd.DataFrame([lb_vec], 
-                                                columns=lumbarJoints) 
+                                                   columns=lumbarJoints) 
         scalingLumbarActivation = pd.DataFrame([s_vec], columns=lumbarJoints)                  
         
         return (upperBoundsLumbarActivation, lowerBoundsLumbarActivation, 
@@ -466,16 +383,19 @@ class bounds_tracking:
         s = [value]
         s_vec = s
         upperBoundsReserveActuator = pd.DataFrame([ub_vec], 
-                                                columns=[joint])   
+                                                  columns=[joint])   
         lowerBoundsReserveActuator = pd.DataFrame([lb_vec], 
-                                                columns=[joint])            
+                                                  columns=[joint])            
         scalingReserveActuator = pd.DataFrame([s_vec], columns=[joint])
         
         return (upperBoundsReserveActuator, lowerBoundsReserveActuator,
                 scalingReserveActuator)
     
     def getBoundsOffset(self, scaling):
-        upperBoundsOffset = pd.DataFrame([0.5 / scaling], columns=['offset_y']) 
-        lowerBoundsOffset = pd.DataFrame([-0.5 / scaling], columns=['offset_y'])
+        
+        upperBoundsOffset = pd.DataFrame([0.5 / scaling], 
+                                         columns=['offset_y']) 
+        lowerBoundsOffset = pd.DataFrame([-0.5 / scaling], 
+                                         columns=['offset_y'])
         
         return upperBoundsOffset, lowerBoundsOffset

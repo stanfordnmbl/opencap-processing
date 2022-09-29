@@ -14,6 +14,8 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+    
+    This script contains helper utilities.
 '''
 
 import os
@@ -27,23 +29,26 @@ import importlib
 from scipy import signal
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-from utils import storage_to_numpy, storage_to_dataframe, download_kinematics, import_metadata
-from utilsProcessing import segmentSquats, segmentSTS, adjustMuscleWrapping, generateModelWithContacts
-from settingsOpenSimAD import get_default_setup, get_trial_setup
 import platform
 import urllib.request
 import zipfile
 
+from utils import (storage_to_numpy, storage_to_dataframe, 
+                   download_kinematics, import_metadata)
+from utilsProcessing import (segmentSquats, segmentSTS, adjustMuscleWrapping,
+                             generateModelWithContacts)
+from settingsOpenSimAD import get_default_setup, get_trial_setup
+
 # %% Filter numpy array.
 def filterNumpyArray(array, time, cutoff_frequency=6, order=4):
+    
     fs = np.round(1 / np.mean(np.diff(time)), 6)
-    fc = cutoff_frequency # Cut-off frequency of the filter
-    w = fc / (fs / 2) # Normalize the frequency
+    fc = cutoff_frequency
+    w = fc / (fs / 2)
     b, a = signal.butter(order/2, w, 'low')  
     arrayFilt = signal.filtfilt(
         b, a, array, axis=0, 
-        padtype='odd', padlen=3*(max(len(b),len(a))-1))
-    
+        padtype='odd', padlen=3*(max(len(b),len(a))-1))    
     print('numpy array filtered at {}Hz.'.format(cutoff_frequency)) 
     
     return arrayFilt
@@ -65,45 +70,46 @@ def interpolateNumpyArray_time(data, time, tIn, tEnd, N):
 
 # %% Solve problem with bounds instead of constraints.
 def solve_with_bounds(opti, tolerance):
-    # Get guess
+    
+    # Get guess.
     guess = opti.debug.value(opti.x, opti.initial())
-    # Sparsity pattern of the constraint Jacobian
+    # Sparsity pattern of the constraint Jacobian.
     jac = ca.jacobian(opti.g, opti.x)
     sp = (ca.DM(jac.sparsity(), 1)).sparse()
-    # Find constraints dependent on one variable
+    # Find constraints dependent on one variable.
     is_single = np.sum(sp, axis=1)
     is_single_num = np.zeros(is_single.shape[0])
     for i in range(is_single.shape[0]):
         is_single_num[i] = np.equal(is_single[i, 0], 1)
-    # Find constraints with linear dependencies or no dependencies
+    # Find constraints with linear dependencies or no dependencies.
     is_nonlinear = ca.which_depends(opti.g, opti.x, 2, True)
     is_linear = [not i for i in is_nonlinear]
     is_linear_np = np.array(is_linear)
     is_linear_np_num = is_linear_np*1
-    # Constraints dependent linearly on one variable should become bounds
+    # Constraints dependent linearly on one variable should become bounds.
     is_simple = is_single_num.astype(int) & is_linear_np_num
     idx_is_simple = [i for i, x in enumerate(is_simple) if x]
-    ## Find corresponding variables
+    # Find corresponding variables.
     col = np.nonzero(sp[idx_is_simple, :].T)[0]
-    # Contraint values
+    # Contraint values.
     lbg = opti.lbg
     lbg = opti.value(lbg)
     ubg = opti.ubg
     ubg = opti.value(ubg)
     # Detect  f2(p)x+f1(p)==0
-    # This is important should you have scaled variables: x = 10*opti.variable()
-    # with a constraint -10 < x < 10. Because in the reformulation we read out the
-    # original variable and thus we need to scale the bounds appropriately.
+    # This is important if you have scaled variables: x = 10*opti.variable()
+    # with a constraint -10 < x < 10. Because in the reformulation we read out 
+    # the original variable and thus we need to scale the bounds appropriately.
     g = opti.g
     gf = ca.Function('gf', [opti.x, opti.p], [g[idx_is_simple, 0], 
                             ca.jtimes(g[idx_is_simple, 0], opti.x, 
                                       np.ones((opti.nx, 1)))])
     [f1, f2] = gf(0, opti.p)
-    f1 = (ca.evalf(f1)).full() # maybe a problem here
+    f1 = (ca.evalf(f1)).full()
     f2 = (ca.evalf(f2)).full()
     lb = (lbg[idx_is_simple] - f1[:, 0]) / np.abs(f2[:, 0])
     ub = (ubg[idx_is_simple] - f1[:, 0]) / np.abs(f2[:, 0])
-    # Initialize bound vector
+    # Initialize bound vector.
     lbx = -np.inf * np.ones((opti.nx))
     ubx = np.inf * np.ones((opti.nx))
     # Fill bound vector. For unbounded variables, we keep +/- inf.
@@ -112,10 +118,10 @@ def solve_with_bounds(opti, tolerance):
         ubx[col[i]] = np.minimum(ubx[col[i]], ub[i])      
     lbx[col] = (lbg[idx_is_simple] - f1[:, 0]) / np.abs(f2[:, 0])
     ubx[col] = (ubg[idx_is_simple] - f1[:, 0]) / np.abs(f2[:, 0])
-    # Updated constraint value vector
+    # Updated constraint value vector.
     not_idx_is_simple = np.delete(range(0, is_simple.shape[0]), idx_is_simple)
     new_g = g[not_idx_is_simple, 0]
-    # Updated bounds
+    # Updated bounds.
     llb = lbg[not_idx_is_simple]
     uub = ubg[not_idx_is_simple]
     
@@ -126,19 +132,18 @@ def solve_with_bounds(opti, tolerance):
     s_opts["ipopt.mu_strategy"] = "adaptive"
     s_opts["ipopt.max_iter"] = 5000
     s_opts["ipopt.tol"] = 10**(-tolerance)
-#    s_opts["ipopt.print_frequency_iter"] = 20 
     solver = ca.nlpsol("solver", "ipopt", prob, s_opts)
-    # Solve
+    # Solve.
     arg = {}
     arg["x0"] = guess
-    # Bounds on x
+    # Bounds on x.
     arg["lbx"] = lbx
     arg["ubx"] = ubx
-    # Bounds on g
+    # Bounds on g.
     arg["lbg"] = llb
     arg["ubg"] = uub    
     sol = solver(**arg) 
-    # Extract and save results
+    # Extract and save results.
     w_opt = sol['x'].full()
     stats = solver.stats()
     
@@ -146,6 +151,7 @@ def solve_with_bounds(opti, tolerance):
 
 # %% Solver problem with constraints and not bounds.
 def solve_with_constraints(opti, tolerance):
+    
     s_opts = {"hessian_approximation": "limited-memory",
               "mu_strategy": "adaptive",
               "max_iter": 5000,
@@ -157,7 +163,8 @@ def solve_with_constraints(opti, tolerance):
     return sol
 
 # %% Helper plotting tools.
-def plotVSBounds(y,lb,ub,title=''):    
+def plotVSBounds(y,lb,ub,title=''):
+    
     ny = np.ceil(np.sqrt(y.shape[0]))   
     fig, axs = plt.subplots(int(ny), int(ny), sharex=True)    
     fig.suptitle(title)
@@ -169,7 +176,8 @@ def plotVSBounds(y,lb,ub,title=''):
             ax.hlines(ub[i,0],x[0],x[-1],'b')
     plt.show()
             
-def plotVSvaryingBounds(y,lb,ub,title=''):    
+def plotVSvaryingBounds(y,lb,ub,title=''):
+    
     ny = np.ceil(np.sqrt(y.shape[0]))   
     fig, axs = plt.subplots(int(ny), int(ny), sharex=True)    
     fig.suptitle(title)
@@ -183,16 +191,19 @@ def plotVSvaryingBounds(y,lb,ub,title=''):
 
 # %% Helper function.
 def getColfromk(xk, d, N):
+    
     xj = np.ones((1, d*N))
     count = 0
     for k in range(N):
         for c in range(d):
             xj[0,count] = xk[0,k]
-            count += 1 
+            count += 1
+            
     return xj
 
 # %% Verify if within range used for fitting polynomials.
-def checkQsWithinPolynomialBounds(data, bounds, coordinates, trials):    
+def checkQsWithinPolynomialBounds(data, bounds, coordinates, trials):
+    
     success = True
     for coord in coordinates:
         if coord in bounds:
@@ -208,11 +219,12 @@ def checkQsWithinPolynomialBounds(data, bounds, coordinates, trials):
                     success = False   
                 if not success:
                     print('Make sure that the motion to track looks realistic; if so consider adjusting the ROM for the polynomial fitting, see OpenSimPipeline\MuscleAnalysis\DummyMotion.mot')
+    
     return success
 
-# %% Extract from storage file.
+# %% Extract data frame from storage file.
 def getFromStorage(storage_file, headers):
-    # Extract data
+    
     data = storage_to_numpy(storage_file)
     out = pd.DataFrame(data=data['time'], columns=['time'])    
     for count, header in enumerate(headers):
@@ -222,7 +234,7 @@ def getFromStorage(storage_file, headers):
 
 # %% Extract EMG.
 def getEMG(storage_file, headers):
-    # Extract data
+
     data = storage_to_numpy(storage_file)
     EMGs = pd.DataFrame(data=data['time'], columns=['time'])    
     for count, header in enumerate(headers):
@@ -236,7 +248,7 @@ def getEMG(storage_file, headers):
 
 # %% Extract ID.
 def getID(storage_file, headers):
-    # Extract data
+    
     data = storage_to_numpy(storage_file)
     out = pd.DataFrame(data=data['time'], columns=['time'])    
     for count, header in enumerate(headers):
@@ -323,6 +335,16 @@ def getGRFAll(pathGRFFile, timeInterval, N):
 
     return GRF
 
+def getGRF(storage_file, headers):
+
+    data = storage_to_numpy(storage_file)
+    GRFs = pd.DataFrame(data=data['time'], columns=['time'])    
+    for count, header in enumerate(headers):
+        GRFs.insert(count + 1, header, data[header])    
+    
+    return GRFs
+
+# %% Extract GRF peaks.
 def getGRFPeaks(GRF, timeIntervals):
     
     time = GRF['df']['forces']['right']['time']
@@ -338,17 +360,9 @@ def getGRFPeaks(GRF, timeIntervals):
         
     return GRF_peaks
 
-def getGRF(storage_file, headers):
-    # Extract data
-    data = storage_to_numpy(storage_file)
-    GRFs = pd.DataFrame(data=data['time'], columns=['time'])    
-    for count, header in enumerate(headers):
-        GRFs.insert(count + 1, header, data[header])    
-    
-    return GRFs
-
+# %% Compute GRM with respect to ground origin.
 def getGRM_wrt_groundOrigin(storage_file, fHeaders, pHeaders, mHeaders):
-    # Extract data
+
     data = storage_to_numpy(storage_file)
     GRFs = pd.DataFrame()    
     for count, fheader in enumerate(fHeaders):
@@ -370,18 +384,15 @@ def getGRM_wrt_groundOrigin(storage_file, fHeaders, pHeaders, mHeaders):
     
     return GRM_wrt_groundOrigin
 
+# %% Extract COP.
 def getCOP(GRF, GRM):
     
     COP = np.zeros((3, GRF.shape[1]))
-    torques = np.zeros((3, GRF.shape[1]))
-    
+    torques = np.zeros((3, GRF.shape[1]))    
     # Only divide non-zeros
-    idx_nonzeros = np.argwhere(GRF[1, :] > 0)
-    
-    
+    idx_nonzeros = np.argwhere(GRF[1, :] > 0)    
     COP[0, idx_nonzeros] = GRM[2, idx_nonzeros] / GRF[1, idx_nonzeros]    
-    COP[2, idx_nonzeros] = -GRM[0, idx_nonzeros] / GRF[1, idx_nonzeros]
-    
+    COP[2, idx_nonzeros] = -GRM[0, idx_nonzeros] / GRF[1, idx_nonzeros]    
     torques[1, :] = GRM[1, :] - COP[2, :]*GRF[0, :] + COP[0, :]*GRF[2, :]
     
     return COP, torques
@@ -389,8 +400,7 @@ def getCOP(GRF, GRM):
 # %% Select in data frame.
 def selectDataFrame(dataFrame, tIn, tEnd):
 
-    time = dataFrame['time'].to_numpy()
-    
+    time = dataFrame['time'].to_numpy()    
     time_start = np.argwhere(time<=tIn)[-1][0]
     time_end = np.argwhere(time>=tEnd)[0][0]
     
@@ -398,6 +408,7 @@ def selectDataFrame(dataFrame, tIn, tEnd):
 
 # %% Select from data frame.
 def selectFromDataFrame(dataFrame, headers):
+    
     dataFrame_sel = pd.DataFrame(data=dataFrame['time'], columns=['time'])  
     for count, header in enumerate(headers): 
         dataFrame_sel.insert(count+1, header, dataFrame[header])
@@ -417,6 +428,7 @@ def interpolateDataFrame(dataFrame, tIn, tEnd, N):
 
 # %% Scale data frame.
 def scaleDataFrame(dataFrame, scaling, headers):
+    
     dataFrame_scaled = pd.DataFrame(data=dataFrame['time'], columns=['time'])  
     for count, header in enumerate(headers): 
         dataFrame_scaled.insert(count+1, header, dataFrame[header] / scaling.iloc[0][header])
@@ -426,10 +438,9 @@ def scaleDataFrame(dataFrame, scaling, headers):
 # %% Filter data frame.
 def filterDataFrame(dataFrame, cutoff_frequency=6, order=4):
     
-    # Filter data    
     fs = np.round(1/np.mean(np.diff(dataFrame['time'])), 6)
-    fc = cutoff_frequency # Cut-off frequency of the filter
-    w = fc / (fs / 2) # Normalize the frequency
+    fc = cutoff_frequency
+    w = fc / (fs / 2)
     if w>=0.999:
         if fc != fs/2:
             print('You tried to filter {}Hz signal with cutoff freq of {}Hz, which is above the Nyquist Frequency. Will filter at {}Hz instead.'.format(fs, fc, fs/2))
@@ -442,15 +453,14 @@ def filterDataFrame(dataFrame, cutoff_frequency=6, order=4):
     output = pd.DataFrame(data=output, columns=columns_keys)
     dataFrameFilt = pd.concat(
         [pd.DataFrame(data=dataFrame['time'].to_numpy(), columns=['time']), 
-         output], axis=1)
-    
+         output], axis=1)    
     print('dataFrame filtered at {}Hz.'.format(cutoff_frequency))    
     
     return dataFrameFilt
 
 # %% Extract inverse kinematics data.
 def getIK(storage_file, joints, degrees=False):
-    # Extract data
+    
     data = storage_to_numpy(storage_file)
     Qs = pd.DataFrame(data=data['time'], columns=['time'])    
     for count, joint in enumerate(joints):  
@@ -675,8 +685,7 @@ def generateExternalFunction(
             # Custom joints
             if c_joint_type == "CustomJoint":
                 
-                f.write('\tSpatialTransform st_%s;\n' % c_joint.getName())
-                
+                f.write('\tSpatialTransform st_%s;\n' % c_joint.getName())                
                 cObj = opensim.CustomJoint.safeDownCast(c_joint)    
                 spatialtransform = cObj.get_SpatialTransform()
                 
@@ -1446,19 +1455,19 @@ def generateExternalFunction(
         # Save dict.
         np.save(pathOutputMap, F_map)
             
-    # %% Build external Function (.dll file).
+    # %% Build external Function.
     if build_externalFunction:
         pathDCAD = os.path.join(baseDir, 'UtilsDynamicSimulations', 'OpenSimAD') 
         buildExternalFunction(
             externalFunctionName, pathDCAD, pathOutputExternalFunctionFolder,
             3*nCoordinates, treadmill=treadmill)
         
-    # %% Verification.
-    # TODO: use API instead of ID tool.
+    # %% Verification..
     if verifyID:    
         # Run ID with the .osim file
         pathGenericTemplates = os.path.join(baseDir, "OpenSimPipeline") 
-        pathGenericIDFolder = os.path.join(pathGenericTemplates, "InverseDynamics")
+        pathGenericIDFolder = os.path.join(pathGenericTemplates,
+                                           "InverseDynamics")
         pathGenericIDSetupFile = os.path.join(pathGenericIDFolder, 
                                               "Setup_InverseDynamics.xml")
         idTool = opensim.InverseDynamicsTool(pathGenericIDSetupFile)
@@ -1547,7 +1556,8 @@ def generateF(dim):
     cg.generate()
 
 # %% Compile external function.
-def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs, treadmill=False):       
+def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
+                          treadmill=False):       
     
     # %% Part 1: build expression graph (i.e., generate foo.py).
     pathMain = os.getcwd()
@@ -1610,7 +1620,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs, treadmill=False)
         path_EXE = os.path.join(pathBuild, 'RelWithDebInfo', filename + '.exe')
         os.system(path_EXE)
     
-    # %% Part 2: build external function (i.e., build .dll).
+    # %% Part 2: build external function (i.e., build .dll/.so/.dylib).
     fooName = "foo.py"
     pathBuildExternalFunction = os.path.join(pathDCAD, 'buildExternalFunction')
     path_external_filename_foo = os.path.join(BIN_DIR, fooName)
@@ -1661,6 +1671,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs, treadmill=False)
     
 # %% Download file given url.
 def download_file(url, file_name):
+    
     with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
     
@@ -1669,7 +1680,7 @@ def download_file(url, file_name):
 def plotResultsDC(dataDir, subject, motion_filename, settings, 
                   cases=['default'], mainPlots=True):
     
-    # %% Load optimal trajectories
+    # %% Load optimal trajectories.
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
     suff_path = ''
     if 'repetition' in settings:
@@ -1895,8 +1906,7 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
         plt.setp(axs[-1, :], xlabel='Time (s)')
         plt.setp(axs[:, 0], ylabel='(Nm)')
         fig.align_ylabels()
-    plt.show()
-    
+    plt.show()    
     
 # %% Process inputs for optimal control problem.   
 def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,

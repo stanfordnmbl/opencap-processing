@@ -14,11 +14,67 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+    
+    This script contains settings of the trajectory optimization problem that
+    we found worked well for a set of activities. We encourage users to play
+    around with these settings until they are satisfied with their results. We
+    cannot guarantee that the settings will 1) make your problem converge and
+    2) make your problem converge to a biomechanically meaningful solution. We
+    also encourage users to explore mainOpenSimAD, since many more settings can
+    be tuned and are not exposed here.
 '''
 
 def get_default_setup(motion_type):
 
-    setups = {}    
+    setups = {}   
+    setups['other'] = {
+        'ipopt_tolerance': 3,
+        'weights': {
+            'positionTrackingTerm': 100,
+            'velocityTrackingTerm': 10,
+            'accelerationTrackingTerm': 50,
+            'activationTerm': 10,
+            'armExcitationTerm': 0.001,
+            'lumbarExcitationTerm': 0.001,
+            'jointAccelerationTerm': 0.001,
+            'activationDtTerm': 0.001,
+            'forceDtTerm': 0.001},            
+        'coordinates_toTrack': {
+            'pelvis_tilt': {"weight": 10},
+            'pelvis_list': {"weight": 10},
+            'pelvis_rotation': {"weight": 10},
+            'pelvis_tx': {"weight": 10},
+            'pelvis_ty': {"weight": 10},
+            'pelvis_tz': {"weight": 10}, 
+            'hip_flexion_l': {"weight": 20},
+            'hip_adduction_l': {"weight": 10},
+            'hip_rotation_l': {"weight": 1},
+            'hip_flexion_r': {"weight": 20},
+            'hip_adduction_r': {"weight": 10},
+            'hip_rotation_r': {"weight": 1},
+            'knee_angle_l': {"weight": 10},
+            'knee_angle_r': {"weight": 10},
+            'ankle_angle_l': {"weight": 10},
+            'ankle_angle_r': {"weight": 10},
+            'subtalar_angle_l': {"weight": 10},
+            'subtalar_angle_r': {"weight": 10},
+            'lumbar_extension': {"weight": 10},
+            'lumbar_bending': {"weight": 10},
+            'lumbar_rotation': {"weight": 10},
+            'arm_flex_l': {"weight": 10},
+            'arm_add_l': {"weight": 10},
+            'arm_rot_l': {"weight": 10},
+            'arm_flex_r': {"weight": 10},
+            'arm_add_r': {"weight": 10},
+            'arm_rot_r': {"weight": 10},
+            'elbow_flex_l': {"weight": 10},
+            'elbow_flex_r': {"weight": 10},
+            'pro_sup_l': {"weight": 10},
+            'pro_sup_r': {"weight": 10}},
+        'coordinate_constraints': {
+            'pelvis_tx': {"env_bound": 0.1}},
+        'ignorePassiveFiberForce': True}
+    
     setups['running'] = {
         'ipopt_tolerance': 3,
         'weights': {
@@ -394,5 +450,17 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['heel_vGRF_threshold'] = 5
         settings['trials'][trialName]['meshDensity'] = 100
+        
+    if motion_type == 'other':        
+        settings['trials'], settings['trials'][trialName] = {}, {}
+        settings['trials'][trialName]['filter_Qs_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qs'] = 30
+        settings['trials'][trialName]['filter_Qds_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qds'] = 30
+        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qdds'] = 30
+        settings['trials'][trialName]['splineQds'] = True
+        settings['trials'][trialName]['meshDensity'] = 100
+        settings['trials'][trialName]['yCalcnToes'] = True
         
     return settings

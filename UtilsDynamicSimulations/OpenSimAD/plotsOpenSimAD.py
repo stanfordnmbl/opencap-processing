@@ -16,7 +16,8 @@
     limitations under the License.
 '''
 
-# TODO: This script is poorly documented, rough plots.
+# TODO: This script is poorly documented and generates rough plots for 
+# debugging.
 
 import numpy as np
 
@@ -26,9 +27,9 @@ from utilsOpenSimAD import plotVSvaryingBounds
 def plotGuessVSBounds(lw, uw, w0, trial, nJoints, N, d, guessQsEnd, 
                       guessQdsEnd, withArms=True, 
                       withLumbarCoordinateActuators=True):
-    # States.
-    # Muscle activation at mesh points.
     
+    # States.
+    # Muscle activation at mesh points.    
     lwp = lw['A'][trial].to_numpy().T
     uwp = uw['A'][trial].to_numpy().T
     y = w0['A'][trial].to_numpy().T
