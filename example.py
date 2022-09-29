@@ -25,10 +25,10 @@ from utilsPlotting import plot_dataframe
 
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
-session_id = "cf3bcb9a-78be-4e25-9761-d04e900167a5"
+session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = None
+specific_trial_names = ['jump']
 
 # Specify where to download the data.
 data_folder = os.path.join("./Data", session_id)
