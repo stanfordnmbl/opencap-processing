@@ -1,3 +1,21 @@
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: muscleDataOpenSimAD.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
+
 import os
 import numpy as np
 
@@ -5,10 +23,9 @@ def getMTParameters(pathModel, muscles, loadMTParameters,
                     pathMTParameters=0, modelName=''):
     
     if loadMTParameters:        
-        mtParameters = np.load(os.path.join(pathMTParameters, 
-                                            modelName + '_mtParameters.npy'), 
-                               allow_pickle=True)     
-        
+        mtParameters = np.load(os.path.join(
+            pathMTParameters, modelName + '_mtParameters.npy'),
+            allow_pickle=True)
     else:   
         import opensim
         model = opensim.Model(pathModel)
@@ -239,44 +256,6 @@ def tendonShift(NSideMuscles):
     
     return tendonShift
 
-def specificTension_2D(muscles):    
-    
-    sigma = {'hamstrings_r' : 0.62222,
-             'bifemsh_r': 1.00500, 
-             'glut_max_r': 0.74455, 
-             'iliopsoas_r': 1.5041, 
-             'rect_fem_r': 0.74936, 
-             'vasti_r': 0.55263, 
-             'gastroc_r': 0.69865, 
-             'soleus_r': 0.62703, 
-             'tib_ant_r': 0.75417}
-    
-    specificTension = np.empty((1, len(muscles)))    
-    for count, muscle in enumerate(muscles):
-        specificTension[0, count] = sigma[muscle]
-    
-    return specificTension
-
-def slowTwitchRatio_2D(muscles):    
-    
-    sigma = {'hamstrings_r' : 0.5425,
-             'bifemsh_r': 0.529, 
-             'glut_max_r': 0.55, 
-             'iliopsoas_r': 0.50, 
-             'rect_fem_r': 0.3865, 
-             'vasti_r': 0.543, 
-             'gastroc_r': 0.566, 
-             'soleus_r': 0.803, 
-             'tib_ant_r': 0.70}
-    
-    slowTwitchRatio = np.empty((1, len(muscles)))    
-    for count, muscle in enumerate(muscles):
-        slowTwitchRatio[0, count] = sigma[muscle]
-    
-    return slowTwitchRatio
-
-
-
 def tendonCompliance_3D():
     tendonCompliance = np.full((1, 46), 35)
     
@@ -442,30 +421,4 @@ def passiveJointTorqueData_3D(joint, model_type='rajagopal2016'):
     k = kAll[joint] 
     theta = thetaAll[joint]
     
-    return k, theta  
-
-def specificTension_2D_muscle(muscles):    
-    
-    sigma = {'hamstrings_r' : 0.62222,
-             'bifemsh_r': 1.00500, 
-             'glut_max_r': 0.74455, 
-             'iliopsoas_r': 1.5041, 
-             'rect_fem_r': 0.74936, 
-             'vasti_r': 0.55263, 
-             'gastroc_r': 0.69865, 
-             'soleus_r': 0.62703, 
-             'tib_ant_r': 0.75417,
-             'ext_dig_r': 0.75,
-             'ext_hal_r': 0.75, 
-             'flex_dig_r': 0.60, 
-             'flex_hal_r': 0.60,
-             'ercspn_r': 0.60,
-             'intobl_r': 0.56, 
-             'extobl_r': 0.58}
-    
-    specificTension = np.empty((1, len(muscles)))    
-    for count, muscle in enumerate(muscles):
-        specificTension[0, count] = sigma[muscle]
-    
-    return specificTension
-    
+    return k, theta

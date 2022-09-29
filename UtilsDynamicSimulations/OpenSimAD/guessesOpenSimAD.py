@@ -1,9 +1,28 @@
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: guessesOpenSimAD.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
+
 import pandas as pd
 import numpy as np
 import scipy.interpolate as interpolate
 from scipy import signal
    
-# %% Quasi-random initial guess    
+# %% Quasi-random initial guess.
+# TODO no longer supported.
 class quasiRandomGuess:    
     def __init__(self, N, d, joints, muscles, time, Qs):      
         
@@ -55,7 +74,6 @@ class quasiRandomGuess:
         
         return self.guessVelocity
     
-    # TODO: zeroAcceleration to match data-driven - not great
     def getGuessAcceleration(self, scaling, zeroAcceleration=True):
         if zeroAcceleration:
             g = [0] * self.N
@@ -204,7 +222,7 @@ class quasiRandomGuess:
         
         return guessOffset
     
-# %% Data-driven initial guess    
+# %% Data-driven initial guess.
 class dataDrivenGuess_tracking:    
     def __init__(self, Qs, N, d, joints, muscles):        
         
@@ -235,11 +253,14 @@ class dataDrivenGuess_tracking:
         order = 4
         w = fc / (fs / 2) # Normalize the frequency
         b, a = signal.butter(order/2, w, 'low')  
-        output = signal.filtfilt(b, a, self.Qdotdots_spline.loc[:, self.Qdotdots_spline.columns != 'time'], axis=0, 
-                                 padtype='odd', padlen=3*(max(len(b),len(a))-1))    
+        output = signal.filtfilt(
+            b, a, 
+            self.Qdotdots_spline.loc[:, self.Qdotdots_spline.columns!='time'],
+            axis=0, padtype='odd', padlen=3*(max(len(b),len(a))-1))    
         output = pd.DataFrame(data=output, columns=self.joints)
-        self.Qdotdots_spline_filter = pd.concat([pd.DataFrame(data=self.Qdotdots_spline['time'], columns=['time']), 
-                            output], axis=1)       
+        self.Qdotdots_spline_filter = pd.concat(
+            [pd.DataFrame(data=self.Qdotdots_spline['time'], columns=['time']), 
+             output], axis=1)       
     
     # Mesh points
     def getGuessPosition(self, scaling):
@@ -285,25 +306,6 @@ class dataDrivenGuess_tracking:
                 else:                
                     self.guessAcceleration.insert(
                         count, joint, self.Qdotdots_spline[joint] /
-                        scaling.iloc[0][joint])                               
-                    
-        return self.guessAcceleration
-    
-    def getGuessAccelerationFiltered(self, scaling, zeroAcceleration=False):
-        self.splineQs()
-        self.guessAcceleration = pd.DataFrame()  
-        g = [0] * self.N
-        g1 = [0] * (self.N)
-        for count, joint in enumerate(self.joints):   
-            if zeroAcceleration:
-                self.guessAcceleration.insert(
-                    count, joint, g / scaling.iloc[0][joint]) 
-            else:
-                if joint == 'mtp_angle_l' or joint == 'mtp_angle_r':
-                    self.guessAcceleration.insert(count, joint, g1) 
-                else:                
-                    self.guessAcceleration.insert(
-                        count, joint, self.Qdotdots_spline_filter[joint] /
                         scaling.iloc[0][joint])                               
                     
         return self.guessAcceleration
@@ -431,29 +433,8 @@ class dataDrivenGuess_tracking:
                 
         return guessAccelerationCol
     
-    def getGuessMarker(self, markers, marker_data, scaling, 
-                       dimensions = ["x", "y", "z"]):
-        guessMarker = pd.DataFrame() 
-        count = 0
-        for marker in markers:  
-            for dimension in dimensions:
-                guessMarker.insert(count, marker + "_" + dimension, 
-                                   marker_data[marker + "_" + dimension] / 
-                                   scaling.iloc[0][marker + "_" + dimension]) 
-                count += 1
-        
-        return guessMarker
-    
     def getGuessOffset(self, scaling):
         
         guessOffset = 0.2 / scaling
         
         return guessOffset
-    
-    def getGuessGRFCol(self, GRFs):
-        g = [0] * (self.N * self.d)
-        guessGRFCol = pd.DataFrame()  
-        for count, GRF in enumerate(GRFs):
-            guessGRFCol.insert(count, GRF, g)
-            
-        return guessGRFCol

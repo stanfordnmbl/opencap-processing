@@ -1,9 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun  1 14:21:40 2022
-
-@author: antoi
-"""
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: settingsOpenSimAD.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
 
 def get_default_setup(motion_type):
 
@@ -155,60 +166,6 @@ def get_default_setup(motion_type):
             'pelvis_tz': {"env_bound": 0.02}},
         'ignorePassiveFiberForce': True}
     
-    # setups['sit_to_stand'] = {
-    #     'weights': {
-    #         'positionTrackingTerm': 50,
-    #         'velocityTrackingTerm': 10,
-    #         'accelerationTrackingTerm': 50,
-    #         'activationTerm': 100,
-    #         'armExcitationTerm': 0.001,
-    #         'lumbarExcitationTerm': 0.001,
-    #         'jointAccelerationTerm': 0.001,
-    #         'activationDtTerm': 0.001,
-    #         'forceDtTerm': 0.001,
-    #         'reserveActuatorTerm': 0.001,
-    #         # 'vGRFRatioTerm': 0.1
-    #         },            
-    #     'coordinates_toTrack': {
-    #         'pelvis_tilt': {"weight": 100},
-    #         'pelvis_list': {"weight": 10},
-    #         'pelvis_rotation': {"weight": 1},
-    #         'pelvis_tx': {"weight": 100},
-    #         'pelvis_ty': {"weight": 10},
-    #         'pelvis_tz': {"weight": 100}, 
-    #         'hip_flexion_l': {"weight": 100},
-    #         'hip_adduction_l': {"weight": 20},
-    #         'hip_rotation_l': {"weight": 1},
-    #         'hip_flexion_r': {"weight": 100},
-    #         'hip_adduction_r': {"weight": 20},
-    #         'hip_rotation_r': {"weight": 1},
-    #         'knee_angle_l': {"weight": 100},
-    #         'knee_angle_r': {"weight": 100},
-    #         'ankle_angle_l': {"weight": 100},
-    #         'ankle_angle_r': {"weight": 100},
-    #         'subtalar_angle_l': {"weight": 20},
-    #         'subtalar_angle_r': {"weight": 20},
-    #         'lumbar_extension': {"weight": 100},
-    #         'lumbar_bending': {"weight": 20},
-    #         'lumbar_rotation': {"weight": 20},
-    #         'arm_flex_l': {"weight": 50},
-    #         'arm_add_l': {"weight": 10},
-    #         'arm_rot_l': {"weight": 10},
-    #         'arm_flex_r': {"weight": 50},
-    #         'arm_add_r': {"weight": 10},
-    #         'arm_rot_r': {"weight": 10},
-    #         'elbow_flex_l': {"weight": 10},
-    #         'elbow_flex_r': {"weight": 10},
-    #         'pro_sup_l': {"weight": 10},
-    #         'pro_sup_r': {"weight": 10}},            
-    #     'coordinate_constraints': {
-    #         'pelvis_ty': {"env_bound": 0.1},
-    #         'pelvis_tx': {"env_bound": 0.1}},       
-    #     'withReserveActuators': True,
-    #     'reserveActuatorCoordinates': {
-    #         'hip_rotation_l': 30, 'hip_rotation_r': 30},
-    #     'ignorePassiveFiberForce': True}
-    
     setups['sit_to_stand'] = {
         'ipopt_tolerance': 3,
         'weights': {
@@ -222,7 +179,6 @@ def get_default_setup(motion_type):
             'activationDtTerm': 0.001,
             'forceDtTerm': 0.001,
             'reserveActuatorTerm': 0.001,
-            # 'vGRFRatioTerm': 0.1
             },            
         'coordinates_toTrack': {
             'pelvis_tilt': {"weight": 100},
@@ -416,7 +372,7 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['meshDensity'] = 100
         
-    elif motion_type == 'sit_to_stand':  
+    elif motion_type == 'sit_to_stand':
         settings['trials'], settings['trials'][trialName] = {}, {}
         settings['trials'][trialName]['filter_Qs_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qs'] = 4
@@ -426,7 +382,6 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 4
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['meshDensity'] = 50
-        # TODO add heel_vGRF_threshold
         
     elif motion_type == 'squats':  
         settings['trials'], settings['trials'][trialName] = {}, {}
@@ -438,6 +393,6 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 4
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['heel_vGRF_threshold'] = 5
-        settings['trials'][trialName]['meshDensity'] = 50
+        settings['trials'][trialName]['meshDensity'] = 100
         
     return settings

@@ -97,7 +97,7 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-case = '0' # Change this to compare across settings.
+case = '1' # Change this to compare across settings.
 if session_type == 'overground':    
     trial_name = 'STS' # Options are 'squat' and 'STS'.
     if trial_name == 'squat': # Squat example
@@ -122,7 +122,7 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
@@ -145,8 +145,8 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   treadmill_speed)
 
 # %% Simulation.
-run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-             solveProblem=solveProblem, analyzeResults=analyzeResults)
+# run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
+#              solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 plotResultsDC(dataFolder, session_id, trial_name, settings, cases=['0'])

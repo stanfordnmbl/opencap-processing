@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<OpenSimDocument Version="40000">
+	<JointReaction name="JointReactionAnalysis">
+		<!--Flag (true or false) specifying whether on. True by default.-->
+		<on>true</on>
+		<!--Start time.-->
+		<start_time>1</start_time>
+		<!--End time.-->
+		<end_time>Inf</end_time>
+		<!--Specifies how often to store results during a simulation. More specifically, the interval (a positive integer) specifies how many successful integration steps should be taken before results are recorded again.-->
+		<step_interval>1</step_interval>
+		<!--Flag (true or false) indicating whether the results are in degrees or not.-->
+		<in_degrees>true</in_degrees>
+		<!--The name of a file containing forces storage. If a file name is provided, the forces for all actuators will be applied according to values specified in the forces_file instead of being computed from the states. This option should be used to calculate joint reactions from static optimization results.-->
+		<forces_file />
+		<!--Names of the joints on which to perform the analysis. The key word 'All' indicates that the analysis should be performed for all joints.-->
+		<joint_names> all </joint_names>
+		<!--Choice of body ('parent' or 'child') for which the reaction loads are calculated. Child body is default. The array must either have one entry or the same number of entries as joints specified above. If the array has one entry only, that selection is applied to all chosen joints.-->
+		<apply_on_bodies> child</apply_on_bodies>
+		<!--Names of frames in which the calculated reactions are expressed, or the keyword 'child' or 'parent' to indicate the joint's 'child' or 'parent' Frame. ground is default. If a Frame named 'child' or 'parent' exists and the keyword 'child' or 'parent' is used, the analysis will use that Frame. The array must either have one entry or the same number of entries as joints specified above. If the array has one entry only, that selection is applied to all chosen joints.-->
+		<express_in_frame> child</express_in_frame>
+	</JointReaction>
+</OpenSimDocument>

@@ -1,3 +1,21 @@
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: utilsOpenSimAD.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
+
 import os
 import sys
 import opensim
@@ -1649,7 +1667,7 @@ def download_file(url, file_name):
 # %% Plot results simulations.
 # TODO: simplify and clean up.
 def plotResultsDC(dataDir, subject, motion_filename, settings, 
-                  cases=['default'], mainPlots=False):
+                  cases=['default'], mainPlots=True):
     
     # %% Load optimal trajectories
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
@@ -1665,9 +1683,9 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
         optimaltrajectories[case] = c_tr[case]
     
     # %% Joint coordinates.
-    joints = optimaltrajectories[cases[0]]['joints']
+    joints = optimaltrajectories[cases[0]]['coordinates']
     NJoints = len(joints)
-    rotationalJoints = optimaltrajectories[cases[0]]['rotationalJoints']
+    rotationalJoints = optimaltrajectories[cases[0]]['rotationalCoordinates']
     ny = np.ceil(np.sqrt(NJoints))   
     fig, axs = plt.subplots(int(ny), int(ny), sharex=True)
     fig.suptitle('Joint positions: DC vs IK') 
@@ -1680,8 +1698,8 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                 scale_angles = 1
             for c, case in enumerate(cases):
                 c_col = next(color)
-                if joints[i] in optimaltrajectories[case]['joints']:                        
-                    idx_coord = optimaltrajectories[case]['joints'].index(joints[i])
+                if joints[i] in optimaltrajectories[case]['coordinates']:                        
+                    idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
                     trial = motion_filename
                     ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
                             optimaltrajectories[case]['coordinate_values_toTrack'][trial][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
@@ -1707,8 +1725,8 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                     scale_angles = 1
                 for c, case in enumerate(cases):
                     c_col = next(color)
-                    if joints[i] in optimaltrajectories[case]['joints']:                        
-                        idx_coord = optimaltrajectories[case]['joints'].index(joints[i])
+                    if joints[i] in optimaltrajectories[case]['coordinates']:                        
+                        idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
                         trial = motion_filename
                         ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
                                 optimaltrajectories[case]['coordinate_speeds_toTrack'][trial][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
@@ -1733,8 +1751,8 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                     scale_angles = 1
                 for c, case in enumerate(cases):
                     c_col = next(color)
-                    if joints[i] in optimaltrajectories[case]['joints']:                        
-                        idx_coord = optimaltrajectories[case]['joints'].index(joints[i])
+                    if joints[i] in optimaltrajectories[case]['coordinates']:                        
+                        idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
                         trial = motion_filename
                         ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
                                 optimaltrajectories[case]['coordinate_accelerations_toTrack'][trial][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
@@ -1754,8 +1772,8 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
         if i < NJoints:
             color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
             for c, case in enumerate(cases):
-                if joints[i] in optimaltrajectories[case]['joints']:                        
-                    idx_coord = optimaltrajectories[case]['joints'].index(joints[i])
+                if joints[i] in optimaltrajectories[case]['coordinates']:                        
+                    idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
                     trial = motion_filename
                     if 'torques_ref' in optimaltrajectories[case]:
                         ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
@@ -1877,8 +1895,9 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
         plt.setp(axs[-1, :], xlabel='Time (s)')
         plt.setp(axs[:, 0], ylabel='(Nm)')
         fig.align_ylabels()
+    plt.draw() 
     plt.show()
-    
+       
     
 # %% Process inputs for optimal control problem.   
 def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,

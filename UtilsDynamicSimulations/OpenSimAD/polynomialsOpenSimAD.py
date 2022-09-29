@@ -1,7 +1,23 @@
-import os
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: polynomialsOpenSimAD.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
+
 import numpy as np
-import matplotlib.pyplot as plt  
-# from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 class polynomials:
     
@@ -150,56 +166,7 @@ class polynomials:
                                 value += valueP * self.coefficients[coeff_nr]
                             coeff_nr += 1                 
                                                 
-        return value       
-   
-#Qs = np.array([[0.814483478343008, 1.05503342897057, 0.162384573599574], 
-#               [0.0633034484654646, 0.433004984392647, 0.716775413397760],
-#               [-0.0299471169706956, 0.200356847296188, 0.716775413397760]])
-#    
-#
-##QsAll =   getPolynomialApproximations(Qs, 2) 
-#coefficients = [0.118034053273277,
-#-0.0198914859748213,
-#0.00341155611798044,
-#0.000826778689685325,
-#0.000259029436944541,
-#0.0471603344972271,
-#0.0236255120631739,
-#-0.0168342796982147,
-#-0.00251675874700809,
-#-0.00455604318179362,
-#-0.000550918170918716,
-#0.00145644549324444,
-#-0.00461496787325817,
-#-0.00136069333510760,
-#0.000606905109073913,
-#0.0144077096126637,
-#-0.0411208977719301,
-#-0.0115698165867765,
-#0.00479522842080227,
-#-0.0193492989240785,
-#0.00287521952609443,
-#0.0138638477541540,
-#0.00459209584151311,
-#0.00234259120488720,
-#0.00217987210918986,
-#-0.00812437639641265,
-#0.00877916340383921,
-#-5.63115284525812e-05,
-#-0.0156996065563687,
-#-0.0151313191287344,
-#0.00391818335257039,
-#-0.00143098571215378,
-#0.00298434394560463,
-#0.00325245307489826,
-#0.000461919491456800]
-#dimension = 3    
-#order = 4
-#polynomial = polynomials(coefficients, dimension, order)
-#value = polynomial.calcValue(Qs[0, :])
-#value1 = polynomial.calcDerivative(Qs[0, :], 0)
-#value2 = polynomial.calcDerivative(Qs[0, :], 1)
-#value3 = polynomial.calcDerivative(Qs[0, :], 2)
+        return value
         
 class polynomial_estimation:
     
@@ -365,18 +332,9 @@ def getPolynomialCoefficients(data4PolynomialFitting, joints,
         
     if removeBadHipFlexionEntries:
         
-        # In some cases, the hip flexion moment arms are bad. This is because
+        # In some cases, the moment arms are bad. This is because
         # of issues with scaling the wrapping surfaces. We want to identify
         # those entries and remove them for the polynomial fitting.
-        
-        # sign = np.zeros((len(muscles),len(joints)))
-        # for i, joint in enumerate(joints):
-        #     c_max_ma = np.max(momentArms[:, :, i], axis=0)
-        #     c_min_ma = np.min(momentArms[:, :, i], axis=0)        
-        #     sign[:,i] = (c_max_ma * c_min_ma).T
-        #     for j in range(sign[:,i].shape[0]):
-        #         if not sign[j,i] == 0:
-        #             sign[j,i] /= np.abs(sign[j,i])
         
         # Correction for the 3 'glut_max_r' and 'iliacus_r'
         # 'glut_max_r' should always be - (hip extensor)
@@ -428,7 +386,6 @@ def getPolynomialCoefficients(data4PolynomialFitting, joints,
                                       idx_bad_hip_add,
                                       idx_bad_hip_rot))
         
-        
         # Ankle angle
         # The edl becomes a plantaflexor in some cases, should not happen.
         idx_ankle_angle = joints.index('ankle_angle_' + side)
@@ -437,8 +394,6 @@ def getPolynomialCoefficients(data4PolynomialFitting, joints,
         idx_bad_ankle_edl = np.where(momentArms_ankle_edl <= 0)[0]
         
         idx_bad = np.concatenate((idx_bad_hip, idx_bad_ankle_edl))
-        
-        
         
         # Remove entries in jointCoordinates, muscleTendonLengths, and momentArms        
         jointCoordinates = np.delete(jointCoordinates, idx_bad, 0)

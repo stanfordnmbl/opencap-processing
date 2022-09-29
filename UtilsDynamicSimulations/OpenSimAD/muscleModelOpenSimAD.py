@@ -1,6 +1,27 @@
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: muscleModelOpenSimAD.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
+
 import numpy as np
 
-class muscleModel:
+# %% DeGrooteFregly2016MuscleModel
+# This class implements the muscle model desrcribed in De Groote et al. (2016).
+# https://link.springer.com/article/10.1007%2Fs10439-016-1591-9
+class DeGrooteFregly2016MuscleModel:
     
     def __init__(self, mtParameters, activation, mtLength, mtVelocity,
                  normTendonForce, normTendonForceDT, tendonCompliance,
@@ -144,7 +165,8 @@ class muscleModel:
         activeFiberForcePen = np.multiply(activeFiberForce,
                                           self.cosPennationAngle)
             
-        return activeFiberForce, self.normActiveFiberForce, activeFiberForcePen
+        return (activeFiberForce, self.normActiveFiberForce,
+                activeFiberForcePen)
         
     def getPassiveFiberForce(self):
         
@@ -172,7 +194,8 @@ class muscleModel:
             passiveFiberForcePen = np.multiply(passiveFiberForce,
                                                self.cosPennationAngle)
             
-        return passiveFiberForce, self.normPassiveFiberForce, passiveFiberForcePen
+        return (passiveFiberForce, self.normPassiveFiberForce, 
+                passiveFiberForcePen)
         
     def deriveHillEquilibrium(self):        
         self.getActiveFiberForce()
@@ -184,43 +207,3 @@ class muscleModel:
                                         self.normTendonForce)
         
         return hillEquilibrium
-    
-#def main():
-#    mtParameters = np.array([[2.5],[4.5],[6.5],[8.5],[10.5]])
-#    activation = 0.8
-#    mtLength = 1.4
-#    mtVelocity = 0.8
-#    normTendonForce = 1.5
-#    normTendonForceDT = 15
-#    tendonCompliance = 35
-#    tendonShift = 0
-#    specificTension = 25
-#    
-#    muscle = muscleModel(mtParameters, activation, mtLength, mtVelocity,
-#                         normTendonForce, normTendonForceDT, tendonCompliance,
-#                         tendonShift, specificTension)
-#    
-#    fiberLength, normFiberLength = muscle.getFiberLength()
-#    print(fiberLength)
-#    print(normFiberLength)
-#    
-#    fiberVelocity, normFiberVelocity = muscle.getFiberVelocity()
-#    print(fiberVelocity)
-#    print(normFiberVelocity)
-#    
-#    normActiveFiberLengthForce = muscle.getActiveFiberLengthForce()
-#    print(normActiveFiberLengthForce)
-#    
-#    normActiveFiberForce = muscle.getActiveFiberForce()
-#    print(normActiveFiberForce)
-#    
-#    normPassiveFiberForce = muscle.getPassiveFiberForce()
-#    print(normPassiveFiberForce)
-#    
-#    hillEquilibrium = muscle.deriveHillEquilibrium()
-#    print(hillEquilibrium)
-#    
-#    tendonForce = muscle.getTendonForce()
-#    print(tendonForce)
-#    
-#main()
