@@ -1895,9 +1895,8 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
         plt.setp(axs[-1, :], xlabel='Time (s)')
         plt.setp(axs[:, 0], ylabel='(Nm)')
         fig.align_ylabels()
-    plt.draw() 
     plt.show()
-       
+    
     
 # %% Process inputs for optimal control problem.   
 def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
