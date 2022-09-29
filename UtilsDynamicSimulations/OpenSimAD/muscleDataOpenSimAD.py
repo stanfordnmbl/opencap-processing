@@ -19,6 +19,12 @@
 import os
 import numpy as np
 
+# %% Import muscle-tendon parameters.
+# We save the muscle-tendon parameters associated with the model the first time
+# we 'use' the model such that we do not need OpenSim later on. We extract 5
+# parameters: maximal isometric muscle force, optimal fiber length, tendon
+# slack length, pennation angle at optimal fiber length, and maximal
+# contraction velocity (times optimal fiber length).
 def getMTParameters(pathModel, muscles, loadMTParameters,
                     pathMTParameters=0, modelName=''):
     
@@ -37,17 +43,19 @@ def getMTParameters(pathModel, muscles, loadMTParameters,
            mtParameters[1,i] = muscle.getOptimalFiberLength()
            mtParameters[2,i] = muscle.getTendonSlackLength()
            mtParameters[3,i] = muscle.getPennationAngleAtOptimalFiberLength()
-           mtParameters[4,i] = muscle.getMaxContractionVelocity()*muscle.getOptimalFiberLength()
+           mtParameters[4,i] = (muscle.getMaxContractionVelocity() * 
+                                muscle.getOptimalFiberLength())
         if pathMTParameters != 0:
-           np.save(os.path.join(pathMTParameters, modelName + '_mtParameters.npy'),
-                   mtParameters)
+           np.save(os.path.join(pathMTParameters, modelName + 
+                                '_mtParameters.npy'), mtParameters)
        
     return mtParameters
 
 # %% Extract muscle-tendon lenghts and moment arms.
 # We extract data from varying limb postures, such as to later fit polynomials
-# to approximate muscle tendon lenghts and moment arms.
-def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table, idxSlice):
+# to approximate muscle tendon lenghts, velocities, and moment arms.
+def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table, 
+                                  idxSlice):
     import opensim
     
     # Create temporary motion file.
@@ -82,13 +90,20 @@ def get_mtu_length_and_moment_arm(pathModel, data, coordinates_table, idxSlice):
             # Hack for the patella, need to provide the same value as for the
             # knee.
             if 'knee_angle_r_beta/value' in stateVariableNameStr:
-                vec_0 = opensim.Vector(data[:, coordinates_table.index('/jointset/walker_knee_r/knee_angle_r/value')] * np.pi/180 )         
+                vec_0 = opensim.Vector(
+                    data[:, coordinates_table.index(
+                        '/jointset/walker_knee_r/knee_angle_r/value')] * 
+                    np.pi/180 )         
             elif 'knee_angle_l_beta/value' in stateVariableNameStr:
-                vec_0 = opensim.Vector(data[:, coordinates_table.index('/jointset/walker_knee_l/knee_angle_l/value')] * np.pi/180 )
+                vec_0 = opensim.Vector(
+                    data[:, coordinates_table.index(
+                        '/jointset/walker_knee_l/knee_angle_l/value')] * 
+                    np.pi/180 )
             else:
                 vec_0 = opensim.Vector([0] * table.getNumRows())            
             table.appendColumn(stateVariableNameStr, vec_0)
-    stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(model, table)
+    stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(model, 
+                                                                     table)
     
     # Number of muscles.
     muscles = []
@@ -246,137 +261,23 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
            
     return polynomialData
 
+# %% Tendon stiffness
+# Default value is 35.
 def tendonCompliance(NSideMuscles):
     tendonCompliance = np.full((1, NSideMuscles), 35)
     
     return tendonCompliance
 
+# Tendon shift to ensure that the tendon force, when the normalized tendon
+# lenght is 1, is the same for all tendon stiffnesses.
 def tendonShift(NSideMuscles):
     tendonShift = np.full((1, NSideMuscles), 0)
     
     return tendonShift
 
-def tendonCompliance_3D():
-    tendonCompliance = np.full((1, 46), 35)
-    
-    return tendonCompliance
-
-def tendonShift_3D():
-    tendonShift = np.full((1, 46), 0)
-    
-    return tendonShift
-
-def specificTension_3D(muscles):    
-    
-    sigma = {'glut_med1_r' : 0.74455,
-             'glut_med2_r': 0.75395, 
-             'glut_med3_r': 0.75057, 
-             'glut_min1_r': 0.75, 
-             'glut_min2_r': 0.75, 
-             'glut_min3_r': 0.75116, 
-             'semimem_r': 0.62524, 
-             'semiten_r': 0.62121, 
-             'bifemlh_r': 0.62222,
-             'bifemsh_r': 1.00500, 
-             'sar_r': 0.74286,
-             'add_long_r': 0.74643, 
-             'add_brev_r': 0.75263,
-             'add_mag1_r': 0.55217,
-             'add_mag2_r': 0.55323, 
-             'add_mag3_r': 0.54831, 
-             'tfl_r': 0.75161,
-             'pect_r': 0.76000, 
-             'grac_r': 0.73636, 
-             'glut_max1_r': 0.75395, 
-             'glut_max2_r': 0.74455, 
-             'glut_max3_r': 0.74595, 
-             'iliacus_r': 1.2477,
-             'psoas_r': 1.5041,
-             'quad_fem_r': 0.74706, 
-             'gem_r': 0.74545, 
-             'peri_r': 0.75254, 
-             'rect_fem_r': 0.74936, 
-             'vas_med_r': 0.49961, 
-             'vas_int_r': 0.55263, 
-             'vas_lat_r': 0.50027,
-             'med_gas_r': 0.69865, 
-             'lat_gas_r': 0.69694, 
-             'soleus_r': 0.62703,
-             'tib_post_r': 0.62520, 
-             'flex_dig_r': 0.5, 
-             'flex_hal_r': 0.50313,
-             'tib_ant_r': 0.75417, 
-             'per_brev_r': 0.62143,
-             'per_long_r': 0.62450, 
-             'per_tert_r': 1.0,
-             'ext_dig_r': 0.75294,
-             'ext_hal_r': 0.73636, 
-             'ercspn_r': 0.25, 
-             'intobl_r': 0.25, 
-             'extobl_r': 0.25}
-    
-    specificTension = np.empty((1, len(muscles)))    
-    for count, muscle in enumerate(muscles):
-        specificTension[0, count] = sigma[muscle]
-    
-    return specificTension
-
-def slowTwitchRatio_3D(muscles):    
-    
-    sigma = {'glut_med1_r' : 0.55,
-             'glut_med2_r': 0.55, 
-             'glut_med3_r': 0.55, 
-             'glut_min1_r': 0.55, 
-             'glut_min2_r': 0.55, 
-             'glut_min3_r': 0.55, 
-             'semimem_r': 0.4925, 
-             'semiten_r': 0.425, 
-             'bifemlh_r': 0.5425,
-             'bifemsh_r': 0.529, 
-             'sar_r': 0.50,
-             'add_long_r': 0.50, 
-             'add_brev_r': 0.50,
-             'add_mag1_r': 0.552,
-             'add_mag2_r': 0.552, 
-             'add_mag3_r': 0.552, 
-             'tfl_r': 0.50,
-             'pect_r': 0.50, 
-             'grac_r': 0.50, 
-             'glut_max1_r': 0.55, 
-             'glut_max2_r': 0.55, 
-             'glut_max3_r': 0.55, 
-             'iliacus_r': 0.50,
-             'psoas_r': 0.50,
-             'quad_fem_r': 0.50, 
-             'gem_r': 0.50, 
-             'peri_r': 0.50, 
-             'rect_fem_r': 0.3865, 
-             'vas_med_r': 0.503, 
-             'vas_int_r': 0.543, 
-             'vas_lat_r': 0.455,
-             'med_gas_r': 0.566, 
-             'lat_gas_r': 0.507, 
-             'soleus_r': 0.803,
-             'tib_post_r': 0.60, 
-             'flex_dig_r': 0.60, 
-             'flex_hal_r': 0.60,
-             'tib_ant_r': 0.70, 
-             'per_brev_r': 0.60,
-             'per_long_r': 0.60, 
-             'per_tert_r': 0.75,
-             'ext_dig_r': 0.75,
-             'ext_hal_r': 0.75, 
-             'ercspn_r': 0.60,
-             'intobl_r': 0.56, 
-             'extobl_r': 0.58}
-    
-    slowTwitchRatio = np.empty((1, len(muscles)))    
-    for count, muscle in enumerate(muscles):
-        slowTwitchRatio[0, count] = sigma[muscle]
-    
-    return slowTwitchRatio
-
-def passiveJointTorqueData_3D(joint, model_type='rajagopal2016'):    
+# %% Joint limit torques.
+# Data from https://www.tandfonline.com/doi/abs/10.1080/10255849908907988
+def passiveJointTorqueData(joint, model_type='rajagopal2016'):    
     
     kAll = {'hip_flexion_r' : [-2.44, 5.05, 1.51, -21.88],
             'hip_flexion_l' : [-2.44, 5.05, 1.51, -21.88],

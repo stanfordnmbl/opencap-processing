@@ -532,13 +532,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     
     # %% Passive/limit torques.
     from functionCasADiOpenSimAD import limitTorque, passiveTorque
-    from muscleDataOpenSimAD import passiveJointTorqueData_3D    
+    from muscleDataOpenSimAD import passiveJointTorqueData
     damping = 0.1
     f_passiveTorque = {}
     for joint in passiveTorqueJoints:
         f_passiveTorque[joint] = limitTorque(
-            passiveJointTorqueData_3D(joint)[0],
-            passiveJointTorqueData_3D(joint)[1], damping)    
+            passiveJointTorqueData(joint)[0],
+            passiveJointTorqueData(joint)[1], damping)    
     if withMTP:
         stiffnessMtp = 25
         dampingMtp = 2
