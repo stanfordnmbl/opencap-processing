@@ -328,6 +328,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # Dump settings in yaml file.
     with open(pathSettings, 'w') as file:
         yaml.dump(settings, file)
+        
+    print('Processing {}'.format(list(trials.keys())[0]))
     
     # %% Muscles.
     # This section specifies the muscles and some of their parameters. This is

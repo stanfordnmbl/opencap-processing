@@ -97,6 +97,8 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 # We tested these examples locally. Here are some pointers about how many
 # iterations the examples took to converge. Please note that these numbers 
 # might change depending on the machine and operating system.
+#   - squat:
+#       - Windows (Windows 10):    converged in 476 iterations
 #   - STS:
 #       - Windows (Windows 10):    converged in 422 iterations
 #       - macOS   (Monterey 12.2): converged in 412 iterations
@@ -106,7 +108,7 @@ session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 case = '0' # Change this to compare across settings.
 if session_type == 'overground':    
-    trial_name = 'STS' # Options are 'squat' and 'STS'.
+    trial_name = 'squat' # Options are 'squat' and 'STS'.
     if trial_name == 'squat': # Squat example
         motion_type = 'squats'
         repetition = 1
@@ -114,7 +116,7 @@ if session_type == 'overground':
         motion_type = 'sit_to_stand'
         repetition = 1
 elif session_type == 'treadmill':
-    trial_name = 'walk_1_25ms'
+    trial_name = 'run_4ms'
     if trial_name == 'walk_1_25ms': # Walking example, 1.25 m/s
         motion_type = 'walking'
         time_window = [1.0, 2.5]
@@ -124,8 +126,8 @@ elif session_type == 'treadmill':
         time_window = [1.4, 2.6]
         treadmill_speed = 2.5
     elif trial_name == 'run_4ms': # Running example, 4.0 m/s
-        motion_type = 'running'
-        time_window = [2.6, 3.6]
+        motion_type = 'my_periodic_running'
+        time_window = [3.1833333, 3.85]
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.

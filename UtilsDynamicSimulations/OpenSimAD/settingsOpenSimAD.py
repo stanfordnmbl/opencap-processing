@@ -382,6 +382,67 @@ def get_default_setup(motion_type):
             'pelvis_ty': {"env_bound": 0.1}},
         'ignorePassiveFiberForce': True,
         }
+    
+    setups['my_periodic_running'] = {
+        'ipopt_tolerance': 3,
+        'weights': {
+            'positionTrackingTerm': 100,
+            'velocityTrackingTerm': 10,
+            'accelerationTrackingTerm': 50,
+            'activationTerm': 10,
+            'armExcitationTerm': 0.001,
+            'lumbarExcitationTerm': 0.001,
+            'jointAccelerationTerm': 0.001,
+            'activationDtTerm': 0.001,
+            'forceDtTerm': 0.001},            
+        'coordinates_toTrack': {
+            'pelvis_tilt': {"weight": 10},
+            'pelvis_list': {"weight": 10},
+            'pelvis_rotation': {"weight": 10},
+            'pelvis_tx': {"weight": 10},
+            'pelvis_ty': {"weight": 10},
+            'pelvis_tz': {"weight": 10}, 
+            'hip_flexion_l': {"weight": 20},
+            'hip_adduction_l': {"weight": 10},
+            'hip_rotation_l': {"weight": 1},
+            'hip_flexion_r': {"weight": 20},
+            'hip_adduction_r': {"weight": 10},
+            'hip_rotation_r': {"weight": 1},
+            'knee_angle_l': {"weight": 10},
+            'knee_angle_r': {"weight": 10},
+            'ankle_angle_l': {"weight": 10},
+            'ankle_angle_r': {"weight": 10},
+            'subtalar_angle_l': {"weight": 10},
+            'subtalar_angle_r': {"weight": 10},
+            'lumbar_extension': {"weight": 10},
+            'lumbar_bending': {"weight": 10},
+            'lumbar_rotation': {"weight": 10},
+            'arm_flex_l': {"weight": 10},
+            'arm_add_l': {"weight": 10},
+            'arm_rot_l': {"weight": 10},
+            'arm_flex_r': {"weight": 10},
+            'arm_add_r': {"weight": 10},
+            'arm_rot_r': {"weight": 10},
+            'elbow_flex_l': {"weight": 10},
+            'elbow_flex_r': {"weight": 10},
+            'pro_sup_l': {"weight": 10},
+            'pro_sup_r': {"weight": 10}},
+        'coordinate_constraints': {
+            'pelvis_tx': {"env_bound": 0.1}},
+        'periodicConstraints': {
+            # All lower limb coordinates but pelvis_tx.
+            'Qs': ['pelvis_tilt', 'pelvis_list', 'pelvis_rotation', 
+                   'pelvis_ty', 'pelvis_tz', 'hip_flexion_l', 
+                   'hip_adduction_l', 'hip_rotation_l', 'hip_flexion_r',
+                   'hip_adduction_r', 'hip_rotation_r', 'knee_angle_l',
+                   'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                   'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l',
+                   'mtp_angle_r', 'lumbar_extension', 'lumbar_bending',
+                   'lumbar_rotation'],
+            'Qds': ['lowerLimbJoints'],
+            'muscles': ['all'],
+            'lumbar': ['all']},
+        'ignorePassiveFiberForce': True}
 
     return setups[motion_type]
 
@@ -449,7 +510,7 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 4
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['heel_vGRF_threshold'] = 5
-        settings['trials'][trialName]['meshDensity'] = 100
+        settings['trials'][trialName]['meshDensity'] = 50
         
     if motion_type == 'other':        
         settings['trials'], settings['trials'][trialName] = {}, {}
@@ -459,6 +520,18 @@ def get_trial_setup(settings, motion_type, trialName):
         settings['trials'][trialName]['cutoff_freq_Qds'] = 30
         settings['trials'][trialName]['filter_Qdds_toTrack'] = True
         settings['trials'][trialName]['cutoff_freq_Qdds'] = 30
+        settings['trials'][trialName]['splineQds'] = True
+        settings['trials'][trialName]['meshDensity'] = 100
+        settings['trials'][trialName]['yCalcnToes'] = True
+        
+    if motion_type == 'my_periodic_running':        
+        settings['trials'], settings['trials'][trialName] = {}, {}
+        settings['trials'][trialName]['filter_Qs_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qs'] = 12
+        settings['trials'][trialName]['filter_Qds_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qds'] = 12
+        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
+        settings['trials'][trialName]['cutoff_freq_Qdds'] = 12
         settings['trials'][trialName]['splineQds'] = True
         settings['trials'][trialName]['meshDensity'] = 100
         settings['trials'][trialName]['yCalcnToes'] = True
