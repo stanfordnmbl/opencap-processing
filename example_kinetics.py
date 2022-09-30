@@ -106,6 +106,9 @@ if session_type == 'overground':
     elif trial_name == 'STS': # Sit-to-stand example
         motion_type = 'sit_to_stand'
         repetition = 1
+    elif trial_name == 'jump': # jump example
+        motion_type = 'jumping'
+        time_window = [1.2, 2.4]
 elif session_type == 'treadmill':
     trial_name = 'walk_1_25ms'
     if trial_name == 'walk_1_25ms': # Walking example, 1.25 m/s
@@ -144,10 +147,10 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   motion_type, time_window, repetition,
                                   treadmill_speed)
 
-# %% Simulation.
-run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-             solveProblem=solveProblem, analyzeResults=analyzeResults)
+# # %% Simulation.
+# run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
+#              solveProblem=solveProblem, analyzeResults=analyzeResults)
 
-# %% Plots.
-# To compare different cases, add to the cases list, eg cases=['0','1'].
-plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case])
+# # %% Plots.
+# # To compare different cases, add to the cases list, eg cases=['0','1'].
+# plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case])
