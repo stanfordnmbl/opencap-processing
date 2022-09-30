@@ -94,6 +94,13 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 '''
 
 # We provide a few examples for overground and treadmill activities.
+# We tested these examples locally. Here are some pointers about how many
+# iterations the examples took to converge. Please note that these numbers 
+# might change depending on the machine and operating system.
+#   - STS:
+#       - Windows: converged in 422 iterations
+#       - Mac: converged in 412 iterations
+#       - Linux: 
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
@@ -103,7 +110,7 @@ if session_type == 'overground':
     if trial_name == 'squat': # Squat example
         motion_type = 'squats'
         repetition = 1
-    elif trial_name == 'STS': # Sit-to-stand example
+    elif trial_name == 'STS': # Sit-to-stand example        
         motion_type = 'sit_to_stand'
         repetition = 1
 elif session_type == 'treadmill':
