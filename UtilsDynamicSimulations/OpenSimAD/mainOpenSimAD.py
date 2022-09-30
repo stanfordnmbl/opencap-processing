@@ -2265,18 +2265,18 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             JTerms["accelerationTerm_sc"] = JTerms["accelerationTerm"] / JAll_opt[0][0]                
         # Print out contributions to the cost function.
         print("\nCONTRIBUTION TO THE COST FUNCTION")
-        print("Muscle activations: {}%".format(np.round(JTerms["activationTerm_sc"] * 100, 2)[0][0]))
+        print("Muscle activations: {}%".format(np.round(JTerms["activationTerm_sc"] * 100, 2)))
         if withArms:
-            print("Arm activations: {}%".format(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)[0][0]))
+            print("Arm activations: {}%".format(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)))
         if withLumbarCoordinateActuators:
-            print("Lumbar excitations: {}%".format(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)[0][0]))
-        print("Joint accelerations: {}%".format(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)[0][0]))
-        print("Muscle activation derivatives: {}%".format(np.round(JTerms["activationDtTerm_sc"] * 100, 2)[0][0]))
-        print("Muscle-tendon force derivatives: {}%".format(np.round(JTerms["forceDtTerm_sc"] * 100, 2)[0][0]))
-        print("Position tracking: {}%".format(np.round(JTerms["positionTerm_sc"] * 100, 2)[0][0]))
-        print("Velocity tracking: {}%".format(np.round(JTerms["velocityTerm_sc"] * 100, 2)[0][0]))
+            print("Lumbar excitations: {}%".format(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)))
+        print("Joint accelerations: {}%".format(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)))
+        print("Muscle activation derivatives: {}%".format(np.round(JTerms["activationDtTerm_sc"] * 100, 2)))
+        print("Muscle-tendon force derivatives: {}%".format(np.round(JTerms["forceDtTerm_sc"] * 100, 2)))
+        print("Position tracking: {}%".format(np.round(JTerms["positionTerm_sc"] * 100, 2)))
+        print("Velocity tracking: {}%".format(np.round(JTerms["velocityTerm_sc"] * 100, 2)))
         if trackQdds:
-            print("Acceleration tracking: {}%".format(np.round(JTerms["accelerationTerm_sc"] * 100, 2)[0][0]))           
+            print("Acceleration tracking: {}%".format(np.round(JTerms["accelerationTerm_sc"] * 100, 2)))           
         print("# Iterations: {}\n".format(stats["iter_count"]))
             
         # %% Compute knee adduction moments.
