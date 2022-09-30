@@ -98,9 +98,9 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 # iterations the examples took to converge. Please note that these numbers 
 # might change depending on the machine and operating system.
 #   - STS:
-#       - Windows: converged in 422 iterations
-#       - Mac: converged in 412 iterations
-#       - Linux: 
+#       - Windows (Windows 10):    converged in 422 iterations
+#       - macOS   (Monterey 12.2): converged in 412 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 419 iterations 
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
