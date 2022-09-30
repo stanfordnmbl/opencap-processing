@@ -35,7 +35,7 @@ import copy
 # %% Settings.
 def run_tracking(baseDir, dataDir, subject, settings, case='0',
                  solveProblem=True, analyzeResults=True, writeGUI=True,
-                 computeKAM=False, computeMCF=False):
+                 computeKAM=True, computeMCF=True):
     
     # %% Settings.
     # Most available settings are left from trying out different formulations 
@@ -2295,7 +2295,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     'kinematics_activations_{}_{}.mot'.format(trial, case))
                 GRFPath = os.path.join(
                     pathResults, 'GRF_{}_{}.mot'.format(trial, case))
-                c_KAM = computeKAM(pathResults, pathModelFile, IDPath, 
+                c_KAM = computeKAM(pathGenericTemplates,
+                                   pathResults, pathModelFile, IDPath, 
                                    IKPath, GRFPath, grfType='sphere',
                                    Qds=Qds_opt_nsc[trial].T)
                 KAM[trial] = np.concatenate(
@@ -2393,12 +2394,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     'kinematics_activations_{}_{}.mot'.format(trial, case))
                 GRFPath = os.path.join(
                     pathResults, 'GRF_{}_{}.mot'.format(trial, case))                
-                c_MCF = computeMCF(pathResults, pathModelFile, IK_act_Path, 
-                                    IK_act_Path, GRFPath, grfType='sphere',
-                                    muscleForceFilePath=forcePath,
-                                    pathReserveGeneralizedForces=forcePath,
-                                    Qds=Qds_opt_nsc[trial].T,
-                                    replaceMuscles=True)
+                c_MCF = computeMCF(pathGenericTemplates, pathResults, 
+                                   pathModelFile, IK_act_Path, 
+                                   IK_act_Path, GRFPath, grfType='sphere',
+                                   muscleForceFilePath=forcePath,
+                                   pathReserveGeneralizedForces=forcePath,
+                                   Qds=Qds_opt_nsc[trial].T,
+                                   replaceMuscles=True)
                 MCF[trial] = np.concatenate(
                     (np.expand_dims(c_MCF['MCF_r'], axis=1),
                      np.expand_dims(c_MCF['MCF_l'], axis=1)), axis=1).T

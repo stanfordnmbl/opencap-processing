@@ -102,16 +102,23 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #   - squat:
 #       - Windows (Windows 10):    converged in 476 iterations
 #       - macOS   (Monterey 12.2): converged in 474 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 486 iterations
 #   - STS:
 #       - Windows (Windows 10):    converged in 422 iterations
 #       - macOS   (Monterey 12.2): converged in 412 iterations
 #       - Linux   (Ubuntu 20.04):  converged in 419 iterations 
 #   - walk_1_25ms:
 #       - Windows (Windows 10):    converged in 781 iterations
+#       - macOS   (Monterey 12.2): converged in 891 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 842 iterations 
 #   - run_2_5ms:
 #       - Windows (Windows 10):    converged in 1772 iterations
+#       - macOS   (Monterey 12.2): converged in 1637 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 2247 iterations 
 #   - run_4ms:
 #       - Windows (Windows 10):    converged in 1148 iterations
+#       - macOS   (Monterey 12.2): converged in 1133 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 1072 iterations 
 # Select which example you would like to run.
 session_type = 'treadmill' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
@@ -140,7 +147,7 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
