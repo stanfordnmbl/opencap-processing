@@ -57,7 +57,9 @@ Please provide:
                     'squats'. We provide pre-defined settings that worked well
                     for this set of activities. If your activity is different,
                     select 'other' to use generic settings or set your own
-                    settings in settingsOpenSimAD.
+                    settings in settingsOpenSimAD. See for example how we tuned
+                    the 'running' settings to include periodic constraints in
+                    the 'my_periodic_running' settings.
                     
     time_window:    This is the time interval you want to simulate. It is
                     recommended to simulate trials shorter than 2s. Set to []
