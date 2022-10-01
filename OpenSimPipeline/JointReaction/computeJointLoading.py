@@ -347,7 +347,7 @@ def computeMCF(pathGenericTemplates, outputDir, modelPath, activationsPath,
                 # Add prescribed controllers for any reserve actuators  .
                 # Construct constant function.
                 constFxn = opensim.Constant(0) 
-                constFxn.setName(force.getName() + '_constFxn')                 
+                constFxn.setName(coordName + '_constFxn')                 
                 # Construct prescribed controller.
                 pController = opensim.PrescribedController() 
                 pController.setName(coordName + '_controller') 
