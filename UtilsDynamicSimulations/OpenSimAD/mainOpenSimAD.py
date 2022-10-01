@@ -2366,6 +2366,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                                        - data_torques[c_j]) 
                                 < 10**(-3)), "error torques arms"
                 # Sanity check for muscle-driven joints
+                # TODO bug
                 for count_j, c_j in enumerate(muscleDrivenJoints):
                     assert np.alltrue(
                             np.abs(torques_opt[trial][joints.index(c_j),:] - (
