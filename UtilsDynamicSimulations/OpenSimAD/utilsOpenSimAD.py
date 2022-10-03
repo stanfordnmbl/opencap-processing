@@ -1687,7 +1687,7 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
         suff_path = '_rep' + str(settings['repetition'])
     c_pathResults = os.path.join(pathOSData, 'Dynamics', 
                                  motion_filename + suff_path)    
-    c_tr = np.load(os.path.join(c_pathResults, 'optimalTrajectories.npy'),
+    c_tr = np.load(os.path.join(c_pathResults, 'optimaltrajectories.npy'),
                    allow_pickle=True).item()    
     optimaltrajectories = {}
     for case in cases:

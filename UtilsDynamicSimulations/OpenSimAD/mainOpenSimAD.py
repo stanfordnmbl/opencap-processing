@@ -35,7 +35,7 @@ import copy
 # %% Settings.
 def run_tracking(baseDir, dataDir, subject, settings, case='0',
                  solveProblem=True, analyzeResults=True, writeGUI=True,
-                 computeKAM=False, computeMCF=False):
+                 computeKAM=True, computeMCF=True):
     
     # %% Settings.
     # Most available settings are left from trying out different formulations 
@@ -328,6 +328,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # Dump settings in yaml file.
     with open(pathSettings, 'w') as file:
         yaml.dump(settings, file)
+        
+    print('Processing {}'.format(list(trials.keys())[0]))
     
     # %% Muscles.
     # This section specifies the muscles and some of their parameters. This is
@@ -353,16 +355,20 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     
     # Extract muscle-tendon parameters (if not done already).
     from muscleDataOpenSimAD import getMTParameters
-    loadMTParameters = True
-    if not os.path.exists(os.path.join(pathModelFolder, 
-                                       model_full_name + '_mtParameters.npy')):
-        loadMTParameters = False
+    loadMTParameters_l = True
+    loadMTParameters_r = True
+    if not os.path.exists(os.path.join(
+            pathModelFolder, model_full_name + '_mtParameters_l.npy')):
+        loadMTParameters_l = False
+    if not os.path.exists(os.path.join(
+            pathModelFolder, model_full_name + '_mtParameters_r.npy')):
+        loadMTParameters_r = False
     righSideMtParameters = getMTParameters(pathModelFile, rightSideMuscles,
-                                           loadMTParameters, pathModelFolder,
-                                           model_full_name)
+                                           loadMTParameters_r, pathModelFolder,
+                                           model_full_name, side='r')
     leftSideMtParameters = getMTParameters(pathModelFile, leftSideMuscles,
-                                           loadMTParameters, pathModelFolder,
-                                           model_full_name)
+                                           loadMTParameters_l, pathModelFolder,
+                                           model_full_name, side='l')
     mtParameters = np.concatenate((leftSideMtParameters, 
                                    righSideMtParameters), axis=1)
     mtParameters[0,:] = mtParameters[0,:] * scaleIsometricMuscleForce
@@ -2263,18 +2269,18 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             JTerms["accelerationTerm_sc"] = JTerms["accelerationTerm"] / JAll_opt[0][0]                
         # Print out contributions to the cost function.
         print("\nCONTRIBUTION TO THE COST FUNCTION")
-        print("Muscle activations: {}%".format(np.round(JTerms["activationTerm_sc"] * 100, 2)[0][0]))
+        print("Muscle activations: {}%".format(np.round(JTerms["activationTerm_sc"] * 100, 2)))
         if withArms:
-            print("Arm activations: {}%".format(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)[0][0]))
+            print("Arm activations: {}%".format(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)))
         if withLumbarCoordinateActuators:
-            print("Lumbar excitations: {}%".format(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)[0][0]))
-        print("Joint accelerations: {}%".format(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)[0][0]))
-        print("Muscle activation derivatives: {}%".format(np.round(JTerms["activationDtTerm_sc"] * 100, 2)[0][0]))
-        print("Muscle-tendon force derivatives: {}%".format(np.round(JTerms["forceDtTerm_sc"] * 100, 2)[0][0]))
-        print("Position tracking: {}%".format(np.round(JTerms["positionTerm_sc"] * 100, 2)[0][0]))
-        print("Velocity tracking: {}%".format(np.round(JTerms["velocityTerm_sc"] * 100, 2)[0][0]))
+            print("Lumbar excitations: {}%".format(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)))
+        print("Joint accelerations: {}%".format(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)))
+        print("Muscle activation derivatives: {}%".format(np.round(JTerms["activationDtTerm_sc"] * 100, 2)))
+        print("Muscle-tendon force derivatives: {}%".format(np.round(JTerms["forceDtTerm_sc"] * 100, 2)))
+        print("Position tracking: {}%".format(np.round(JTerms["positionTerm_sc"] * 100, 2)))
+        print("Velocity tracking: {}%".format(np.round(JTerms["velocityTerm_sc"] * 100, 2)))
         if trackQdds:
-            print("Acceleration tracking: {}%".format(np.round(JTerms["accelerationTerm_sc"] * 100, 2)[0][0]))           
+            print("Acceleration tracking: {}%".format(np.round(JTerms["accelerationTerm_sc"] * 100, 2)))           
         print("# Iterations: {}\n".format(stats["iter_count"]))
             
         # %% Compute knee adduction moments.
@@ -2293,7 +2299,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     'kinematics_activations_{}_{}.mot'.format(trial, case))
                 GRFPath = os.path.join(
                     pathResults, 'GRF_{}_{}.mot'.format(trial, case))
-                c_KAM = computeKAM(pathResults, pathModelFile, IDPath, 
+                c_KAM = computeKAM(pathGenericTemplates,
+                                   pathResults, pathModelFile, IDPath, 
                                    IKPath, GRFPath, grfType='sphere',
                                    Qds=Qds_opt_nsc[trial].T)
                 KAM[trial] = np.concatenate(
@@ -2322,7 +2329,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                         else:
                             labels_torques.append(c_j)
                             data_torques.insert(data_torques.shape[1], 
-                                                c_j, rAct_opt_nsc[trial][c_j])
+                                                c_j, rAct_opt_nsc[trial][c_j].flatten())
                 if enableLimitTorques:
                     for count_j, c_j in enumerate(passiveTorqueJoints):
                         if c_j in data_torques:
@@ -2364,9 +2371,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                                 < 10**(-3)), "error torques arms"
                 # Sanity check for muscle-driven joints
                 for count_j, c_j in enumerate(muscleDrivenJoints):
+                    if c_j in data_torques:
+                        c_data_torques = data_torques[c_j].to_numpy()
+                    else:
+                        c_data_torques = np.zeros((data_torques.shape[0],))
                     assert np.alltrue(
                             np.abs(torques_opt[trial][joints.index(c_j),:] - (
-                                data_torques[c_j].to_numpy() + 
+                                c_data_torques + 
                                 pMT_opt[trial][count_j, :] + 
                                 aMT_opt[trial][count_j, :])) 
                             < 10**(-3)), "error torques muscle-driven joints"
@@ -2391,12 +2402,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     'kinematics_activations_{}_{}.mot'.format(trial, case))
                 GRFPath = os.path.join(
                     pathResults, 'GRF_{}_{}.mot'.format(trial, case))                
-                c_MCF = computeMCF(pathResults, pathModelFile, IK_act_Path, 
-                                    IK_act_Path, GRFPath, grfType='sphere',
-                                    muscleForceFilePath=forcePath,
-                                    pathReserveGeneralizedForces=forcePath,
-                                    Qds=Qds_opt_nsc[trial].T,
-                                    replaceMuscles=True)
+                c_MCF = computeMCF(pathGenericTemplates, pathResults, 
+                                   pathModelFile, IK_act_Path, 
+                                   IK_act_Path, GRFPath, grfType='sphere',
+                                   muscleForceFilePath=forcePath,
+                                   pathReserveGeneralizedForces=forcePath,
+                                   Qds=Qds_opt_nsc[trial].T,
+                                   replaceMuscles=True)
                 MCF[trial] = np.concatenate(
                     (np.expand_dims(c_MCF['MCF_r'], axis=1),
                      np.expand_dims(c_MCF['MCF_l'], axis=1)), axis=1).T

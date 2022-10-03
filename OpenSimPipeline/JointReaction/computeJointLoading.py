@@ -1,11 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Sep 13 15:20:10 2021
-
-@author: suhlr
-"""
-
-# Computes KAM from IK, ID, and GRFs
+'''
+    ---------------------------------------------------------------------------
+    OpenCap processing: computeJointLoading.py
+    ---------------------------------------------------------------------------
+    Copyright 2022 Stanford University and the Authors
+    
+    Author(s): Antoine Falisse, Scott Uhlrich
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+'''
 
 import opensim
 import os
@@ -13,41 +22,23 @@ import numpy as np
 import copy
 import glob
 
-
-# %% This was to get to xml path, but opensim didn't like loading relative xml paths
-def getBaseDir():
-    functionAbsPath = os.path.abspath(__file__)
-    head, tail = os.path.split(functionAbsPath)
-    head,tail = os.path.split(head)
-    upString = ''
-    while tail != 'mobilecap':
-        head, tail = os.path.split(head)
-        upString += '../'
-    baseRelPath = upString
+#%% Compute knee adduction moments.
+def computeKAM(pathGenericTemplates, outputDir, modelPath, IDPath, IKPath,
+               GRFPath, grfType, Qds=[]):
     
-    return baseRelPath
+    print('Computing knee adduction moment.\n')
 
-#%% 
-def computeKAM(outputDir,modelPath,IDPath,IKPath,GRFPath,grfType, Qds=[]):
-
-    baseRelPath = getBaseDir()
-    jointReactionXmlPath = os.path.join(baseRelPath,'opensimPipeline\JointReaction\Setup_JointReaction.xml')
-
-    
-    # %% Editable variables
-    statesInDegrees = True # defaults to reading input file, but if not in header, uses this
+    jointReactionXmlPath = os.path.join(pathGenericTemplates,'JointReaction',
+                                        'Setup_JointReaction.xml')
+    statesInDegrees = True # Default input file. If not in header, uses this.
     removeSpheres = True # Delete spheres as force elements
-    # grfType = 'sphere' # Options: 'sphere','sphereResultant','experimental'
-    
-    # %%
-    
+      
     # Load model
     opensim.Logger.setLevelString('error')
     model = opensim.Model(modelPath)
     
-    # Remove all actuators and add coordinate actuators                                            
+    # Remove all actuators and add coordinate actuators.                                         
     forceSet = model.getForceSet()
-    
     i = 0
     while i < forceSet.getSize():
         if removeSpheres:
@@ -58,10 +49,12 @@ def computeKAM(outputDir,modelPath,IDPath,IKPath,GRFPath,grfType, Qds=[]):
             else:
                 i+=1
       
+    # Coordinates.
     coords = model.getCoordinateSet()
     nCoords = coords.getSize()
     coordNames = [coords.get(i).getName() for i in range(nCoords)]
     
+    # Add coordinate actuators.
     actuatorNames = []
     for coord in coords:
         newActuator = opensim.CoordinateActuator(coord.getName())
@@ -72,29 +65,27 @@ def computeKAM(outputDir,modelPath,IDPath,IKPath,GRFPath,grfType, Qds=[]):
         newActuator.set_optimal_force(1)
         model.addForce(newActuator)
         
-        # Add Prescribed Controllers for Coordinate Actuators (Needed for JRA to
-        # work properly)
-        
-        # Construct constant function
+        # Add Prescribed Controllers for Coordinate Actuators.
+        #(Needed for joint reaction analysis to work properly).        
+        # Construct constant function.
         constFxn = opensim.Constant(0) 
-        constFxn.setName(coord.getName() + '_constFxn') 
-         
-        # Construct prescribed controller
+        constFxn.setName(coord.getName() + '_constFxn')         
+        # Construct prescribed controller.
         pController = opensim.PrescribedController() 
         pController.setName(coord.getName() + '_controller') 
-        pController.addActuator(newActuator) 
-        pController.prescribeControlForActuator(0,constFxn) # attach the function to the controller
+        pController.addActuator(newActuator)
+        # Attach the function to the controller.
+        pController.prescribeControlForActuator(0,constFxn) 
         model.addController(pController) 
         
-    actuators = model.getActuators()
+    # Get controler set.
     controllerSet = model.getControllerSet()
     
     # Load ID moments
     idTable = opensim.TimeSeriesTable(IDPath)
-    idNames = idTable.getColumnLabels()
     idTime = idTable.getIndependentColumn()
     
-    # Load kinematic states, compute speeds
+    # Load kinematic states, compute speeds.
     stateTable = opensim.TimeSeriesTable(IKPath)
     stateNames = stateTable.getColumnLabels()
     stateTime = stateTable.getIndependentColumn()
@@ -102,7 +93,8 @@ def computeKAM(outputDir,modelPath,IDPath,IKPath,GRFPath,grfType, Qds=[]):
         inDegrees = stateTable.getTableMetaDataAsString('inDegrees') == 'yes'
     except:
         inDegrees = statesInDegrees
-        print('using statesInDegrees variable, which says statesInDegrees is ' + str(statesInDegrees))
+        print('Using statesInDegrees variable: statesInDegrees is {}'.format(
+            statesInDegrees))
     q = np.zeros((len(stateTime),nCoords))
     dt = stateTime[1] - stateTime[0]    
     if len(Qds) > 0:
@@ -114,25 +106,22 @@ def computeKAM(outputDir,modelPath,IDPath,IKPath,GRFPath,grfType, Qds=[]):
         else:
             coordCol = coordNames.index(col)
             for t in range(len(stateTime)):
-                qTemp = np.asarray(stateTable.getDependentColumn(col)[t])
-                
-                if coords.get(col).getMotionType() == 1 and inDegrees: # rotation
-                    qTemp = np.deg2rad(qTemp)
+                qTemp = np.asarray(stateTable.getDependentColumn(col)[t])                
+                if coords.get(col).getMotionType() == 1 and inDegrees:
+                    qTemp = np.deg2rad(qTemp) # convert rotation to rad.
                 q[t,coordCol] = copy.deepcopy(qTemp)
             if len(Qds) > 0:
-                # get index
                 idx_col = stateNames.index(col)
                 qd_t[:,coordCol] = Qds[:, idx_col]
-    # Add option to pass q_dot as argument.
+    # Add option to pass q_dot as argument (state of the model), otherwise
+    # compute with finite difference.
     if not len(Qds) > 0:
         qd = np.diff(q, axis=0, prepend=np.reshape(q[0,:],(1,nCoords))) / dt
     else:
-        qd = qd_t
-    # qdd = np.diff(qd, axis=0, prepend=np.reshape(qd[0,:],(1,nCoords))) / dt # just for testing    
+        qd = qd_t  
         
-    # Load and apply GRFs
-    dataSource = opensim.Storage(GRFPath) 
-    
+    # Load and apply GRFs.
+    dataSource = opensim.Storage(GRFPath)    
     if grfType == 'sphere':
         appliedToBody = ['calcn','calcn','calcn','calcn','toes','toes']
         for leg in ['r','l']:
@@ -142,112 +131,108 @@ def computeKAM(outputDir,modelPath,IDPath,IKPath,GRFPath,grfType, Qds=[]):
                 newForce.set_applied_to_body(appliedToBody[i] + '_' + leg) 
                 newForce.set_force_expressed_in_body('ground') 
                 newForce.set_point_expressed_in_body('ground')
-                newForce.set_force_identifier('ground_force_s' + str(i+1) + '_' + leg + '_v')
-                newForce.set_torque_identifier('ground_torque_s' + str(i+1) + '_' + leg + '_') ;
-                newForce.set_point_identifier('ground_force_s' + str(i+1) + '_' + leg + '_p') ;
-                newForce.setDataSource(dataSource) ;
+                newForce.set_force_identifier(
+                    'ground_force_s' + str(i+1) + '_' + leg + '_v')
+                newForce.set_torque_identifier(
+                    'ground_torque_s' + str(i+1) + '_' + leg + '_')
+                newForce.set_point_identifier(
+                    'ground_force_s' + str(i+1) + '_' + leg + '_p')
+                newForce.setDataSource(dataSource)
                 if removeSpheres:
-                    model.addForce(newForce) ;
+                    model.addForce(newForce)
                 elif i==0:
-                    print('GRFs were not applied b/c sphere contacts were used.')
+                    print('GRFs were not applied b/c spheres were used.')
     elif grfType == 'sphereResultant':
         appliedToBody = ['calcn']
         for leg in ['r','l']:
             for i in range(len(appliedToBody)):
                 newForce = opensim.ExternalForce()
                 newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
-                newForce.set_applied_to_body(appliedToBody[i] + '_' + leg.lower()) 
+                newForce.set_applied_to_body(appliedToBody[i] + '_' + 
+                                             leg.lower()) 
                 newForce.set_force_expressed_in_body('ground') 
                 newForce.set_point_expressed_in_body('ground')
                 newForce.set_force_identifier('ground_force_' + leg + '_v')
-                newForce.set_torque_identifier('ground_torque_' + leg + '_') ;
-                newForce.set_point_identifier('ground_force_' + leg + '_p') ;
-                newForce.setDataSource(dataSource) ;
-                model.addForce(newForce) ; #tested and these make a difference
+                newForce.set_torque_identifier('ground_torque_' + leg + '_')
+                newForce.set_point_identifier('ground_force_' + leg + '_p')
+                newForce.setDataSource(dataSource)
+                model.addForce(newForce)
     elif grfType == 'experimental':
         appliedToBody = ['calcn']
         for leg in ['R','L']:
             for i in range(len(appliedToBody)):
                 newForce = opensim.ExternalForce()
                 newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
-                newForce.set_applied_to_body(appliedToBody[i] + '_' + leg.lower()) 
+                newForce.set_applied_to_body(appliedToBody[i] + '_' + 
+                                             leg.lower()) 
                 newForce.set_force_expressed_in_body('ground') 
                 newForce.set_point_expressed_in_body('ground')
                 newForce.set_force_identifier(leg + '_ground_force_v')
-                newForce.set_torque_identifier(leg + '_ground_torque_') ;
-                newForce.set_point_identifier(leg + '_ground_force_p') ;
-                newForce.setDataSource(dataSource) ;
-                model.addForce(newForce) ; #tested and these make a difference
+                newForce.set_torque_identifier(leg + '_ground_torque_')
+                newForce.set_point_identifier(leg + '_ground_force_p')
+                newForce.setDataSource(dataSource)
+                model.addForce(newForce)
     
-    # initSystem - done editing model
+    # initSystem - done editing model.
     state = model.initSystem()
     
-    # Create state Y map
+    # Create state Y map.
     yNames = opensim.createStateVariableNamesInSystemOrder(model)
     systemPositionInds = []
     systemVelocityInds = []
     stateNameList = []
     for stateName in coordNames:
-        posIdx =np.squeeze(np.argwhere([stateName + '/value' in y for y in yNames]))
-        velIdx =np.squeeze(np.argwhere([stateName + '/speed' in y for y in yNames])) 
+        posIdx = np.squeeze(
+            np.argwhere([stateName + '/value' in y for y in yNames]))
+        velIdx = np.squeeze(
+            np.argwhere([stateName + '/speed' in y for y in yNames])) 
         if posIdx.size>0:  
             systemPositionInds.append(posIdx)
             systemVelocityInds.append(velIdx)
             stateNameList.append(stateName)
     
-    # Create JRA reporter
+    # Create JRA reporter.
     jointReaction = opensim.JointReaction(jointReactionXmlPath)
     model.addAnalysis(jointReaction) ;
     jointReaction.setModel(model) ;
     jointReaction.printToXML(os.path.join(outputDir, 'JrxnSetup.xml')) ;    
     
-    # Loop over time
+    # Loop over time.
     controls = opensim.Vector(nCoords,0) ;
     for iTime in range(len(stateTime)):
-        thisTime = stateTime[iTime]
-    
+        thisTime = stateTime[iTime]    
         if thisTime <= idTime[-1]:
             idRow = idTable.getNearestRowIndexForTime(thisTime)               
             # Set time
-            state.setTime(thisTime)   
-                
-            # Set state, velocity, actuator controls
+            state.setTime(thisTime)                
+            # Set state, velocity, actuator controls.
             yVec = np.zeros((state.getNY())).tolist()
             for iCoord, coord in enumerate(coords):
                 if '_beta' not in coord.getName():
-                    
-    
-                    # Loop thru states to set speeds and vels
+                    # Loop through states to set values and speeds.
                     yVec[systemPositionInds[iCoord]] = q[iTime,iCoord]
-                    yVec[systemVelocityInds[iCoord]] = qd[iTime,iCoord]
-                              
-                    # Old/slow setting of speeds and velocity
-                    # coord.setValue(state,q[iTime,iCoord])
-                    # coord.setSpeedValue(state,qd[iTime,iCoord])
-                    
+                    yVec[systemVelocityInds[iCoord]] = qd[iTime,iCoord]                    
                     if coord.getMotionType() == 1: # rotation
                         suffix = '_moment'
                     elif coord.getMotionType() == 2: # translation
-                        suffix = '_force'
-                        
-                    # Set prescribed controller constant value to control value. Controls
-                    # don't live through joint reaction analysis for some reason.
+                        suffix = '_force'                        
+                    # Set prescribed controller constant value to control value. 
+                    # Controls don't live through joint reaction analysis.
                     thisController = opensim.PrescribedController.safeDownCast(controllerSet.get(coord.getName() + '_controller')) 
                     thisConstFxn = opensim.Constant.safeDownCast(thisController.get_ControlFunctions(0).get(0))
                     thisConstFxn.setValue(idTable.getDependentColumn(coord.getName()+suffix)[idRow])
-            # Setting controls this way is redundant, but necessary if want to do a force reporter
-            # in future
+            # Setting controls this way is redundant, but necessary if want to 
+            # do a force reporter in the future.
                     controls.set(iCoord, idTable.getDependentColumn(coord.getName()+suffix)[idRow])
             
             state.setY(opensim.Vector(yVec))
-            model.realizeVelocity(state)
-                
-            model.setControls(state,controls) # tested and commenting didn't impact JRA
+            model.realizeVelocity(state)                
+            model.setControls(state,controls)
             
-            # Realize acceleration
+            # Realize acceleration.
             model.realizeAcceleration(state)
             
-        # Compute JRA
+        # Compute JR.
         if iTime == 0:
             jointReaction.begin(state) 
         else:
@@ -255,21 +240,25 @@ def computeKAM(outputDir,modelPath,IDPath,IKPath,GRFPath,grfType, Qds=[]):
         if iTime == len(stateTime)-1 or thisTime >=idTime[-1]:
             jointReaction.end(state)
     
-    # Finish time loop and output
+    # Finish time loop and output.
     if not removeSpheres:
         grfType = 'spheresUsed_noGRFsApplied'
     outFileBase = 'results_JRA'
     jointReaction.printResults(outFileBase,outputDir,-1,'.sto')
     
-    # Load and get KAM
-    outFilePath = glob.glob(os.path.join(outputDir,outFileBase + '_JointReactionAnalysis_ReactionLoads.sto'))[0] # extra stuff in filename
-    
+    # Load and get KAM.
+    outFilePath = glob.glob(
+        os.path.join(
+            outputDir,
+            outFileBase + '_JointReactionAnalysis_ReactionLoads.sto'))[0]    
     thisTable = opensim.TimeSeriesTable(outFilePath)
     results = {} ;
     results['time'] = np.asarray(thisTable.getIndependentColumn())
     nSteps = len(results['time'])
-    temp_r = thisTable.getDependentColumn('walker_knee_r_on_tibia_r_in_tibia_r_mx')
-    temp_l = thisTable.getDependentColumn('walker_knee_l_on_tibia_l_in_tibia_l_mx')
+    temp_r = thisTable.getDependentColumn(
+        'walker_knee_r_on_tibia_r_in_tibia_r_mx')
+    temp_l = thisTable.getDependentColumn(
+        'walker_knee_l_on_tibia_l_in_tibia_l_mx')
     
     results['KAM_r'] = np.ndarray((nSteps))
     results['KAM_l'] = np.ndarray((nSteps))
@@ -279,33 +268,32 @@ def computeKAM(outputDir,modelPath,IDPath,IKPath,GRFPath,grfType, Qds=[]):
     
     return results
 
-# %%
-def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType, 
-               muscleForceFilePath = None, pathReserveGeneralizedForces=None, Qds=[],pathJRAResults=None, 
-               replaceMuscles = False, visualize=False):
+# %% Compute medial knee contact forces.
+def computeMCF(pathGenericTemplates, outputDir, modelPath, activationsPath,
+               IKPath, GRFPath, grfType, muscleForceFilePath=None, 
+               pathReserveGeneralizedForces=None, Qds=[],pathJRAResults=None, 
+               replaceMuscles=False, visualize=False, debugMode=False):
+    
+    print('Computing medial knee contact forces.\n')
     
     muscForceOverride = muscleForceFilePath!=None
     usingGenForceActuators = pathReserveGeneralizedForces !=None
 
-    if pathJRAResults == None: # If JRA is already computed, skip to MCF computation
-        baseRelPath = getBaseDir()
-        jointReactionXmlPath = os.path.join(baseRelPath,'opensimPipeline\JointReaction\JointReactionSetup.xml')
-        print('you supplied muscle forces for computeMCF - these will override forces computed by OpenSim muscle model.')
+    if pathJRAResults == None: # If JRA is already computed, skip.
+        jointReactionXmlPath = os.path.join(
+            pathGenericTemplates,'JointReaction', 'Setup_JointReaction.xml')
+        if debugMode:
+            print('You supplied muscle forces for computeMCF - these will override forces computed by OpenSim muscle model.')
         
+        statesInDegrees = True # Default input file. If not in header, uses this.
+        removeSpheres = True # Delete spheres as force elements.
         
-        # %% Editable variables
-        statesInDegrees = True # defaults to reading input file, but if not in header, uses this
-        removeSpheres = True # Delete spheres as force elements
-        # grfType = 'sphere' # Options: 'sphere','sphereResultant','experimental'
-        
-# %%    
-        # Load model
+        # Load model.
         opensim.Logger.setLevelString('error')
         model = opensim.Model(modelPath)
         
-        # Remove spheres                                        
-        forceSet = model.getForceSet()
-        
+        # Remove spheres.                              
+        forceSet = model.getForceSet()        
         i = 0
         while i < forceSet.getSize():
             if 'SmoothSphere' in forceSet.get(i).getConcreteClassName():
@@ -313,6 +301,7 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
             else:
                 i+=1
           
+        # Coordinates.
         coords = model.getCoordinateSet()
         nCoords = coords.getSize()
         coordNames = [coords.get(i).getName() for i in range(nCoords)]
@@ -327,15 +316,17 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
             fName = forceSet.get(iF).getName()
             if pathReserveGeneralizedForces != None: 
                 forceSet.remove(iF)
-                print('deleted ' + fName + ' from force set. Will be added back if a reserve actuator.')
+                if debugMode:
+                    print('deleted ' + fName + ' from force set. Will be added back if a reserve actuator.')
             else:
-                print('did not delete ' + fName + ' from force set but it is not actuated.')
+                if debugMode:
+                    print('did not delete ' + fName + ' from force set but it is not actuated.')
             
-        # Add coordinate actuators if they are provided in pathReserveGeneralizedForces
+        # Add coordinate actuators if they are provided in 
+        # pathReserveGeneralizedForces.
         actuatorNames = []
         if pathReserveGeneralizedForces !=None:
-            idTable = opensim.TimeSeriesTable(pathReserveGeneralizedForces) # we just call this ID, because thats what was used in KAM fxn
-            # idNames = idTable.getColumnLabels()
+            idTable = opensim.TimeSeriesTable(pathReserveGeneralizedForces)
             idTime = idTable.getIndependentColumn()
             idLabels = idTable.getColumnLabels()
             
@@ -353,22 +344,22 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
                 newActuator.set_optimal_force(1)
                 model.addForce(newActuator)
         
-                # Add prescribed controllers for any reserve actuators  
-                # Construct constant function
+                # Add prescribed controllers for any reserve actuators  .
+                # Construct constant function.
                 constFxn = opensim.Constant(0) 
-                constFxn.setName(force.getName() + '_constFxn') 
-                 
-                # Construct prescribed controller
+                constFxn.setName(coordName + '_constFxn')                 
+                # Construct prescribed controller.
                 pController = opensim.PrescribedController() 
                 pController.setName(coordName + '_controller') 
                 pController.addActuator(newActuator) 
-                pController.prescribeControlForActuator(0,constFxn) # attach the function to the controller
+                # Attach the function to the controller.
+                pController.prescribeControlForActuator(0,constFxn) 
                 model.addController(pController) 
             
         controllerSet = model.getControllerSet()
         muscles = model.getMuscles()
         
-        # Replace muscles
+        # Replace muscles.
         if replaceMuscles:
             opensim.DeGrooteFregly2016Muscle.replaceMuscles(model,False)
             for force in forceSet:
@@ -393,13 +384,14 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
         # Load force data if provided
         if muscForceOverride:
             overrideForceTable = opensim.TimeSeriesTable(muscleForceFilePath)
-            overrideForceTime = overrideForceTable.getIndependentColumn()  
-        
+            overrideForceTime = overrideForceTable.getIndependentColumn()        
         try:
             inDegrees = stateTable.getTableMetaDataAsString('inDegrees') == 'yes'
         except:
             inDegrees = statesInDegrees
-            print('using supplied statesInDegrees variable, which says statesInDegrees is ' + str(statesInDegrees))
+            if debugMode:
+                print('Using statesInDegrees variable: statesInDegrees is {}'.format(
+                    statesInDegrees))
         q = np.zeros((len(stateTime),nCoords))
         dt = stateTime[1] - stateTime[0]    
         if len(Qds) > 0:
@@ -411,23 +403,21 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
             else:
                 coordCol = coordNames.index(col)
                 for t in range(len(stateTime)):
-                    qTemp = np.asarray(stateTable.getDependentColumn(col)[t])
-                    
-                    if coords.get(col).getMotionType() == 1 and inDegrees: # rotation
-                        qTemp = np.deg2rad(qTemp)
+                    qTemp = np.asarray(stateTable.getDependentColumn(col)[t])                    
+                    if coords.get(col).getMotionType() == 1 and inDegrees:
+                        qTemp = np.deg2rad(qTemp) # Convert rotation to rad.
                     q[t,coordCol] = copy.deepcopy(qTemp)
                 if len(Qds) > 0:
-                    # get index
                     idx_col = stateNames.index(col)
                     qd_t[:,coordCol] = Qds[:, idx_col]
-        # Add option to pass q_dot as argument.
+        # Add option to pass q_dot as argument (state of the model), otherwise
+        # compute with finite difference.
         if not len(Qds) > 0:
             qd = np.diff(q, axis=0, prepend=np.reshape(q[0,:],(1,nCoords))) / dt
         else:
-            qd = qd_t
-        # qdd = np.diff(qd, axis=0, prepend=np.reshape(qd[0,:],(1,nCoords))) / dt # just for testing    
+            qd = qd_t 
         
-        # Load activations and muscle forces if overrieing
+        # Load activations and muscle forces if overriding.
         muscleNames = []
         act = np.zeros((len(actTime),muscles.getSize()))
         overrideForce = np.copy(act)
@@ -444,9 +434,8 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
                    act[t,iMusc] = copy.deepcopy(np.asarray(
                                   actTable.getDependentColumn(actColName)[t]))
         
-        # Load and apply GRFs
-        dataSource = opensim.Storage(GRFPath) 
-        
+        # Load and apply GRFs.
+        dataSource = opensim.Storage(GRFPath)        
         if grfType == 'sphere':
             appliedToBody = ['calcn','calcn','calcn','calcn','toes','toes']
             for leg in ['r','l']:
@@ -457,11 +446,11 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
                     newForce.set_force_expressed_in_body('ground') 
                     newForce.set_point_expressed_in_body('ground')
                     newForce.set_force_identifier('ground_force_s' + str(i+1) + '_' + leg + '_v')
-                    newForce.set_torque_identifier('ground_torque_s' + str(i+1) + '_' + leg + '_') ;
-                    newForce.set_point_identifier('ground_force_s' + str(i+1) + '_' + leg + '_p') ;
-                    newForce.setDataSource(dataSource) ;
+                    newForce.set_torque_identifier('ground_torque_s' + str(i+1) + '_' + leg + '_')
+                    newForce.set_point_identifier('ground_force_s' + str(i+1) + '_' + leg + '_p')
+                    newForce.setDataSource(dataSource)
                     if removeSpheres:
-                        model.addForce(newForce) ;
+                        model.addForce(newForce)
                     elif i==0:
                         print('GRFs were not applied b/c sphere contacts were used.')
         elif grfType == 'sphereResultant':
@@ -474,10 +463,10 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
                     newForce.set_force_expressed_in_body('ground') 
                     newForce.set_point_expressed_in_body('ground')
                     newForce.set_force_identifier('ground_force_' + leg + '_v')
-                    newForce.set_torque_identifier('ground_torque_' + leg + '_') ;
-                    newForce.set_point_identifier('ground_force_' + leg + '_p') ;
-                    newForce.setDataSource(dataSource) ;
-                    model.addForce(newForce) ; #tested and these make a difference
+                    newForce.set_torque_identifier('ground_torque_' + leg + '_')
+                    newForce.set_point_identifier('ground_force_' + leg + '_p')
+                    newForce.setDataSource(dataSource)
+                    model.addForce(newForce)
         elif grfType == 'experimental':
             appliedToBody = ['calcn']
             for leg in ['R','L']:
@@ -488,16 +477,15 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
                     newForce.set_force_expressed_in_body('ground') 
                     newForce.set_point_expressed_in_body('ground')
                     newForce.set_force_identifier(leg + '_ground_force_v')
-                    newForce.set_torque_identifier(leg + '_ground_torque_') ;
-                    newForce.set_point_identifier(leg + '_ground_force_p') ;
-                    newForce.setDataSource(dataSource) ;
-                    model.addForce(newForce) ; #tested and these make a difference
-                
+                    newForce.set_torque_identifier(leg + '_ground_torque_')
+                    newForce.set_point_identifier(leg + '_ground_force_p')
+                    newForce.setDataSource(dataSource)
+                    model.addForce(newForce)
         
-        # initSystem - done editing model
+        # initSystem - done editing model.
         state = model.initSystem()
         
-        # Create state Y map
+        # Create state Y map.
         yNames = opensim.createStateVariableNamesInSystemOrder(model)
         systemPositionInds = []
         systemVelocityInds = []
@@ -515,7 +503,7 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
             actIdx = np.squeeze(np.argwhere([muscleName + '/activation' in y for y in yNames]))
             systemActivationInds.append(actIdx)
         
-        # Create JRA reporter
+        # Create JRA reporter.
         jointReaction = opensim.JointReaction(jointReactionXmlPath)
         model.addAnalysis(jointReaction) ;
         jointReaction.setModel(model) ;
@@ -530,9 +518,8 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
             endTime = stateTime[-1]
         else:
             endTime = np.max(endTime)
-        
 
-        # Loop over time
+        # Loop over time.
         if usingGenForceActuators:
             controls = opensim.Vector(nCoords,0) ;
         for iTime in range(len(stateTime)):
@@ -552,35 +539,27 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
                 yVec = np.zeros((state.getNY())).tolist()
                 for iCoord, coord in enumerate(coords):
                     if '_beta' not in coord.getName():
-                        
-        
-                        # Loop thru states to set speeds, vels, activations
+                        # Loop through states to set values, speeds, and
+                        # activations
                         yVec[systemPositionInds[iCoord]] = q[iTime,iCoord]
                         yVec[systemVelocityInds[iCoord]] = qd[iTime,iCoord]
-                                  
-                        # Old/slow setting of speeds and velocity
-                        # coord.setValue(state,q[iTime,iCoord])
-                        # coord.setSpeedValue(state,qd[iTime,iCoord])
-                        
-                        # if coord.getMotionType() == 1: # rotation
-                        #     suffix = '_moment'
-                        # elif coord.getMotionType() == 2: # translation
-                        #     suffix = '_force'
                         
                         if usingGenForceActuators:
-                            actuatorName = [aN for aN in idLabels if coord.getName() in aN] # is there a coord actuator for this coord?
+                            actuatorName = [aN for aN in idLabels if coord.getName() in aN]
                             if len(actuatorName) == 1:    
-                                # Set prescribed controller constant value to control value. Controls
-                                # don't live through joint reaction analysis for some reason. 
+                                # Set prescribed controller constant value to 
+                                # control value. Controls don't live through
+                                # joint reaction analysis.
                                 thisController = opensim.PrescribedController.safeDownCast(controllerSet.get(coord.getName() + '_controller')) 
                                 thisConstFxn = opensim.Constant.safeDownCast(thisController.get_ControlFunctions(0).get(0))
                                 thisConstFxn.setValue(idTable.getDependentColumn(actuatorName[0])[idRow])
                                 
-                                # Setting controls this way is redundant, but necessary if want to do a force reporter
-                                # in future
+                                # Setting controls this way is redundant, but
+                                # necessary if want to use a force reporter
+                                # in the future.
                                 controls.set(iCoord, idTable.getDependentColumn(actuatorName[0])[idRow])
                 
-                # Set muscle activations or force          
+                # Set muscle activations or force.  
                 for iMusc,muscName in enumerate(muscleNames):
                     if muscForceOverride:
                         muscles.get(iMusc).overrideActuation(state,True)
@@ -595,9 +574,9 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
                     model.equilibrateMuscles(state) # this changes muscles to appropriate l and v (not 0 from yVec)
                 
                 if usingGenForceActuators:
-                    model.setControls(state,controls) # tested and commenting didn't impact JRA
+                    model.setControls(state,controls)
                 
-                # Realize acceleration
+                # Realize acceleration.
                 model.realizeAcceleration(state)
                 
             # Compute JRA
@@ -608,16 +587,16 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
             if iTime == len(stateTime)-1 or thisTime >= endTime:
                 jointReaction.end(state)
         
-        # Finish time loop and output
+        # Finish time loop and output.
         if not removeSpheres:
             grfType = 'spheresUsed_noGRFsApplied'
         outFileBase = 'results_JRAforMCF'
         jointReaction.printResults(outFileBase,outputDir,-1,'.sto')        
         
-        # Get filename
-        pathJRAResults = glob.glob(os.path.join(outputDir,outFileBase + '_JointReactionAnalysis_ReactionLoads.sto'))[0] # extra stuff in filename
+        # Get filename.
+        pathJRAResults = glob.glob(os.path.join(outputDir,outFileBase + '_JointReactionAnalysis_ReactionLoads.sto'))[0]
         
-    # Load JRA results values and compute MCF    
+    # Load JRA results values and compute MCF.
     thisTable = opensim.TimeSeriesTable(pathJRAResults)
     results = {} ;
     results['time'] = np.asarray(thisTable.getIndependentColumn())
@@ -627,51 +606,13 @@ def computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType,
     Fy_r = thisTable.getDependentColumn('walker_knee_r_on_tibia_r_in_tibia_r_fy')
     Fy_l = thisTable.getDependentColumn('walker_knee_l_on_tibia_l_in_tibia_l_fy')
     
-    d = 0.04 # intercondyler distance (Lerner 2015)
-    
+    d = 0.04 # intercondyler distance (Lerner 2015).    
     results['MCF_r'] = np.ndarray((nSteps))
     results['MCF_l'] = np.ndarray((nSteps))
-    # can delete these - just for visualization
-    temp_Fy = np.ndarray((nSteps))
-    temp_KAM = np.ndarray((nSteps))
 
     # MCF = Fy/2 + KAM/d. Sign changes are due to signs in opensim
     for i in range(nSteps):
         results['MCF_r'][i] = -Fy_r[i]/2 - KAM_r[i]/d
         results['MCF_l'][i] = -Fy_l[i]/2 + KAM_l[i]/d
-        temp_Fy[i] = -Fy_l[i]
-        temp_KAM[i] = KAM_l[i]/d
-        
-        
-    
-    # TODO DELETE
-    if visualize:
-        import matplotlib.pyplot as plt
-        plt.figure()
-        plt.plot(temp_Fy)
-        plt.plot(results['MCF_l'])
-        plt.plot(temp_KAM)
-        plt.legend(['fy','mcf','kam/d'])
             
     return results
-
-
-# TODO delete: Testing
-# trial = 'walking2'
-# subject = 'subject11'
-
-# basePath = 'C:/MyDriveSym/mobilecap/Data/'+subject+'/OpenSimData/Video/mmpose_0.8/2-cameras/separateLowerUpperBody_OpenPose'
-# modelPath = os.path.join(basePath,'Model','LaiArnoldModified2017_poly_withArms_weldHand','LaiArnoldModified2017_poly_withArms_weldHand_scaled.osim')
-# outputDir = os.path.join(basePath,'DC','LaiArnoldModified2017_poly_withArms_weldHand',trial+'_videoAndMocap')
-# activationsPath = os.path.join(outputDir,'kinematics_act_' + trial +'_videoAndMocap_208.mot')
-# IKPath = activationsPath
-# IDPath = os.path.join(outputDir,'forces_' + trial + '_videoAndMocap_208.mot')
-# GRFPath = os.path.join(outputDir,'GRF_' + trial + '_videoAndMocap_208.mot')
-
-# # pathJRAResults = os.path.join(outputDir,'results_JRA_JointReactionAnalysis_ReactionLoads.sto')
-# # pathJRAResults = os.path.join(outputDir,'results_JRAforMCF_JointReactionAnalysis_ReactionLoads.sto')
-
-# forceFilePath = os.path.join(outputDir,'forces_' + trial + '_videoAndMocap_208.mot')
-# computeMCF(outputDir,modelPath,activationsPath,IKPath,GRFPath,grfType='sphere', 
-#                 muscleForceFilePath = forceFilePath, pathReserveGeneralizedForces=forceFilePath,  
-#                 Qds=[],pathJRAResults=None, replaceMuscles = True, visualize=True)

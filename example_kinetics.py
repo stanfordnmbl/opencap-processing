@@ -57,7 +57,9 @@ Please provide:
                     'squats'. We provide pre-defined settings that worked well
                     for this set of activities. If your activity is different,
                     select 'other' to use generic settings or set your own
-                    settings in settingsOpenSimAD.
+                    settings in settingsOpenSimAD. See for example how we tuned
+                    the 'running' settings to include periodic constraints in
+                    the 'my_periodic_running' settings.
                     
     time_window:    This is the time interval you want to simulate. It is
                     recommended to simulate trials shorter than 2s. Set to []
@@ -94,38 +96,61 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 '''
 
 # We provide a few examples for overground and treadmill activities.
+# We tested these examples locally. Here are some pointers about how many
+# iterations the examples took to converge. Please note that these numbers 
+# might change depending on the machine and operating system.
+#   - squat:
+#       - Windows (Windows 10):    converged in 476 iterations
+#       - macOS   (Monterey 12.2): converged in 474 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 486 iterations
+#   - STS:
+#       - Windows (Windows 10):    converged in 422 iterations
+#       - macOS   (Monterey 12.2): converged in 412 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 419 iterations 
+#   - walk_1_25ms:
+#       - Windows (Windows 10):    converged in 781 iterations
+#       - macOS   (Monterey 12.2): converged in 891 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 842 iterations 
+#   - run_2_5ms:
+#       - Windows (Windows 10):    converged in 1772 iterations
+#       - macOS   (Monterey 12.2): converged in 1637 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 2247 iterations 
+#   - run_4ms:
+#       - Windows (Windows 10):    converged in 1148 iterations
+#       - macOS   (Monterey 12.2): converged in 1133 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 1072 iterations 
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 case = '0' # Change this to compare across settings.
 if session_type == 'overground':    
     trial_name = 'STS' # Options are 'squat' and 'STS'.
-    if trial_name == 'squat': # Squat example
+    if trial_name == 'squat': # Squat
         motion_type = 'squats'
         repetition = 1
-    elif trial_name == 'STS': # Sit-to-stand example
+    elif trial_name == 'STS': # Sit-to-stand        
         motion_type = 'sit_to_stand'
         repetition = 1
     elif trial_name == 'jump': # jump example
         motion_type = 'jumping'
         time_window = [1.2, 2.4]
 elif session_type == 'treadmill':
-    trial_name = 'walk_1_25ms'
-    if trial_name == 'walk_1_25ms': # Walking example, 1.25 m/s
+    trial_name = 'run_2_5ms'
+    if trial_name == 'walk_1_25ms': # Walking, 1.25 m/s
         motion_type = 'walking'
         time_window = [1.0, 2.5]
         treadmill_speed = 1.25
-    elif trial_name == 'run_2_5ms': # Running example, 2.5 m/s
+    elif trial_name == 'run_2_5ms': # Running, 2.5 m/s
         motion_type = 'running'
         time_window = [1.4, 2.6]
         treadmill_speed = 2.5
-    elif trial_name == 'run_4ms': # Running example, 4.0 m/s
-        motion_type = 'running'
-        time_window = [2.6, 3.6]
+    elif trial_name == 'run_4ms': # Running with periodic constraints, 4.0 m/s
+        motion_type = 'my_periodic_running'
+        time_window = [3.1833333, 3.85]
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
