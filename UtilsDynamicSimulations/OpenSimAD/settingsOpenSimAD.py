@@ -24,7 +24,7 @@
     be tuned and are not exposed here.
 '''
 
-def get_default_setup(motion_type):
+def get_setup(motion_type):
 
     setups = {}   
     setups['other'] = {
@@ -73,7 +73,16 @@ def get_default_setup(motion_type):
             'pro_sup_r': {"weight": 10}},
         'coordinate_constraints': {
             'pelvis_tx': {"env_bound": 0.1}},
-        'ignorePassiveFiberForce': True}
+        'ignorePassiveFiberForce': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 30,
+        'filter_Qds_toTrack': True,
+        'cutoff_freq_Qds': 30,
+        'filter_Qdds_toTrack': True,
+        'cutoff_freq_Qdds': 30,
+        'splineQds': True,
+        'meshDensity': 100,
+        'yCalcnToes': True}
     
     setups['running'] = {
         'ipopt_tolerance': 3,
@@ -121,7 +130,18 @@ def get_default_setup(motion_type):
             'pro_sup_r': {"weight": 10}},
         'coordinate_constraints': {
             'pelvis_tx': {"env_bound": 0.1}},
-        'ignorePassiveFiberForce': True}
+        'ignorePassiveFiberForce': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 12,
+        'filter_Qds_toTrack': True,
+        'cutoff_freq_Qds': 12,
+        'filter_Qdds_toTrack': True,
+        'cutoff_freq_Qdds': 12,
+        'splineQds': True,
+        'meshDensity': 100,
+        'yCalcnToes': True,
+        
+        }
     
     setups['walking'] = {
         'ipopt_tolerance': 3,
@@ -170,7 +190,10 @@ def get_default_setup(motion_type):
         'coordinate_constraints': {
             'pelvis_ty': {"env_bound": 0.1},
             'pelvis_tx': {"env_bound": 0.1}},
-        'enableLimitTorques': True}
+        'enableLimitTorques': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 6,
+        'meshDensity': 100}
     
     
     setups['drop_jump'] = {
@@ -220,7 +243,15 @@ def get_default_setup(motion_type):
             'pelvis_ty': {"env_bound": 0.02},
             'pelvis_tx': {"env_bound": 0.02},
             'pelvis_tz': {"env_bound": 0.02}},
-        'ignorePassiveFiberForce': True}
+        'ignorePassiveFiberForce': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 30,
+        'filter_Qds_toTrack': True,
+        'cutoff_freq_Qds': 30,
+        'filter_Qdds_toTrack': True,
+        'cutoff_freq_Qdds': 30,
+        'splineQds': True,
+        'meshDensity': 100}
     
     setups['sit_to_stand'] = {
         'ipopt_tolerance': 3,
@@ -275,7 +306,15 @@ def get_default_setup(motion_type):
         'reserveActuatorCoordinates': {
             'hip_rotation_l': 30, 'hip_rotation_r': 30},
         'periodicConstraints': {'Qs': ['lowerLimbJoints']},
-        'ignorePassiveFiberForce': True}
+        'ignorePassiveFiberForce': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 4,
+        'filter_Qds_toTrack': True,
+        'cutoff_freq_Qds': 4,
+        'filter_Qdds_toTrack': True,
+        'cutoff_freq_Qdds': 4,
+        'splineQds': True,
+        'meshDensity': 50}
     
     setups['squats'] = {
         'ipopt_tolerance': 3,
@@ -332,7 +371,16 @@ def get_default_setup(motion_type):
                                 'Qds': ['lowerLimbJoints'],
                                 'muscles': ['all'],
                                 'lumbar': ['all']},
-        'ignorePassiveFiberForce': True}
+        'ignorePassiveFiberForce': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 4,
+        'filter_Qds_toTrack': True,
+        'cutoff_freq_Qds': 4,
+        'filter_Qdds_toTrack': True,
+        'cutoff_freq_Qdds': 4,
+        'splineQds': True,
+        'heel_vGRF_threshold': 5,
+        'meshDensity': 50}
         
     setups['jumping'] = {
         'weights': {
@@ -381,6 +429,15 @@ def get_default_setup(motion_type):
             'pelvis_tx': {"env_bound": 0.1},
             'pelvis_ty': {"env_bound": 0.1}},
         'ignorePassiveFiberForce': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 20,
+        'filter_Qds_toTrack': True,
+        'cutoff_freq_Qds': 20,
+        'filter_Qdds_toTrack': True,
+        'cutoff_freq_Qdds': 20,
+        'splineQds': True,
+        'meshDensity': 50,
+        'yCalcnToes': True,
         }
     
     setups['my_periodic_running'] = {
@@ -442,98 +499,15 @@ def get_default_setup(motion_type):
             'Qds': ['lowerLimbJoints'],
             'muscles': ['all'],
             'lumbar': ['all']},
-        'ignorePassiveFiberForce': True}
+        'ignorePassiveFiberForce': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 12,
+        'filter_Qds_toTrack': True,
+        'cutoff_freq_Qds': 12,
+        'filter_Qdds_toTrack': True,
+        'cutoff_freq_Qdds': 12,
+        'splineQds': True,
+        'meshDensity': 100,
+        'yCalcnToes': True}
 
     return setups[motion_type]
-
-def get_trial_setup(settings, motion_type, trialName):
-    
-    if motion_type == 'running':        
-        settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_Qs_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qs'] = 12
-        settings['trials'][trialName]['filter_Qds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qds'] = 12
-        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qdds'] = 12
-        settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['meshDensity'] = 100
-        settings['trials'][trialName]['yCalcnToes'] = True
-        
-    elif motion_type == 'jumping':  
-        settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_Qs_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qs'] = 20
-        settings['trials'][trialName]['filter_Qds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qds'] = 20
-        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qdds'] = 20
-        settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['meshDensity'] = 50
-        settings['trials'][trialName]['yCalcnToes'] = True
-        
-    elif motion_type == 'walking':  
-        settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_Qs_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qs'] = 6
-        settings['trials'][trialName]['meshDensity'] = 100
-        
-    elif motion_type == 'drop_jump':  
-        settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_Qs_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qs'] = 30
-        settings['trials'][trialName]['filter_Qds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qds'] = 30
-        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qdds'] = 30
-        settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['meshDensity'] = 100
-        
-    elif motion_type == 'sit_to_stand':
-        settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_Qs_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qs'] = 4
-        settings['trials'][trialName]['filter_Qds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qds'] = 4
-        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qdds'] = 4
-        settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['meshDensity'] = 50
-        
-    elif motion_type == 'squats':  
-        settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_Qs_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qs'] = 4
-        settings['trials'][trialName]['filter_Qds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qds'] = 4
-        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qdds'] = 4
-        settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['heel_vGRF_threshold'] = 5
-        settings['trials'][trialName]['meshDensity'] = 50
-        
-    if motion_type == 'other':        
-        settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_Qs_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qs'] = 30
-        settings['trials'][trialName]['filter_Qds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qds'] = 30
-        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qdds'] = 30
-        settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['meshDensity'] = 100
-        settings['trials'][trialName]['yCalcnToes'] = True
-        
-    if motion_type == 'my_periodic_running':        
-        settings['trials'], settings['trials'][trialName] = {}, {}
-        settings['trials'][trialName]['filter_Qs_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qs'] = 12
-        settings['trials'][trialName]['filter_Qds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qds'] = 12
-        settings['trials'][trialName]['filter_Qdds_toTrack'] = True
-        settings['trials'][trialName]['cutoff_freq_Qdds'] = 12
-        settings['trials'][trialName]['splineQds'] = True
-        settings['trials'][trialName]['meshDensity'] = 100
-        settings['trials'][trialName]['yCalcnToes'] = True
-        
-    return settings
