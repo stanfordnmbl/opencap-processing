@@ -100,25 +100,25 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 # iterations the examples took to converge. Please note that these numbers 
 # might change depending on the machine and operating system.
 #   - squat:
-#       - Windows (Windows 10):    converged in 476 iterations
-#       - macOS   (Monterey 12.2): converged in 474 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 486 iterations
+#       - Windows (Windows 10):    converged in 595 iterations
+#       - macOS   (Monterey 12.2): converged in 624 iterations
+#       - Linux   (Ubuntu 20.04):  converged in / iterations
 #   - STS:
 #       - Windows (Windows 10):    converged in 422 iterations
 #       - macOS   (Monterey 12.2): converged in 412 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 419 iterations 
+#       - Linux   (Ubuntu 20.04):  converged in / iterations 
 #   - walk_1_25ms:
-#       - Windows (Windows 10):    converged in 781 iterations
-#       - macOS   (Monterey 12.2): converged in 891 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 842 iterations 
+#       - Windows (Windows 10):    converged in 776 iterations
+#       - macOS   (Monterey 12.2): converged in 597 iterations
+#       - Linux   (Ubuntu 20.04):  converged in / iterations 
 #   - run_2_5ms:
-#       - Windows (Windows 10):    converged in 1772 iterations
-#       - macOS   (Monterey 12.2): converged in 1637 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 2247 iterations 
+#       - Windows (Windows 10):    converged in / iterations
+#       - macOS   (Monterey 12.2): converged in / iterations
+#       - Linux   (Ubuntu 20.04):  converged in / iterations 
 #   - run_4ms:
-#       - Windows (Windows 10):    converged in 1148 iterations
-#       - macOS   (Monterey 12.2): converged in 1133 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 1072 iterations 
+#       - Windows (Windows 10):    converged in 861 iterations
+#       - macOS   (Monterey 12.2): converged in 869 iterations
+#       - Linux   (Ubuntu 20.04):  converged in / iterations 
 # Select which example you would like to run.
 session_type = 'treadmill' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"

@@ -2149,7 +2149,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     assert np.alltrue(
                             np.abs(torques_opt[joints.index(c_j),:]
                                    - data_torques[c_j]) 
-                            < 10**(-3)), "error torques coordinate acts"
+                            < 10**(-2)), "error torques coordinate actuators"
             if withArms:
                 for count_j, c_j in enumerate(armJoints):
                     aArm_opt_nsc = (scaling['ArmE'].iloc[0][c_j] * 
@@ -2164,7 +2164,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     assert np.alltrue(
                             np.abs(torques_opt[joints.index(c_j),:] 
                                    - data_torques[c_j]) 
-                            < 10**(-3)), "error torques arms"
+                            < 10**(-2)), "error torques arms"
             # Sanity check for muscle-driven joints
             for count_j, c_j in enumerate(muscleDrivenJoints):
                 if c_j in data_torques:
@@ -2175,7 +2175,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                         np.abs(torques_opt[joints.index(c_j),:] - (
                             c_data_torques + pMT_opt[count_j, :] + 
                             aMT_opt[count_j, :])) 
-                        < 10**(-3)), "error torques muscle-driven joints"
+                        < 10**(-2)), "error torques muscle-driven joints"
             data_torques_np = data_torques.to_numpy()
             if len(data_torques) > 0:
                 data = np.concatenate((data, data_torques_np),axis=1)
