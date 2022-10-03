@@ -112,7 +112,7 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #       - macOS   (Monterey 12.2): converged in 597 iterations
 #       - Linux   (Ubuntu 20.04):  converged in / iterations 
 #   - run_2_5ms:
-#       - Windows (Windows 10):    converged in / iterations
+#       - Windows (Windows 10):    converged in 2022 iterations
 #       - macOS   (Monterey 12.2): converged in / iterations
 #       - Linux   (Ubuntu 20.04):  converged in / iterations 
 #   - run_4ms:
