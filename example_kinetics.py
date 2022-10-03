@@ -120,11 +120,11 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #       - macOS   (Monterey 12.2): converged in 1133 iterations
 #       - Linux   (Ubuntu 20.04):  converged in 1072 iterations 
 # Select which example you would like to run.
-session_type = 'treadmill' # Options are 'overground' and 'treadmill'.
+session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 case = '0' # Change this to compare across settings.
 if session_type == 'overground':    
-    trial_name = 'squat' # Options are 'squat' and 'STS'.
+    trial_name = 'STS' # Options are 'squat' and 'STS'.
     if trial_name == 'squat': # Squat
         motion_type = 'squats'
         repetition = 1
@@ -132,7 +132,7 @@ if session_type == 'overground':
         motion_type = 'sit_to_stand'
         repetition = 1
 elif session_type == 'treadmill':
-    trial_name = 'run_4ms'
+    trial_name = 'run_2_5ms'
     if trial_name == 'walk_1_25ms': # Walking, 1.25 m/s
         motion_type = 'walking'
         time_window = [1.0, 2.5]

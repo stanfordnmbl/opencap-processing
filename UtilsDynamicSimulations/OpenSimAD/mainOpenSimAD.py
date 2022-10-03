@@ -2325,7 +2325,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                         else:
                             labels_torques.append(c_j)
                             data_torques.insert(data_torques.shape[1], 
-                                                c_j, rAct_opt_nsc[trial][c_j])
+                                                c_j, rAct_opt_nsc[trial][c_j].flatten())
                 if enableLimitTorques:
                     for count_j, c_j in enumerate(passiveTorqueJoints):
                         if c_j in data_torques:
@@ -2366,11 +2366,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                                        - data_torques[c_j]) 
                                 < 10**(-3)), "error torques arms"
                 # Sanity check for muscle-driven joints
-                # TODO bug
                 for count_j, c_j in enumerate(muscleDrivenJoints):
+                    if c_j in data_torques:
+                        c_data_torques = data_torques[c_j].to_numpy()
+                    else:
+                        c_data_torques = np.zeros((data_torques.shape[0],))
                     assert np.alltrue(
                             np.abs(torques_opt[trial][joints.index(c_j),:] - (
-                                data_torques[c_j].to_numpy() + 
+                                c_data_torques + 
                                 pMT_opt[trial][count_j, :] + 
                                 aMT_opt[trial][count_j, :])) 
                             < 10**(-3)), "error torques muscle-driven joints"
