@@ -1,4 +1,3 @@
-
 # Install requirements
 - Open Anaconda prompt
 - Create environment (python 3.9 recommended): `conda create -n opencap-processing python=3.9`
@@ -19,3 +18,7 @@
 # Examples
 - Run `example.py` for examples of how to run kinematic analyses.
 - Run `example_kinetics.py` for examples of how to generate muscle-driven simulations.
+
+# Download OpenCap data using Google Colab
+- Open batchDownload.ipynb in Colab and follow instructions.
+- (To do this, no need to follow the install requirements above).
