@@ -26,7 +26,7 @@ import glob
 def computeKAM(pathGenericTemplates, outputDir, modelPath, IDPath, IKPath,
                GRFPath, grfType, Qds=[]):
     
-    print('Computing knee adduction moment.\n')
+    print('Computing knee adduction moments.\n')
 
     jointReactionXmlPath = os.path.join(pathGenericTemplates,'JointReaction',
                                         'Setup_JointReaction.xml')

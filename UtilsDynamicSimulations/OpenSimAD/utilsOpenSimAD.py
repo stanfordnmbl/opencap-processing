@@ -37,7 +37,7 @@ from utils import (storage_to_numpy, storage_to_dataframe,
                    download_kinematics, import_metadata)
 from utilsProcessing import (segmentSquats, segmentSTS, adjustMuscleWrapping,
                              generateModelWithContacts)
-from settingsOpenSimAD import get_default_setup, get_trial_setup
+from settingsOpenSimAD import get_setup
 
 # %% Filter numpy array.
 def filterNumpyArray(array, time, cutoff_frequency=6, order=4):
@@ -202,23 +202,22 @@ def getColfromk(xk, d, N):
     return xj
 
 # %% Verify if within range used for fitting polynomials.
-def checkQsWithinPolynomialBounds(data, bounds, coordinates, trials):
+def checkQsWithinPolynomialBounds(data, bounds, coordinates):
     
     success = True
     for coord in coordinates:
         if coord in bounds:
-            for trial in trials:
-                c_idc = coordinates.index(coord)
-                c_data = data[trial][c_idc, :]
-                # Small margin to account for filtering.                
-                if not np.all(c_data * 180 / np.pi <= bounds[coord]['max'] + 1):
-                    print('WARNING: coordinate values to track has values above upper bound ROM for polynomial fitting - {}: {} >= {}'.format(coord, np.round(np.max(c_data), 2), np.round(bounds[coord]['max'] * np.pi / 180, 2)))
-                    success = False
-                if not np.all(c_data * 180 / np.pi >= bounds[coord]['min'] - 1):
-                    print('WARNING: coordinate values to track has values below lower bound ROM for polynomial fitting-  {}: {} <= {}'.format(coord, np.round(np.min(c_data), 2), np.round(bounds[coord]['min'] * np.pi / 180, 2)))
-                    success = False   
-                if not success:
-                    print('Make sure that the motion to track looks realistic; if so consider adjusting the ROM for the polynomial fitting, see OpenSimPipeline\MuscleAnalysis\DummyMotion.mot')
+            c_idc = coordinates.index(coord)
+            c_data = data[c_idc, :]
+            # Small margin to account for filtering.                
+            if not np.all(c_data * 180 / np.pi <= bounds[coord]['max'] + 1):
+                print('WARNING: coordinate values to track has values above upper bound ROM for polynomial fitting - {}: {} >= {}'.format(coord, np.round(np.max(c_data), 2), np.round(bounds[coord]['max'] * np.pi / 180, 2)))
+                success = False
+            if not np.all(c_data * 180 / np.pi >= bounds[coord]['min'] - 1):
+                print('WARNING: coordinate values to track has values below lower bound ROM for polynomial fitting-  {}: {} <= {}'.format(coord, np.round(np.min(c_data), 2), np.round(bounds[coord]['min'] * np.pi / 180, 2)))
+                success = False   
+            if not success:
+                print('Make sure that the motion to track looks realistic; if so consider adjusting the ROM for the polynomial fitting, see OpenSimPipeline\MuscleAnalysis\DummyMotion.mot')
     
     return success
 
@@ -1711,11 +1710,10 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                 c_col = next(color)
                 if joints[i] in optimaltrajectories[case]['coordinates']:                        
                     idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
-                    trial = motion_filename
-                    ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                            optimaltrajectories[case]['coordinate_values_toTrack'][trial][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
-                    ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                            optimaltrajectories[case]['coordinate_values'][trial][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])          
+                    ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                            optimaltrajectories[case]['coordinate_values_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
+                    ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                            optimaltrajectories[case]['coordinate_values'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])          
             ax.set_title(joints[i])
             handles, labels = ax.get_legend_handles_labels()
             plt.legend(handles, labels, loc='upper right')
@@ -1738,11 +1736,10 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                     c_col = next(color)
                     if joints[i] in optimaltrajectories[case]['coordinates']:                        
                         idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
-                        trial = motion_filename
-                        ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_speeds_toTrack'][trial][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
-                        ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_speeds'][trial][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['coordinate_speeds_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['coordinate_speeds'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])
                 handles, labels = ax.get_legend_handles_labels()
                 plt.legend(handles, labels, loc='upper right')
         plt.setp(axs[-1, :], xlabel='Time (s)')
@@ -1764,11 +1761,10 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                     c_col = next(color)
                     if joints[i] in optimaltrajectories[case]['coordinates']:                        
                         idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
-                        trial = motion_filename
-                        ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_accelerations_toTrack'][trial][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
-                        ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_accelerations'][trial][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])     
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['coordinate_accelerations_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['coordinate_accelerations'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])     
                 ax.set_title(joints[i])
                 handles, labels = ax.get_legend_handles_labels()
                 plt.legend(handles, labels, loc='upper right')
@@ -1785,12 +1781,11 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
             for c, case in enumerate(cases):
                 if joints[i] in optimaltrajectories[case]['coordinates']:                        
                     idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
-                    trial = motion_filename
                     if 'torques_ref' in optimaltrajectories[case]:
-                        ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['torques_ref'][trial][idx_coord:idx_coord+1,:].T, c='black', label='mocap-based ID ' + cases[c])
-                    ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                            optimaltrajectories[case]['torques'][trial][idx_coord:idx_coord+1,:].T, c=next(color), label='video-based DC ' + cases[c])      
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['torques_ref'][idx_coord:idx_coord+1,:].T, c='black', label='mocap-based ID ' + cases[c])
+                    ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                            optimaltrajectories[case]['torques'][idx_coord:idx_coord+1,:].T, c=next(color), label='video-based DC ' + cases[c])      
             ax.set_title(joints[i])
             handles, labels = ax.get_legend_handles_labels()
             plt.legend(handles, labels, loc='upper right')
@@ -1808,13 +1803,12 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
             color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
             plotedGRF = False
             for c, case in enumerate(cases):
-                trial = motion_filename
                 if 'GRF_ref' in optimaltrajectories[case] and not plotedGRF:
                     plotedGRF = True
-                    ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                            optimaltrajectories[case]['GRF_ref'][trial][i:i+1,:].T, c='black', label='measured GRF ' + cases[c])
-                ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                        optimaltrajectories[case]['GRF'][trial][i:i+1,:].T, c=next(color), label='video-based DC ' + cases[c])         
+                    ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                            optimaltrajectories[case]['GRF_ref'][i:i+1,:].T, c='black', label='measured GRF ' + cases[c])
+                ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                        optimaltrajectories[case]['GRF'][i:i+1,:].T, c=next(color), label='video-based DC ' + cases[c])         
             ax.set_title(GRF_labels[i])
             handles, labels = ax.get_legend_handles_labels()
             plt.legend(handles, labels, loc='upper right')
@@ -1833,13 +1827,12 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                 color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
                 plotedGRF = False
                 for c, case in enumerate(cases):
-                    trial = motion_filename
                     if 'GRM_ref' in optimaltrajectories[case] and not plotedGRF:
                         plotedGRF = True
-                        ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['GRM_ref'][trial][i:i+1,:].T, c='black', label='measured GRM ' + cases[c])
-                    ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                            optimaltrajectories[case]['GRM'][trial][i:i+1,:].T, c=next(color), label='video-based DC ' + cases[c])         
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['GRM_ref'][i:i+1,:].T, c='black', label='measured GRM ' + cases[c])
+                    ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                            optimaltrajectories[case]['GRM'][i:i+1,:].T, c=next(color), label='video-based DC ' + cases[c])         
                 ax.set_title(GRF_labels[i])
                 handles, labels = ax.get_legend_handles_labels()
                 plt.legend(handles, labels, loc='upper right')
@@ -1852,14 +1845,13 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
     NMuscles = len(muscles)
     ny = np.ceil(np.sqrt(NMuscles))   
     fig, axs = plt.subplots(int(ny), int(ny), sharex=True)
-    fig.suptitle('Muscle activations: DC vs IK - {}'.format(trial)) 
+    fig.suptitle('Muscle activations: DC vs IK') 
     for i, ax in enumerate(axs.flat):
         if i < NMuscles:
             color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
             for c, case in enumerate(cases):
-                trial = motion_filename
-                ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                        optimaltrajectories[case]['muscle_activations'][trial][i:i+1,:-1].T, c=next(color), label='video-based DC ' + cases[c])         
+                ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                        optimaltrajectories[case]['muscle_activations'][i:i+1,:-1].T, c=next(color), label='video-based DC ' + cases[c])         
             ax.set_title(muscles[i])
             ax.set_ylim((0,1))
             handles, labels = ax.get_legend_handles_labels()
@@ -1883,22 +1875,19 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                     c_col = next(color)
                     if muscleDrivenJoints[i] in optimaltrajectories[case]['muscle_driven_joints']:                        
                         idx_coord = optimaltrajectories[case]['muscle_driven_joints'].index(muscleDrivenJoints[i])
-                        trial = motion_filename
-                        ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['passive_muscle_torques'][trial][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='dashed', label='passive muscle torque ' + cases[c])
-                        ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['active_muscle_torques'][trial][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='solid', label='active muscle torque ' + cases[c])                
-                        c_sum = optimaltrajectories[case]['passive_muscle_torques'][trial][idx_coord:idx_coord+1,:].T + optimaltrajectories[case]['active_muscle_torques'][trial][idx_coord:idx_coord+1,:].T             
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['passive_muscle_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='dashed', label='passive muscle torque ' + cases[c])
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['active_muscle_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='solid', label='active muscle torque ' + cases[c])                
+                        c_sum = optimaltrajectories[case]['passive_muscle_torques'][idx_coord:idx_coord+1,:].T + optimaltrajectories[case]['active_muscle_torques'][idx_coord:idx_coord+1,:].T             
                     if muscleDrivenJoints[i] in optimaltrajectories[case]['limit_torques_joints']:                        
                           idx_coord = optimaltrajectories[case]['limit_torques_joints'].index(muscleDrivenJoints[i])
-                          trial = motion_filename            
-                          ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
-                                optimaltrajectories[case]['passive_limit_torques'][trial][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='dotted', label='limit torque ' + cases[c])                    
-                          c_sum += optimaltrajectories[case]['passive_limit_torques'][trial][idx_coord:idx_coord+1,:].T             
+                          ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['passive_limit_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='dotted', label='limit torque ' + cases[c])                    
+                          c_sum += optimaltrajectories[case]['passive_limit_torques'][idx_coord:idx_coord+1,:].T             
                     if muscleDrivenJoints[i] in optimaltrajectories[case]['muscle_driven_joints']:                        
                           idx_coord = optimaltrajectories[case]['muscle_driven_joints'].index(muscleDrivenJoints[i])
-                          trial = motion_filename
-                          ax.plot(optimaltrajectories[case]['time'][trial][0,:-1].T,
+                          ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                                   c_sum, c=c_col, linestyle='solid', linewidth=3, label='net torque ' + cases[c])
                 ax.set_title(muscleDrivenJoints[i])
                 handles, labels = ax.get_legend_handles_labels()
@@ -1911,26 +1900,30 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
 # %% Process inputs for optimal control problem.   
 def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                            motion_type, time_window=[], repetition=None,
-                           treadmill_speed=0):
+                           treadmill_speed=0, overwrite=False):
         
     # Path session folder.
     sessionFolder =  os.path.join(dataFolder, session_id)
     
     # Download kinematics and model.
-    _ = download_kinematics(session_id, sessionFolder, trialNames=[trial_name])
+    pathTrial = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics', 
+                             trial_name + '.mot') 
+    if not os.path.exists(pathTrial) or overwrite:
+        _ = download_kinematics(session_id, sessionFolder, 
+                                trialNames=[trial_name])
     
     # Prepare inputs for dynamic simulations.
     # Adjust muscle wrapping.
-    adjustMuscleWrapping(baseDir, dataFolder, session_id, overwrite=False)
+    adjustMuscleWrapping(baseDir, dataFolder, session_id, overwrite=overwrite)
     # Add foot-ground contacts to musculoskeletal model.
-    generateModelWithContacts(dataFolder, session_id, overwrite=False)
+    generateModelWithContacts(dataFolder, session_id, overwrite=overwrite)
     # Generate external function.
     generateExternalFunction(baseDir, dataFolder, session_id, 
-                             overwrite=False, treadmill=bool(treadmill_speed))
+                             overwrite=overwrite, 
+                             treadmill=bool(treadmill_speed))
     
     # Get settings.
-    default_settings = get_default_setup(motion_type)
-    settings = get_trial_setup(default_settings, motion_type, trial_name)
+    settings = get_setup(motion_type)
     # # Add time to settings if not specified.
     pathMotionFile = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics',
                                   trial_name + '.mot')
@@ -1946,7 +1939,7 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
         if not time_window:
             motion_file = storage_to_numpy(pathMotionFile)
             time_window = [motion_file['time'][0], motion_file['time'][-1]]
-    settings['trials'][trial_name]['timeInterval'] = time_window
+    settings['timeInterval'] = time_window
     
     # Get demographics.
     metadata = import_metadata(os.path.join(sessionFolder, 'sessionMetadata.yaml'))
@@ -1954,6 +1947,9 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     settings['height_m'] = metadata['height_m']
     
     # Treadmill speed.
-    settings['trials'][trial_name]['treadmill_speed'] = treadmill_speed
+    settings['treadmill_speed'] = treadmill_speed
+    
+    # Trial name
+    settings['trial_name'] = trial_name
     
     return settings
