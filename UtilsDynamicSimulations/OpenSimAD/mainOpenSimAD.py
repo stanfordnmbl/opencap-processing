@@ -355,16 +355,20 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     
     # Extract muscle-tendon parameters (if not done already).
     from muscleDataOpenSimAD import getMTParameters
-    loadMTParameters = True
-    if not os.path.exists(os.path.join(pathModelFolder, 
-                                       model_full_name + '_mtParameters.npy')):
-        loadMTParameters = False
+    loadMTParameters_l = True
+    loadMTParameters_r = True
+    if not os.path.exists(os.path.join(
+            pathModelFolder, model_full_name + '_mtParameters_l.npy')):
+        loadMTParameters_l = False
+    if not os.path.exists(os.path.join(
+            pathModelFolder, model_full_name + '_mtParameters_r.npy')):
+        loadMTParameters_r = False
     righSideMtParameters = getMTParameters(pathModelFile, rightSideMuscles,
-                                           loadMTParameters, pathModelFolder,
-                                           model_full_name)
+                                           loadMTParameters_r, pathModelFolder,
+                                           model_full_name, side='r')
     leftSideMtParameters = getMTParameters(pathModelFile, leftSideMuscles,
-                                           loadMTParameters, pathModelFolder,
-                                           model_full_name)
+                                           loadMTParameters_l, pathModelFolder,
+                                           model_full_name, side='l')
     mtParameters = np.concatenate((leftSideMtParameters, 
                                    righSideMtParameters), axis=1)
     mtParameters[0,:] = mtParameters[0,:] * scaleIsometricMuscleForce

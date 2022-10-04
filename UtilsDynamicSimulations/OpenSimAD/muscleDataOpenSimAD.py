@@ -26,11 +26,12 @@ import numpy as np
 # slack length, pennation angle at optimal fiber length, and maximal
 # contraction velocity (times optimal fiber length).
 def getMTParameters(pathModel, muscles, loadMTParameters,
-                    pathMTParameters=0, modelName=''):
+                    pathMTParameters=0, modelName='', side=''):
     
     if loadMTParameters:        
         mtParameters = np.load(os.path.join(
-            pathMTParameters, modelName + '_mtParameters.npy'),
+            pathMTParameters, 
+            '{}_mtParameters_{}.npy'.format(modelName, side)),
             allow_pickle=True)
     else:   
         import opensim
@@ -46,8 +47,9 @@ def getMTParameters(pathModel, muscles, loadMTParameters,
            mtParameters[4,i] = (muscle.getMaxContractionVelocity() * 
                                 muscle.getOptimalFiberLength())
         if pathMTParameters != 0:
-           np.save(os.path.join(pathMTParameters, modelName + 
-                                '_mtParameters.npy'), mtParameters)
+           np.save(os.path.join(pathMTParameters, 
+                                '{}_mtParameters_{}.npy'.format(
+                                    modelName, side)), mtParameters)
        
     return mtParameters
 
