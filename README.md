@@ -8,5 +8,14 @@
 - Navigate to the directory where this repository is cloned and install required packages: `python -m pip install -r requirements.txt`
     - (Optional): Install an IDE such as Spyder: `conda install spyder` 
     
+## Install requirements to run muscle-driven simulations
+- Install [CMake](https://cmake.org/download/)
+    - **Windows**: Add CMake to system path. During the installation, select *Add CMake to the system PATH for all users*.
+- **Windows**: Install [Visual Studio](https://visualstudio.microsoft.com/downloads/)
+    - The Community variant is sufficient and is free for everyone.
+    - During the installation, select the *workload Desktop Development with C++*.
+    - The code was tested with the 2017, 2019, and 2022 Community editions.
+    
 # Examples
-- Run `example.py` for some kinematic analyses.
+- Run `example.py` for examples of how to run kinematic analyses.
+- Run `example_kinetics.py` for examples of how to generate muscle-driven simulations.

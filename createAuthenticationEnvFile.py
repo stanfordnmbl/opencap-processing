@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
     ---------------------------------------------------------------------------
     OpenCap processing: createAuthenticationEnvFile.py
@@ -20,8 +19,8 @@
 '''
 
 # Run this script to save authentication token into a .env file. 
-# DO NOT CHANGE THE FILE NAME OF THE .env FILE, or your credentials will get pushed
-# to github with a commit, and anyone could get access to your data.
+# DO NOT CHANGE THE FILE NAME OF THE .env FILE, or your credentials will get 
+# pushed to github with a commit, and anyone could get access to your data.
 # We recommend only saving this .env file on your own encrypted machine
 # and not while running on google collab.
 
