@@ -6,7 +6,7 @@ OpenSimAD requires compiling C++ and C code. Everything is automated, but please
 
 ### Overview pipeline muscle-driven simulations
 1. **Process inputs**
-  - [Download the model and the motion file](https://github.com/stanfordnmbl/opencap-processing/blob/main/UtilsDynamicSimulations/OpenSimAD/utilsOpenSimAD.py#L1912) with the coordinate values (eg, joint angles).
+  - [Download the model and the motion file](https://github.com/stanfordnmbl/opencap-processing/blob/main/UtilsDynamicSimulations/OpenSimAD/utilsOpenSimAD.py#L1912) with the coordinate values estimated from videos.
   - [Adjust the wrapping surfaces](https://github.com/stanfordnmbl/opencap-processing/blob/main/UtilsDynamicSimulations/OpenSimAD/utilsOpenSimAD.py#L1917) of the model to enforce meaningful moment arms (ie, address known bug of wrapping surfaces).
   - [Add contact spheres](https://github.com/stanfordnmbl/opencap-processing/blob/main/UtilsDynamicSimulations/OpenSimAD/utilsOpenSimAD.py#L1919) to the musculoskeletal model to model foot-ground interactions.
   - [Generate differentiable external function](https://github.com/stanfordnmbl/opencap-processing/blob/main/UtilsDynamicSimulations/OpenSimAD/utilsOpenSimAD.py#L1921) to leverage AD when solving the optimal control problem.
@@ -74,3 +74,7 @@ OpenSimAD requires compiling C++ and C code. Everything is automated, but please
 - `polynomialsOpenSimAD.py`: script to fit polynomial coefficients.
 - `settingsOpenSimAD.py`: settings for the problem with pre-defined settings for simulating different activities.
 - `utilsOpenSimAD.py`: various utilities for OpenSimAD.
+
+### Food for thoughts
+
+Dynamic simulations of human movement require solving complex optimal control problems. **It is a tedious task with no guarantee of success.** Even if the problem converges (*optimal solution found*), you should always verify that the results are biomechanically meaningful. it is indeed possible that the problem satisfied all constraints but did not converge to the expected solution. You might want to play with the settings (eg, weights of the different terms in the cost function), constraints, and cost function terms to generate simulations that make sense for the particular activity you are interested in.
