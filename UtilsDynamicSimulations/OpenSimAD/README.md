@@ -48,13 +48,20 @@ OpenSimAD requires compiling C++ and C code. Everything is automated, but please
       - muscle_activations: muscle activations from the dynamic simulation.
       - passive_muscle_torques: passive torque contribution of the muscles from the dynamic simulation.
       - active_muscle_torques: active torque contribution of the muscles from the dynamic simulation.
-      - passive_limit_torques: torque contributions from limit torques from the dynamic simulation.      
+      - passive_limit_torques: torque contributions from limit torques from the dynamic simulation.
+      - KAM: knee adduction moments from the dynamic simulation.
+      - KAM_BWht: knee adduction moments normalized by body weight times height from the dynamic simulation.
+      - MCF: medial knee contact forces from the dynamic simulation.
+      - MCF_BW: medial knee contact forces normalized by body weight from the dynamic simulation.
       - coordinates: coordinate names.
       - rotationalCoordinates: rotational coordinate names.
-      - GRF_labels: labels groun reactionf forces
+      - GRF_labels: labels ground reaction forces
       - muscles: muscle names.
       - muscle_driven_joints: muscle-driven coordinate names.
       - limit_torques_joints : names of coordinates with limit torques.
+      - KAM_labels: labels knee adduction moments.
+      - MCF_labels: labels medial knee contact fprces.
+      - iter_count: number of iterations the problem took to converge.
 
 ### Overview files
 - `boundsOpenSimAD.py`: script describing the bounds of the problem variables.
