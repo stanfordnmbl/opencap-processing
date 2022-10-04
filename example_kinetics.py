@@ -173,8 +173,8 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   treadmill_speed)
 
 # %% Simulation.
-#run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-#              solveProblem=solveProblem, analyzeResults=analyzeResults)
+run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
+             solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
