@@ -212,15 +212,6 @@ def adjustMuscleWrapping(
     
     # Paths
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
-    
-    # TEMP
-    # pathModelFolder = os.path.join(osDir, poseDetector, cameraSetup, 'Model')
-    # pathUnscaledModel = os.path.join(pathModelFolder,
-    #                                OpenSimModel + '_generic.osim')
-    # pathScaledModel = os.path.join(pathModelFolder,
-    #                                OpenSimModel + '_scaled.osim')
-    # pathOutputModel = os.path.join(pathModelFolder,
-    #                                OpenSimModel + '_scaled_adjusted.osim')
     pathModelFolder = os.path.join(osDir, 'Model')
     pathUnscaledModel = os.path.join(baseDir, 'OpenSimPipeline', 'Models',
                                      OpenSimModel + '.osim')

@@ -23,11 +23,8 @@ import os
 
 # List of sessions you'd like to download. They go to the Data folder in the 
 # current directory.
-# sessionList = ['7272a71a-e70a-4794-a253-39e11cb7542c',
-#                 'abe79267-646f-436b-a19e-a9e1d8f32807']
-
-sessionList = ['887570ac-ff7a-45a0-a4ad-7579a7308d8e']
-
+sessionList = ['7272a71a-e70a-4794-a253-39e11cb7542c',
+               'abe79267-646f-436b-a19e-a9e1d8f32807']
              
 # base directory for downloads. Specify None if you want to go to os.path.join(os.getcwd(),'Data')
 downloadPath = os.path.join(os.getcwd(),'Data')
