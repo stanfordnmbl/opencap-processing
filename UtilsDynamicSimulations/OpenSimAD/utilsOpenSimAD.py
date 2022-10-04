@@ -1677,7 +1677,7 @@ def download_file(url, file_name):
 # %% Plot results simulations.
 # TODO: simplify and clean up.
 def plotResultsDC(dataDir, subject, motion_filename, settings, 
-                  cases=['default'], mainPlots=False):
+                  cases=['default'], mainPlots=True):
     
     # %% Load optimal trajectories.
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')

@@ -102,29 +102,29 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #   - squat:
 #       - Windows (Windows 10):    converged in 595 iterations
 #       - macOS   (Monterey 12.2): converged in 624 iterations
-#       - Linux   (Ubuntu 20.04):  converged in / iterations
+#       - Linux   (Ubuntu 20.04):  converged in 431 iterations
 #   - STS:
 #       - Windows (Windows 10):    converged in 422 iterations
 #       - macOS   (Monterey 12.2): converged in 412 iterations
-#       - Linux   (Ubuntu 20.04):  converged in / iterations 
+#       - Linux   (Ubuntu 20.04):  converged in 419 iterations 
 #   - walk_1_25ms:
 #       - Windows (Windows 10):    converged in 776 iterations
 #       - macOS   (Monterey 12.2): converged in 597 iterations
-#       - Linux   (Ubuntu 20.04):  converged in / iterations 
+#       - Linux   (Ubuntu 20.04):  converged in 602 iterations 
 #   - run_2_5ms:
 #       - Windows (Windows 10):    converged in 2022 iterations
-#       - macOS   (Monterey 12.2): converged in / iterations
-#       - Linux   (Ubuntu 20.04):  converged in / iterations 
+#       - macOS   (Monterey 12.2): converged in 1698 iterations
+#       - Linux   (Ubuntu 20.04):  converged in 2104 iterations 
 #   - run_4ms:
 #       - Windows (Windows 10):    converged in 861 iterations
 #       - macOS   (Monterey 12.2): converged in 869 iterations
-#       - Linux   (Ubuntu 20.04):  converged in / iterations 
+#       - Linux   (Ubuntu 20.04):  converged in 856 iterations 
 # Select which example you would like to run.
-session_type = 'treadmill' # Options are 'overground' and 'treadmill'.
+session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 case = '0' # Change this to compare across settings.
 if session_type == 'overground':    
-    trial_name = 'squat' # Options are 'squat' and 'STS'.
+    trial_name = 'STS' # Options are 'squat' and 'STS'.
     if trial_name == 'squat': # Squat
         motion_type = 'squats'
         repetition = 1
@@ -135,7 +135,7 @@ if session_type == 'overground':
         motion_type = 'jumping'
         time_window = [1.2, 2.4]
 elif session_type == 'treadmill':
-    trial_name = 'run_4ms'
+    trial_name = 'walk_1_25ms'
     if trial_name == 'walk_1_25ms': # Walking, 1.25 m/s
         motion_type = 'walking'
         time_window = [1.0, 2.5]
@@ -173,9 +173,9 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   treadmill_speed)
 
 # %% Simulation.
-run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-              solveProblem=solveProblem, analyzeResults=analyzeResults)
+#run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
+#              solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
-# plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case])
+plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case])
