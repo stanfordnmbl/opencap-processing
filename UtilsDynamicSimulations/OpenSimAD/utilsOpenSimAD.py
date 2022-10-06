@@ -1906,6 +1906,7 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     sessionFolder =  os.path.join(dataFolder, session_id)
     
     # Download kinematics and model.
+    print('Download kinematic data and model.')
     pathTrial = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics', 
                              trial_name + '.mot') 
     if not os.path.exists(pathTrial) or overwrite:
@@ -1914,10 +1915,13 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     
     # Prepare inputs for dynamic simulations.
     # Adjust muscle wrapping.
+    print('Adjust muscle wrapping surfaces.')
     adjustMuscleWrapping(baseDir, dataFolder, session_id, overwrite=overwrite)
     # Add foot-ground contacts to musculoskeletal model.
+    print('Add foot-ground contacts.')
     generateModelWithContacts(dataFolder, session_id, overwrite=overwrite)
     # Generate external function.
+    print('Generate external function to leverage automatic differentiation.')
     generateExternalFunction(baseDir, dataFolder, session_id, 
                              overwrite=overwrite, 
                              treadmill=bool(treadmill_speed))

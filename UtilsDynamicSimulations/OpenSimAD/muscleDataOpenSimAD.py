@@ -194,7 +194,8 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
             pathModelFolder, 'data4PolynomialFitting_{}.npy'.format(modelName))
         # Generate polynomial data.
         if (not os.path.exists(path_data4PolynomialFitting) or 
-            overwritedata4PolynomialFitting):
+            overwritedata4PolynomialFitting):            
+            print('Generating data to fit polynomials.')            
             import opensim
             from joblib import Parallel, delayed
             import multiprocessing
@@ -258,11 +259,13 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
             data4PolynomialFitting = np.load(path_data4PolynomialFitting, 
                                              allow_pickle=True).item()
         # Fit polynomial coefficients.
+        print('Fit polynomials.')
         from polynomialsOpenSimAD import getPolynomialCoefficients
         polynomialData = getPolynomialCoefficients(
             data4PolynomialFitting, joints, muscles, side=side)
         if pathModelFolder != 0:
             np.save(pathPolynomialData, polynomialData)
+        print('Done fitting polynomials.')
            
     return polynomialData
 
