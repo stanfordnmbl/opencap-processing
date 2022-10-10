@@ -6,13 +6,19 @@ Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 20
 
 # Install requirements
 ## General
-1. Open Anaconda prompt.
+1. Install [Anaconda](https://www.anaconda.com/)
+1. Open Anaconda prompt
 2. Create environment (python 3.9 recommended): `conda create -n opencap-processing python=3.9`
 3. Activate environment: `conda activate opencap-processing`
 4. Install OpenSim: `conda install -c opensim-org opensim=4.4=py39np120`
     - Visit this [webpage](https://simtk-confluence.stanford.edu:8443/display/OpenSim/Conda+Package) for more details about the OpenSim conda package.
-5. Navigate to the directory where this repository is cloned and install required packages: `python -m pip install -r requirements.txt`
-    - (Optional): Install an IDE such as Spyder: `conda install spyder`
+5. (Optional): Install an IDE such as Spyder: `conda install spyder`
+6. Clone the repository to your machine: 
+    - Navigate to the directory where you want to download the code: eg. `cd Documents`
+    - Clone the repository: `git clone https://github.com/stanfordnmbl/opencap-processing.git`
+    - Navigate to the directory: `cd opencap-processing`
+7. Install required packages: `python -m pip install -r requirements.txt`
+    
     
 ## Muscle-driven simulations
 1. Install [CMake](https://cmake.org/download/)
