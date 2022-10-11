@@ -13,6 +13,11 @@ Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 20
 2. Create environment (python 3.9 recommended): `conda create -n opencap-processing python=3.9`
 3. Activate environment: `conda activate opencap-processing`
 4. Install OpenSim: `conda install -c opensim-org opensim=4.4=py39np120`
+    - Test that OpenSim was successfully installed:
+        - Start IPython: `ipython`
+        - Import OpenSim: `import opensim`
+            - If you don't get any error message at this point, you should be good to go.
+        - You can also double check which version you installed : `opensim.GetVersion()`
     - Visit this [webpage](https://simtk-confluence.stanford.edu:8443/display/OpenSim/Conda+Package) for more details about the OpenSim conda package.
 5. (Optional): Install an IDE such as Spyder: `conda install spyder`
 6. Clone the repository to your machine: 
