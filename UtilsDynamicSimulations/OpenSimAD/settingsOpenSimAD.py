@@ -198,9 +198,9 @@ def get_setup(motion_type):
     
     setups['drop_jump'] = {
         'weights': {
-            'positionTrackingTerm': 50,
+            'positionTrackingTerm': 100,
             'velocityTrackingTerm': 10,
-            'accelerationTrackingTerm': 50,
+            'accelerationTrackingTerm': 10,
             'activationTerm': 1,
             'armExcitationTerm': 0.001,
             'lumbarExcitationTerm': 0.001,

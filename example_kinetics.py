@@ -122,18 +122,18 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-case = '0' # Change this to compare across settings.
+case = '2' # Change this to compare across settings.
 if session_type == 'overground':    
-    trial_name = 'STS' # Options are 'squat' and 'STS'.
+    trial_name = 'DJ' # Options are 'squat' and 'STS'.
     if trial_name == 'squat': # Squat
         motion_type = 'squats'
         repetition = 1
     elif trial_name == 'STS': # Sit-to-stand        
         motion_type = 'sit_to_stand'
         repetition = 1
-    elif trial_name == 'jump': # jump example
-        motion_type = 'jumping'
-        time_window = [1.2, 2.4]
+    elif trial_name == 'DJ': # drop jump example
+        motion_type = 'drop_jump'
+        time_window = [2.45, 3.35]
 elif session_type == 'treadmill':
     trial_name = 'walk_1_25ms'
     if trial_name == 'walk_1_25ms': # Walking, 1.25 m/s
@@ -174,7 +174,7 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
 
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-             solveProblem=solveProblem, analyzeResults=analyzeResults)
+              solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
