@@ -131,9 +131,6 @@ if session_type == 'overground':
     elif trial_name == 'STS': # Sit-to-stand        
         motion_type = 'sit_to_stand'
         repetition = 1
-    elif trial_name == 'jump': # jump example
-        motion_type = 'jumping'
-        time_window = [1.2, 2.4]
 elif session_type == 'treadmill':
     trial_name = 'walk_1_25ms'
     if trial_name == 'walk_1_25ms': # Walking, 1.25 m/s
