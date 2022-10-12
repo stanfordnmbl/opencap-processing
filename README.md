@@ -14,7 +14,7 @@ Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 20
 3. Activate environment: `conda activate opencap-processing`
 4. Install OpenSim: `conda install -c opensim-org opensim=4.4=py39np120`
     - Test that OpenSim was successfully installed:
-        - Start IPython: `ipython`
+        - Start python: `python`
         - Import OpenSim: `import opensim`
             - If you don't get any error message at this point, you should be good to go.
         - You can also double check which version you installed : `opensim.GetVersion()`
