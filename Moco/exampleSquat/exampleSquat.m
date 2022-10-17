@@ -16,7 +16,8 @@
 % limitations under the License.                                             %
 % -------------------------------------------------------------------------- %
 
-% Example using OpenSim Moco to track OpenCap data of squatting.
+% Example using OpenSim Moco to track OpenCap data of squatting. This example
+% solves in about 6 hours on a computer with 8 cores.
 %
 % Model
 % -----

@@ -16,7 +16,8 @@
 % limitations under the License.                                             %
 % -------------------------------------------------------------------------- %
 
-% Example using OpenSim Moco to track OpenCap data of walking.
+% Example using OpenSim Moco to track OpenCap data of walking. This example
+% solves in about 5 hours on a computer with 8 cores.
 %
 % Model
 % -----
