@@ -22,7 +22,7 @@ Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 20
     - Visit this [webpage](https://simtk-confluence.stanford.edu:8443/display/OpenSim/Conda+Package) for more details about the OpenSim conda package.
 5. (Optional): Install an IDE such as Spyder: `conda install spyder`
 6. Clone the repository to your machine: 
-    - Navigate to the directory where you want to download the code: eg. `cd Documents`
+    - Navigate to the directory where you want to download the code: eg. `cd Documents`. Make sure there are no spaces in this path.
     - Clone the repository: `git clone https://github.com/stanfordnmbl/opencap-processing.git`
     - Navigate to the directory: `cd opencap-processing`
 7. Install required packages: `python -m pip install -r requirements.txt`
