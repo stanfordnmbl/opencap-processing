@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def plot_dataframe(dataframes, x=None, y=[], xlabel=None, ylabel=None, 
-                   labels=None, title=None):
+                   labels=None, title=None, xrange=None):
     
     # Handle case specific number of subplots.
     if not x and not y:
@@ -62,6 +62,8 @@ def plot_dataframe(dataframes, x=None, y=[], xlabel=None, ylabel=None,
         for c, dataframe in enumerate(dataframes):
             c_color = next(color)     
             plt.plot(dataframe[x], dataframe[y], c=c_color, label=labels[c])
+            if xrange is not None:
+                plt.xlim(xrange)
     else: # Multiple subplots.
         fig, axs = plt.subplots(nRow, nCol, sharex=True)     
         for i, ax in enumerate(axs.flat):
@@ -71,6 +73,8 @@ def plot_dataframe(dataframes, x=None, y=[], xlabel=None, ylabel=None,
                     c_color = next(color)                
                     ax.plot(dataframe[x], dataframe[y[i]], c=c_color, label=labels[c])
                     ax.set_title(y[i])
+                    if xrange is not None:
+                        plt.xlim(xrange)
             if i == 0:
                 handles, labels = ax.get_legend_handles_labels()
         
@@ -103,7 +107,7 @@ def plot_dataframe(dataframes, x=None, y=[], xlabel=None, ylabel=None,
         axs_flat = axs.flat
         for ax in (axs_flat[len(axs_flat)-nEmptySubplots:]):
             ax.set_visible(False)
-        
+                   
     # Tight layout (should make figure big enough first).
     # fig.tight_layout()
     
