@@ -17,7 +17,9 @@
 % -------------------------------------------------------------------------- %
 
 % Example using OpenSim Moco to track OpenCap data of walking. This example
-% solves in about 5 hours on a computer with 8 cores.
+% solves in about 5 hours on a computer with 8 cores. The solution and solve 
+% time can vary on different computers, so the solve time provided here is
+% provided as a rough guideline.
 %
 % Model
 % -----
@@ -60,6 +62,10 @@ stateTrackingWeight = 1;
 % Set other parameters, including the initial and final times of the
 % simulation, the mesh interval, the relative size of the state bounds, and
 % the optimal force for the lumbar and upper limb coordinate actuators.
+% Since we enforce periodicity, the initial and final time are chosen to be
+% time points during adjacent strides at the same point in the gait cycle.
+% These exact values were chosen by visualizing the input motion in the
+% Opensim GUI and finding times with similar joint coordinate values.
 initialTime = 0.07;
 finalTime = 1.45;
 meshInterval = 0.05;
@@ -107,7 +113,8 @@ problem = study.updProblem();
 % Tracking
 % --------
 % Set different tracking weights for states (weights for states not 
-% explicitly set here have a default value of 1.0)
+% explicitly set here have a default value of 1.0). The values below
+% were obtained by trial and error.
 stateTrackingGoal = MocoStateTrackingGoal.safeDownCast(problem.updGoal('state_tracking'));
 stateTrackingGoal.setWeightForState('/jointset/ground_pelvis/pelvis_tilt/value', 10.0);
 stateTrackingGoal.setWeightForState('/jointset/ground_pelvis/pelvis_tilt/speed', 10.0);

@@ -17,8 +17,10 @@
 % -------------------------------------------------------------------------- %
 
 % Example using OpenSim Moco to track OpenCap data of squatting. This example
-% solves in about 6 hours on a computer with 8 cores.
-%
+% solves in about 6 hours on a computer with 8 cores. The solution and solve 
+% time can vary on different computers, so the solve time provided here is
+% provided as a rough guideline.
+% 
 % Model
 % -----
 % This script uses the same base model from OpenCap and then adjusts the
@@ -64,6 +66,11 @@ calcnTargetTrackingHeight = 0.03;
 % Set other parameters, including the initial and final times of the
 % simulation, the mesh interval, the relative size of the state bounds, and
 % the optimal force for the lumbar and upper limb coordinate actuators.
+% Since we enforce periodicity, the initial and final time are chosen to be
+% time points at the start and end of the squat that are in the standing
+% position. These exact values were chosen by visualizing the input motion
+% in the OpenSim GUI and finding time points in the standing position at
+% the start and end of one of the squats.
 initialTime = 1.70;
 finalTime = 3.20;
 meshInterval = 0.08;
@@ -121,7 +128,8 @@ problem = study.updProblem();
 % Tracking
 % --------
 % Set different tracking weights for states (weights for states not 
-% explicitly set here have a default value of 1.0)
+% explicitly set here have a default value of 1.0). The values below 
+% were obtained by trial and error.
 stateTrackingGoal = MocoStateTrackingGoal.safeDownCast(problem.updGoal('state_tracking'));
 stateTrackingGoal.setWeightForState('/jointset/ground_pelvis/pelvis_tilt/value', 10.0);
 stateTrackingGoal.setWeightForState('/jointset/ground_pelvis/pelvis_tilt/speed', 10.0);
@@ -150,7 +158,14 @@ problem.addGoal(periodicityGoal);
 model = modelProcessor.process();
 model.initSystem();
 
-% Periodic coordinate values (except for pelvis_tx) and speeds.
+% Periodic coordinate values (except for pelvis_tx) and speeds. Note that for
+% the pelvis translation coordinates, a periodic goal is added for the "y" and
+% "z" directions (vertical and side-to-side directions) because the coordinate
+% values at the initial and final times were small (< 1 cm). The "x"
+% direction (forward-backward direction) is not added as its difference was
+% larger between the initial and final time points, indicating that a person
+% performing a squat may end up leaning forward or backward more than in
+% the initial position.
 for i = 1:model.getNumStateVariables()
     currentStateName = string(model.getStateVariableNames().getitem(i-1));
     if startsWith(currentStateName , '/jointset')
