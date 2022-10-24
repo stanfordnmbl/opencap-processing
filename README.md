@@ -18,7 +18,7 @@ Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 20
         - Import OpenSim: `import opensim`
             - If you don't get any error message at this point, you should be good to go.
         - You can also double check which version you installed : `opensim.GetVersion()`
-        - Exit IPython: `quit()`
+        - Exit python: `quit()`
     - Visit this [webpage](https://simtk-confluence.stanford.edu:8443/display/OpenSim/Conda+Package) for more details about the OpenSim conda package.
 5. (Optional): Install an IDE such as Spyder: `conda install spyder`
 6. Clone the repository to your machine: 
