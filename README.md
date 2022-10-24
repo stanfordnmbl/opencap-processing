@@ -35,19 +35,21 @@ Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 20
     - The Community variant is sufficient and is free for everyone.
     - During the installation, select the *workload Desktop Development with C++*.
     - The code was tested with the 2017, 2019, and 2022 Community editions.
+3. Run `createAuthenticationEnvFile.py`
+    - An environment variable (`.env` file) will be saved after authenticating.
     
 ## Examples
-- Run `example.py` for examples of how to run kinematic analyses.
-- Run `example_kinetics.py` for examples of how to generate muscle-driven simulations.
+- Run `example.py` for examples of how to run kinematic analyses
+- Run `example_kinetics.py` for examples of how to generate muscle-driven simulations
 
 ## Download OpenCap data
 
 ### Using Colab
-- Open `batchDownload.ipynb` in Colab and follow the instructions.
+- Open `batchDownload.ipynb` in Colab and follow the instructions
     - You do not need to follow the install requirements above.
 
 ### Locally
-- Follow the install requirements above.
-- (Optional): Run `createAuthenticationEnvFile.py`.
+- Follow the install requirements above
+- (Optional): Run `createAuthenticationEnvFile.py`
     - An environment variable (`.env` file) will be saved after authenticating. You can proceed without this, but you will be required to login every time you run a script.
-- Open `batchDownload.py` and follow the instructions.
+- Open `batchDownload.py` and follow the instructions
