@@ -1589,7 +1589,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             url = 'https://sourceforge.net/projects/opensimad/files/linux.tar.gz'
             zipfilename = 'linux.tar.gz'                
             download_file(url, zipfilename)
-            cmd_tar = 'tar -xf linux.tar.gz -C {}'.format(OpenSimAD_DIR)
+            cmd_tar = 'tar -xf linux.tar.gz -C "{}"'.format(OpenSimAD_DIR)
             os.system(cmd_tar)
             os.remove('linux.tar.gz')
         cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '" -DCMAKE_INSTALL_PREFIX= "' + OpenSimADOS_DIR + '"'
@@ -1603,7 +1603,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             url = 'https://sourceforge.net/projects/opensimad/files/macOS.tgz'
             zipfilename = 'macOS.tgz'                
             download_file(url, zipfilename)
-            cmd_tar = 'tar -xf macOS.tgz -C {}'.format(OpenSimAD_DIR)
+            cmd_tar = 'tar -xf macOS.tgz -C "{}"'.format(OpenSimAD_DIR)
             os.system(cmd_tar)
             os.remove('macOS.tgz')
         cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '" -DCMAKE_INSTALL_PREFIX= "' + OpenSimADOS_DIR + '"'
@@ -1617,7 +1617,8 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
     if os_system == 'Windows':
         os.chdir(BIN_DIR)
         path_EXE = os.path.join(pathBuild, 'RelWithDebInfo', filename + '.exe')
-        os.system(path_EXE)
+        cmd2w = '"{}"'.format(path_EXE)
+        os.system(cmd2w)
     
     # %% Part 2: build external function (i.e., build .dll/.so/.dylib).
     fooName = "foo.py"
