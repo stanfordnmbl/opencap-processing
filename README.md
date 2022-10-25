@@ -41,6 +41,8 @@ Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 20
 ## Examples
 - Run `example.py` for examples of how to run kinematic analyses
 - Run `example_kinetics.py` for examples of how to generate muscle-driven simulations
+- Moco
+    - The [Moco folder](https://github.com/stanfordnmbl/opencap-processing/tree/main/Moco) contains examples for generating muscle-driven simulations using [OpenSim Moco](https://opensim-org.github.io/opensim-moco-site/). 
 
 ## Download OpenCap data
 
