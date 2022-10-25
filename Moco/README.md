@@ -1,6 +1,6 @@
 # OpenSim Moco examples
 
-This folder contains examples that use [OpenSim Moco](https://opensim-org.github.io/opensim-moco-site/) to generate simulations using kinematic data proceessed by OpenCap. For installation instructions, please refer to the OpenSim Moco documentation. Currently, example scripts are provided in Matlab.
+This folder contains examples that use [OpenSim Moco](https://opensim-org.github.io/opensim-moco-site/) to generate simulations using kinematic data processed by OpenCap. For installation instructions, please refer to the OpenSim Moco documentation. Currently, example scripts are provided in Matlab.
 
 ## Examples
 - `exampleSquat` contains an example Matlab script (`exampleSquat.m`) for tracking the provided squatting data (`squats1_videoAndMocap.mot`).
