@@ -1589,7 +1589,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             url = 'https://sourceforge.net/projects/opensimad/files/linux.tar.gz'
             zipfilename = 'linux.tar.gz'                
             download_file(url, zipfilename)
-            cmd_tar = 'tar -xf linux.tar.gz -C {}'.format(OpenSimAD_DIR)
+            cmd_tar = 'tar -xf linux.tar.gz -C "{}"'.format(OpenSimAD_DIR)
             os.system(cmd_tar)
             os.remove('linux.tar.gz')
         cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '" -DCMAKE_INSTALL_PREFIX= "' + OpenSimADOS_DIR + '"'
