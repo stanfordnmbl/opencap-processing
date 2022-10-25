@@ -110,7 +110,7 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #   - jump:
 #       - Windows (Windows 10):    converged in 2321 iterations
 #       - macOS   (Monterey 12.2): converged in 412 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 419 iterations 
+#       - Linux   (Ubuntu 20.04):  converged in 2457 iterations 
 #   - walk_1_25ms:
 #       - Windows (Windows 10):    converged in 776 iterations
 #       - macOS   (Monterey 12.2): converged in 597 iterations
@@ -154,7 +154,7 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = False
+solveProblem = True
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
