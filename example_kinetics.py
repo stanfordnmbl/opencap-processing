@@ -180,7 +180,7 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
 
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-              solveProblem=solveProblem, analyzeResults=analyzeResults)
+             solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
