@@ -486,7 +486,8 @@ def get_syncd_videos(trial_id,session_path):
                 download_file(url,syncVideoPath)
         
         
-def download_session(session_id, sessionBasePath= None,zipFolder=False,writeToDB=False):
+def download_session(session_id, sessionBasePath= None,
+                     zipFolder=False,writeToDB=False, downloadVideos=True):
     print('\nDownloading {}'.format(session_id))
     
     if sessionBasePath is None:
@@ -502,9 +503,10 @@ def download_session(session_id, sessionBasePath= None,zipFolder=False,writeToDB
     # Calibration
     try:
         get_camera_mapping(session_id, session_path)
-        download_videos_from_server(session_id,calib_id,
-                             isCalibration=True,isStaticPose=False,
-                             session_path = session_path) 
+        if downloadVideos:
+            download_videos_from_server(session_id,calib_id,
+                                 isCalibration=True,isStaticPose=False,
+                                 session_path = session_path) 
 
         get_calibration(session_id,session_path)
     except:
@@ -514,9 +516,10 @@ def download_session(session_id, sessionBasePath= None,zipFolder=False,writeToDB
     try:
         modelName = get_model_and_metadata(session_id,session_path)
         get_motion_data(neutral_id,session_path)
-        download_videos_from_server(session_id,neutral_id,
-                         isCalibration=False,isStaticPose=True,
-                         session_path = session_path)
+        if downloadVideos:
+            download_videos_from_server(session_id,neutral_id,
+                             isCalibration=False,isStaticPose=True,
+                             session_path = session_path)
 
         get_syncd_videos(neutral_id,session_path)
     except:
@@ -526,9 +529,10 @@ def download_session(session_id, sessionBasePath= None,zipFolder=False,writeToDB
     for dynamic_id in dynamic_ids:
         try:
             get_motion_data(dynamic_id,session_path)
-            download_videos_from_server(session_id,dynamic_id,
-                     isCalibration=False,isStaticPose=False,
-                     session_path = session_path)
+            if downloadVideos:
+                download_videos_from_server(session_id,dynamic_id,
+                         isCalibration=False,isStaticPose=False,
+                         session_path = session_path)
 
             get_syncd_videos(dynamic_id,session_path)
         except:

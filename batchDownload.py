@@ -30,4 +30,4 @@ sessionList = ['7272a71a-e70a-4794-a253-39e11cb7542c',
 downloadPath = os.path.join(os.getcwd(),'Data')
 
 for session_id in sessionList:
-    download_session(session_id,downloadPath)
+    download_session(session_id,sessionBasePath=downloadPath,downloadVideos=False)
