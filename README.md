@@ -27,17 +27,17 @@ Archived code base corresponding to publication: https://zenodo.org/record/74199
     - Clone the repository: `git clone https://github.com/stanfordnmbl/opencap-processing.git`
     - Navigate to the directory: `cd opencap-processing`
 7. Install required packages: `python -m pip install -r requirements.txt`
-    
+8. Run `python createAuthenticationEnvFile.py`
+    - An environment variable (`.env` file) will be saved after authenticating.    
     
 ### Muscle-driven simulations
-1. Install [CMake](https://cmake.org/download/)
-    - **Windows only**: Add CMake to system path. During the installation, select *Add CMake to the system PATH for all users*
-2. **Windows only**: Install [Visual Studio](https://visualstudio.microsoft.com/downloads/)
+1. **Windows only**: Install [Visual Studio](https://visualstudio.microsoft.com/downloads/)
     - The Community variant is sufficient and is free for everyone.
     - During the installation, select the *workload Desktop Development with C++*.
     - The code was tested with the 2017, 2019, and 2022 Community editions.
-3. Run `createAuthenticationEnvFile.py`
-    - An environment variable (`.env` file) will be saved after authenticating.
+3. **Linux only**: Install OpenBLAS libraries.
+    - `sudo apt-get install libopenblas-base`
+
     
 ## Examples
 - Run `example.py` for examples of how to run kinematic analyses
@@ -53,6 +53,4 @@ Archived code base corresponding to publication: https://zenodo.org/record/74199
 
 ### Locally
 - Follow the install requirements above
-- (Optional): Run `createAuthenticationEnvFile.py`
-    - An environment variable (`.env` file) will be saved after authenticating. You can proceed without this, but you will be required to login every time you run a script.
 - Open `batchDownload.py` and follow the instructions
