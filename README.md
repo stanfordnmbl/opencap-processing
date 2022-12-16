@@ -35,7 +35,7 @@ Archived code base corresponding to publication: https://zenodo.org/record/74199
     - The Community variant is sufficient and is free for everyone.
     - During the installation, select the *workload Desktop Development with C++*.
     - The code was tested with the 2017, 2019, and 2022 Community editions.
-3. **Linux only**: Install OpenBLAS libraries.
+3. **Linux only**: Install OpenBLAS libraries
     - `sudo apt-get install libopenblas-base`
 
     
