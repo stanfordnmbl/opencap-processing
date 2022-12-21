@@ -442,8 +442,8 @@ def adjustMuscleWrapping(
                 outputStr = '-For pose #{}, couldn''t restore psoas moment arm by moving path points by 2cm. Model unchanged.'.format(iPose)
                 print(outputStr)
                 logging.info(outputStr)                
-                point1.set_location(original_loc1)
-                point2.set_location(original_loc2)            
+                point1.set_location(opensim.Vec3(original_loc1))
+                point2.set_location(opensim.Vec3(original_loc2))          
             scaledModel.initSystem()           
         else:
             outputStr = '-For pose #{}, scaled psoas moment arm was {:.3f}. Unscaled was {:.3f}. No adjustements made.'.format(
