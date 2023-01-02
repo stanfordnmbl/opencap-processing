@@ -31,6 +31,7 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import platform
 import urllib.request
+import requests
 import zipfile
 
 from utils import (storage_to_numpy, storage_to_dataframe, 
@@ -1574,8 +1575,22 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
         # Download libraries if not existing locally.
         if not os.path.exists(BIN_DIR):
             url = 'https://sourceforge.net/projects/opensimad/files/windows.zip'
-            zipfilename = 'windows.zip'                
-            download_file(url, zipfilename)
+            zipfilename = 'windows.zip'
+            try:
+                download_file(url, zipfilename)
+            except:
+                try:
+                    download_file_2(url, zipfilename)
+                except:
+                    error_msg = """ \n\n\n
+                    Problem when downloading third-party libraries. You can download them manually:
+                        1. Download the zip file hosted here: {},
+                        2. Extract the files, and
+                        3. Copy then under: <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install.
+                    You should have:
+                        1. <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install/windows/bin and
+                        2. <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install/windows/sdk \n\n\n""".format(url)
+                    raise ValueError(error_msg)                    
             with zipfile.ZipFile('windows.zip', 'r') as zip_ref:
                 zip_ref.extractall(OpenSimAD_DIR)
             os.remove('windows.zip')
@@ -1588,7 +1603,21 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
         if not os.path.exists(os.path.join(OpenSimAD_DIR, 'linux', 'lib')):
             url = 'https://sourceforge.net/projects/opensimad/files/linux.tar.gz'
             zipfilename = 'linux.tar.gz'                
-            download_file(url, zipfilename)
+            try:
+                download_file(url, zipfilename)
+            except:
+                try:
+                    download_file_2(url, zipfilename)
+                except:
+                    error_msg = """ \n\n\n
+                    Problem when downloading third-party libraries. You can download them manually:
+                        1. Download the tar file hosted here: {},
+                        2. Extract the files, and
+                        3. Copy then under: <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install.
+                    You should have:
+                        1. <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install/linux/lib and
+                        2. <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install/linux/include \n\n\n""".format(url)
+                    raise ValueError(error_msg) 
             cmd_tar = 'tar -xf linux.tar.gz -C "{}"'.format(OpenSimAD_DIR)
             os.system(cmd_tar)
             os.remove('linux.tar.gz')
@@ -1602,7 +1631,21 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
         if not os.path.exists(os.path.join(OpenSimAD_DIR, 'macOS', 'lib')):
             url = 'https://sourceforge.net/projects/opensimad/files/macOS.tgz'
             zipfilename = 'macOS.tgz'                
-            download_file(url, zipfilename)
+            try:
+                download_file(url, zipfilename)
+            except:
+                try:
+                    download_file_2(url, zipfilename)
+                except:
+                    error_msg = """ \n\n\n
+                    Problem when downloading third-party libraries. You can download them manually:
+                        1. Download the tar file hosted here: {},
+                        2. Extract the files, and
+                        3. Copy then under: <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install.
+                    You should have:
+                        1. <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install/macOS/lib and
+                        2. <local_path>/opencap-processing/UtilsDynamicSimulations/OpenSimAD/opensimAD-install/macOS/include \n\n\n""".format(url)
+                    raise ValueError(error_msg) 
             cmd_tar = 'tar -xf macOS.tgz -C "{}"'.format(OpenSimAD_DIR)
             os.system(cmd_tar)
             os.remove('macOS.tgz')
@@ -1669,11 +1712,17 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
     shutil.rmtree(path_external_functions_filename_install)
     shutil.rmtree(path_external_functions_filename_build)
     
-# %% Download file given url.
+# %% Download file given url (approach 1).
 def download_file(url, file_name):
     
     with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
+        
+# %% Download file given url (approach 2).
+def download_file_2(url, file_name):
+    
+    response = requests.get(url)
+    open(file_name, 'wb').write(response.content)
     
 # %% Plot results simulations.
 # TODO: simplify and clean up.
