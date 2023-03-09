@@ -461,17 +461,23 @@ def filterDataFrame(dataFrame, cutoff_frequency=6, order=4):
 # %% Extract inverse kinematics data.
 def getIK(storage_file, joints, degrees=False):
     
+    # Check if data is in degrees or in radians
+    table = opensim.TimeSeriesTable(storage_file)
+    inDegrees = table.getTableMetaDataString('inDegrees')    
+    
     data = storage_to_numpy(storage_file)
     Qs = pd.DataFrame(data=data['time'], columns=['time'])    
     for count, joint in enumerate(joints):  
         if ((joint == 'pelvis_tx') or (joint == 'pelvis_ty') or 
             (joint == 'pelvis_tz')):
             Qs.insert(count + 1, joint, data[joint])         
-        else:
-            if degrees == True:
-                Qs.insert(count + 1, joint, data[joint])                  
+        else:                
+            if inDegrees == 'no' and degrees == True:
+                Qs.insert(count + 1, joint, data[joint] / np.pi * 180)                
+            elif inDegrees == 'yes' and degrees == False:
+                Qs.insert(count + 1, joint, data[joint] * np.pi / 180)                
             else:
-                Qs.insert(count + 1, joint, data[joint] * np.pi / 180)
+                Qs.insert(count + 1, joint, data[joint])
                 
     return Qs
 
