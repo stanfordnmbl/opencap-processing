@@ -35,7 +35,7 @@ import requests
 import zipfile
 
 from utils import (storage_to_numpy, storage_to_dataframe, 
-                   download_kinematics, import_metadata)
+                   download_kinematics, import_metadata, numpy_to_storage)
 from utilsProcessing import (segmentSquats, segmentSTS, adjustMuscleWrapping,
                              generateModelWithContacts)
 from settingsOpenSimAD import get_setup
@@ -205,22 +205,20 @@ def getColfromk(xk, d, N):
 # %% Verify if within range used for fitting polynomials.
 def checkQsWithinPolynomialBounds(data, bounds, coordinates):
     
-    success = True
+    updated_bounds = {}    
     for coord in coordinates:
         if coord in bounds:
             c_idc = coordinates.index(coord)
             c_data = data[c_idc, :]
             # Small margin to account for filtering.                
             if not np.all(c_data * 180 / np.pi <= bounds[coord]['max'] + 1):
-                print('WARNING: coordinate values to track has values above upper bound ROM for polynomial fitting - {}: {} >= {}'.format(coord, np.round(np.max(c_data), 2), np.round(bounds[coord]['max'] * np.pi / 180, 2)))
-                success = False
+                print('WARNING: the {} coordinate values to track have values above the default upper bound ROM for polynomial fitting: {}deg >= {}deg'.format(coord, np.round(np.max(c_data) / np.pi * 180, 0), np.round(bounds[coord]['max'], 2)))
+                updated_bounds[coord] = {'max': np.round(np.max(c_data) * 180 / np.pi, 0)}
             if not np.all(c_data * 180 / np.pi >= bounds[coord]['min'] - 1):
-                print('WARNING: coordinate values to track has values below lower bound ROM for polynomial fitting-  {}: {} <= {}'.format(coord, np.round(np.min(c_data), 2), np.round(bounds[coord]['min'] * np.pi / 180, 2)))
-                success = False   
-            if not success:
-                print('Make sure that the motion to track looks realistic; if so consider adjusting the ROM for the polynomial fitting, see OpenSimPipeline\MuscleAnalysis\DummyMotion.mot')
+                print('WARNING: the {} coordinate values to track have values below default lower bound ROM for polynomial fitting: {}deg <= {}deg'.format(coord, np.round(np.min(c_data) / np.pi * 180, 0), np.round(bounds[coord]['min'], 2)))
+                updated_bounds[coord] = {'min': np.round(np.min(c_data) * 180 / np.pi, 0)}
     
-    return success
+    return updated_bounds
 
 # %% Extract data frame from storage file.
 def getFromStorage(storage_file, headers):
@@ -2013,3 +2011,34 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     settings['trial_name'] = trial_name
     
     return settings
+
+# %% Adjust dummy_motion for polynomial fitting.
+
+def adjustBoundsAndDummyMotion(polynomial_bounds, updated_bounds, pathDummyMotion, pathModelFolder, trialName,
+                               overwriteDummyMotion=False):
+    # Modify the values of polynomial_bounds based on the values in
+    # updated_bounds. 
+    for u_b in updated_bounds:
+        for c_m in updated_bounds[u_b]:
+            polynomial_bounds[u_b][c_m] = updated_bounds[u_b][c_m]
+            
+    pathAdjustedDummyMotion = os.path.join(pathModelFolder, 'dummy_motion_' + trialName + '.mot')    
+    # Generate dummy motion if not exists or if overwrite is True.
+    if not os.path.exists(pathAdjustedDummyMotion) or overwriteDummyMotion:
+        print('We are adjusting the ROM used for polynomial fitting, but please make sure that the motion to track looks realistic')
+        table = opensim.TimeSeriesTable(pathDummyMotion)
+        coordinates_table_jointset = list(table.getColumnLabels())
+        coordinates_table = [c.split('/')[3] for c in coordinates_table_jointset]
+        data = table.getMatrix().to_numpy()
+        for u_b in updated_bounds:
+            idx_u_b = coordinates_table.index(u_b)
+            data[:,idx_u_b] = (polynomial_bounds[u_b]["max"]-polynomial_bounds[u_b]["min"])*np.random.uniform(0.0,1.0,data.shape[0]) + polynomial_bounds[u_b]["min"]
+            
+        labels = ['time'] + coordinates_table_jointset
+        t_dummy_motion = np.array(table.getIndependentColumn())
+        t_dummy_motion = np.expand_dims(t_dummy_motion, axis=1)
+        data = np.concatenate((t_dummy_motion, data),axis=1)
+        
+        numpy_to_storage(labels, data, pathAdjustedDummyMotion, datatype='IK')
+    
+    return polynomial_bounds, pathAdjustedDummyMotion
