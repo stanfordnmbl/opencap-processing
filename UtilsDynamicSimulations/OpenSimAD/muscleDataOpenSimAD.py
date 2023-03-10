@@ -191,7 +191,7 @@ def getPolynomialData(loadPolynomialData, pathModelFolder, modelName='',
         
     else:
         path_data4PolynomialFitting = os.path.join(
-            pathModelFolder, 'data4PolynomialFitting_{}.npy'.format(modelName))
+            pathModelFolder, 'data4PolynomialFitting_{}_{}.npy'.format(modelName, type_bounds_polynomials))
         # Generate polynomial data.
         if (not os.path.exists(path_data4PolynomialFitting) or 
             overwritedata4PolynomialFitting):            

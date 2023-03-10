@@ -42,45 +42,16 @@ class bounds_tracking:
             splineD2 = spline.derivative(n=2)
             self.Qdotdots_spline[joint] = splineD2(self.Qs['time'])
     
-    def getBoundsPosition(self):
+    def getBoundsPosition(self, polynomial_bounds):
         
         self.splineQs()        
         upperBoundsPosition_all = {}
-        lowerBoundsPosition_all = {}      
-        upperBoundsPosition_all['hip_flexion_l'] = [120 * np.pi / 180]
-        upperBoundsPosition_all['hip_flexion_r'] = [120 * np.pi / 180]
-        upperBoundsPosition_all['hip_adduction_l'] = [20 * np.pi / 180]
-        upperBoundsPosition_all['hip_adduction_r'] = [20 * np.pi / 180]
-        upperBoundsPosition_all['hip_rotation_l'] = [35 * np.pi / 180]
-        upperBoundsPosition_all['hip_rotation_r'] = [35 * np.pi / 180]  
-        upperBoundsPosition_all['knee_angle_l'] = [138 * np.pi / 180]
-        upperBoundsPosition_all['knee_angle_r'] = [138 * np.pi / 180]
-        upperBoundsPosition_all['knee_adduction_l'] = [20 * np.pi / 180]
-        upperBoundsPosition_all['knee_adduction_r'] = [20 * np.pi / 180]
-        upperBoundsPosition_all['ankle_angle_l'] = [50 * np.pi / 180]
-        upperBoundsPosition_all['ankle_angle_r'] = [50 * np.pi / 180]
-        upperBoundsPosition_all['subtalar_angle_l'] = [35 * np.pi / 180] 
-        upperBoundsPosition_all['subtalar_angle_r'] = [35 * np.pi / 180] 
-        upperBoundsPosition_all['mtp_angle_l'] = [5 * np.pi / 180]
-        upperBoundsPosition_all['mtp_angle_r'] = [5 * np.pi / 180]        
-      
-        lowerBoundsPosition_all['hip_flexion_l'] = [-30 * np.pi / 180]
-        lowerBoundsPosition_all['hip_flexion_r'] = [-30 * np.pi / 180]
-        lowerBoundsPosition_all['hip_adduction_l'] = [-50 * np.pi / 180]
-        lowerBoundsPosition_all['hip_adduction_r'] = [-50 * np.pi / 180]
-        lowerBoundsPosition_all['hip_rotation_l'] = [-40 * np.pi / 180]
-        lowerBoundsPosition_all['hip_rotation_r'] = [-40 * np.pi / 180]       
-        lowerBoundsPosition_all['knee_angle_l'] = [0 * np.pi / 180]
-        lowerBoundsPosition_all['knee_angle_r'] = [0 * np.pi / 180]        
-        lowerBoundsPosition_all['knee_adduction_l'] = [-30 * np.pi / 180]
-        lowerBoundsPosition_all['knee_adduction_r'] = [-30 * np.pi / 180]        
-        lowerBoundsPosition_all['ankle_angle_l'] = [-50 * np.pi / 180]
-        lowerBoundsPosition_all['ankle_angle_r'] = [-50 * np.pi / 180]        
-        lowerBoundsPosition_all['subtalar_angle_l'] = [-35 * np.pi / 180] 
-        lowerBoundsPosition_all['subtalar_angle_r'] = [-35 * np.pi / 180]        
-        lowerBoundsPosition_all['mtp_angle_l'] = [-45 * np.pi / 180]
-        lowerBoundsPosition_all['mtp_angle_r'] = [-45 * np.pi / 180]        
-        
+        lowerBoundsPosition_all = {}
+        for coord in polynomial_bounds:
+            upperBoundsPosition_all[coord] = (
+                [polynomial_bounds[coord]['max'] * np.pi / 180])
+            lowerBoundsPosition_all[coord] = (
+                [polynomial_bounds[coord]['min'] * np.pi / 180])
         upperBoundsPosition = pd.DataFrame()   
         lowerBoundsPosition = pd.DataFrame() 
         scalingPosition = pd.DataFrame() 
