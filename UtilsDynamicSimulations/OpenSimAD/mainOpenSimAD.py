@@ -581,14 +581,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     
     # Paths
     pathGenericTemplates = os.path.join(baseDir, "OpenSimPipeline")
-    # Default dummy motion path
     pathDummyMotion = os.path.join(pathGenericTemplates, "MuscleAnalysis", 
                                    'DummyMotion.mot')
     
     # These are the ranges of motion used to fit the polynomial coefficients.
     # We do not want the experimental data to be out of these ranges. If they
     # are, we make them larger and fit polynomial coefficients specific to the
-    # trial being processed.
+    # trial being processed. These are also the bounds used in the optimal
+    # control problem.
     polynomial_bounds = {
             'hip_flexion_l': {'max': 120, 'min': -30},
             'hip_flexion_r': {'max': 120, 'min': -30},
@@ -606,8 +606,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             'subtalar_angle_r': {'max': 35, 'min': -35},
             'mtp_angle_l': {'max': 5, 'min': -45},
             'mtp_angle_r': {'max': 5, 'min': -45}}
-    # Sanity check: ensure that the Qs to track are within the bounds
-    # used to define the polynomials.
+    # Check if the Qs (coordinate values) to track are within the bounds
+    # used to define the polynomials. If not, adjust the polynomial bounds.
     from utilsOpenSimAD import checkQsWithinPolynomialBounds
     updated_bounds = checkQsWithinPolynomialBounds(
         dataToTrack_Qs_nsc, polynomial_bounds, coordinates_toTrack_l)
@@ -1047,8 +1047,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         nF_col = opti.variable(nMuscles, d*N)
         opti.subject_to(opti.bounded(lw['Fj'], ca.vec(nF_col), uw['Fj']))
         opti.set_initial(nF_col, w0['Fj'].to_numpy().T)
-        assert np.alltrue(lw['Fj'] <= ca.vec(w0['Fj'].to_numpy().T).full()), "Issue with lower bound muscle force (collocation points)"
-        assert np.alltrue(uw['Fj'] >= ca.vec(w0['Fj'].to_numpy().T).full()), "Issue with upper bound muscle force (collocation points)"
+        assert np.alltrue(lw['Fj'] <= ca.vec(w0['Fj'].to_numpy().T).full()), "Issue with lower bound muscle forces (collocation points)"
+        assert np.alltrue(uw['Fj'] >= ca.vec(w0['Fj'].to_numpy().T).full()), "Issue with upper bound muscle forces (collocation points)"
         # Joint position at mesh points.
         Qs = opti.variable(nJoints, N+1)
         opti.subject_to(opti.bounded(lw['Qsk'], ca.vec(Qs), uw['Qsk']))
