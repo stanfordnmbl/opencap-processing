@@ -1982,7 +1982,7 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     
     # Get settings.
     settings = get_setup(motion_type)
-    # # Add time to settings if not specified.
+    # Add time to settings if not specified.
     pathMotionFile = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics',
                                   trial_name + '.mot')
     if (repetition is not None and 
@@ -1994,9 +1994,21 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
         time_window = times_window[repetition]
         settings['repetition'] = repetition
     else:
-        if not time_window:
-            motion_file = storage_to_numpy(pathMotionFile)
+        motion_file = storage_to_numpy(pathMotionFile)
+        # If no time window is specified, use the whole motion file.
+        if not time_window:            
             time_window = [motion_file['time'][0], motion_file['time'][-1]]
+        # If -1 is specified for start or end time, use the motion start or end time.
+        if time_window[0] == -1:
+            time_window[0] = motion_file['time'][0]
+        if time_window[1] == -1:
+            time_window[1] = motion_file['time'][-1]
+        # If time window is specified outside the motion file, use the motion file start or end time.
+        if time_window[0] < motion_file['time'][0]:
+            time_window[0] = motion_file['time'][0]
+        if time_window[1] > motion_file['time'][-1]:
+            time_window[1] = motion_file['time'][-1]
+            
     settings['timeInterval'] = time_window
     
     # Get demographics.
