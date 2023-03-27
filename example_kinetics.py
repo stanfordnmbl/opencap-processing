@@ -156,7 +156,7 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
