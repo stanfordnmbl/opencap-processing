@@ -28,10 +28,10 @@ from utils import download_kinematics
 
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
-session_id = "6fc75175-7a66-4fe0-819d-c5f2ee8672dc"
+session_id = "3ef5cfad-cf8a-420b-af15-2d833a33cfb8"
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = ['lessKneeFlexion', 'countermovement', 'moreKneeFlexion']
+specific_trial_names = None 
 
 # Specify where to download the data.
 data_folder = os.path.join("./../Data", session_id)
