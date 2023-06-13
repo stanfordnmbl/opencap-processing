@@ -1976,7 +1976,7 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                              trial_name + '.mot') 
     if not os.path.exists(pathTrial) or overwrite:
         _, _ = download_kinematics(session_id, sessionFolder, 
-                                           trialNames=[trial_name])        
+                                   trialNames=[trial_name])
     
     # Prepare inputs for dynamic simulations.
     # Adjust muscle wrapping.
