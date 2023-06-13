@@ -129,7 +129,7 @@ session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 case = '0' # Change this to compare across settings.
 # Options are 'squat', 'STS', and 'jump'.
 if session_type == 'overground': 
-    trial_name = 'STS' 
+    trial_name = 'STS'
     if trial_name == 'squat': # Squat
         motion_type = 'squats'
         repetition = 1

@@ -151,14 +151,13 @@ def get_motion_data(trial_id, session_path):
         download_file(ikURL, ikPath)
         
         
-def get_geometries(session_path,
-                   modelName='LaiArnoldModified2017_poly_withArms_weldHand_scaled'):
+def get_geometries(session_path, modelName='LaiUhlrich2022_scaled'):
         
     geometryFolder = os.path.join(session_path, 'OpenSimData', 'Model', 'Geometry')
     try:
         # Download.
         os.makedirs(geometryFolder, exist_ok=True)
-        if 'LaiArnold' in modelName:
+        if 'Lai' in modelName:
             modelType = 'LaiArnold'
             vtpNames = [
                 'capitate_lvs','capitate_rvs','hamate_lvs','hamate_rvs',
@@ -210,7 +209,9 @@ def download_kinematics(session_id, folder=None, trialNames=None):
     # Model and metadata.
     neutral_id = get_neutral_trial_id(session_id)
     get_motion_data(neutral_id, folder)
-    _ = get_model_and_metadata(session_id, folder)
+    modelName = get_model_and_metadata(session_id, folder)
+    # Remove extension from modelName
+    modelName = modelName.replace('.osim','')
     
     # Session trial names.
     sessionJson = get_session_json(session_id)
@@ -232,9 +233,9 @@ def download_kinematics(session_id, folder=None, trialNames=None):
     loadedTrialNames = [i for i in loadedTrialNames if i!='neutral' and i!='calibration']
         
     # Geometries.
-    get_geometries(folder)
+    get_geometries(folder, modelName=modelName)
         
-    return loadedTrialNames
+    return loadedTrialNames, modelName
 
 # %%  Storage file to numpy array.
 def storage_to_numpy(storage_file, excess_header_entries=0):
@@ -550,7 +551,7 @@ def download_session(session_id, sessionBasePath= None,
         
     # Geometry
     try:
-        if 'LaiArnold' in modelName:
+        if 'Lai' in modelName:
             modelType = 'LaiArnold'
         else:
             raise ValueError("Geometries not available for this model, please contact us")
@@ -561,8 +562,7 @@ def download_session(session_id, sessionBasePath= None,
         # If not in cache, download from s3.
         if not os.path.exists(geometryDir):
             os.makedirs(geometryDir, exist_ok=True)
-            get_geometries(session_path,
-                           modelName='LaiArnoldModified2017_poly_withArms_weldHand_scaled')
+            get_geometries(session_path, modelName=modelName)
         geometryDirEnd = os.path.join(session_path, 'OpenSimData', 'Model', 'Geometry')
         shutil.copytree(geometryDir, geometryDirEnd)
     except:

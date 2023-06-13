@@ -510,7 +510,7 @@ def getIndices(mylist, items):
 # %% Generate external function.
 def generateExternalFunction(
         baseDir, dataDir, subject, 
-        OpenSimModel="LaiArnoldModified2017_poly_withArms_weldHand",
+        OpenSimModel="LaiUhlrich2022",
         treadmill=False, build_externalFunction=True, verifyID=True, 
         externalFunctionName='F', overwrite=False):
 
@@ -1959,24 +1959,38 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     # Path session folder.
     sessionFolder =  os.path.join(dataFolder, session_id)
     
+    # Get metadata
+    metadata = import_metadata(os.path.join(sessionFolder, 'sessionMetadata.yaml'))
+    OpenSimModel = metadata['openSimModel']
+    
+    # TODO: support new shoulder model
+    if 'shoulder' in OpenSimModel:
+        raise ValueError("""
+         The full body model with the ISB shoulder is not yet supported for
+         dynamic simulations (https://github.com/stanfordnmbl/opencap-processing/issues/61).
+         Consider using the default Full body model instead (LaiUhlrich2022).""")
+    
     # Download kinematics and model.
     print('Download kinematic data and model.')
     pathTrial = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics', 
                              trial_name + '.mot') 
     if not os.path.exists(pathTrial) or overwrite:
-        _ = download_kinematics(session_id, sessionFolder, 
-                                trialNames=[trial_name])
+        _, _ = download_kinematics(session_id, sessionFolder, 
+                                           trialNames=[trial_name])        
     
     # Prepare inputs for dynamic simulations.
     # Adjust muscle wrapping.
     print('Adjust muscle wrapping surfaces.')
-    adjustMuscleWrapping(baseDir, dataFolder, session_id, overwrite=overwrite)
+    adjustMuscleWrapping(baseDir, dataFolder, session_id,
+                         OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Add foot-ground contacts to musculoskeletal model.
     print('Add foot-ground contacts.')
-    generateModelWithContacts(dataFolder, session_id, overwrite=overwrite)
+    generateModelWithContacts(dataFolder, session_id, 
+                              OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Generate external function.
     print('Generate external function to leverage automatic differentiation.')
-    generateExternalFunction(baseDir, dataFolder, session_id, 
+    generateExternalFunction(baseDir, dataFolder, session_id,
+                             OpenSimModel=OpenSimModel,
                              overwrite=overwrite, 
                              treadmill=bool(treadmill_speed))
     
@@ -2011,8 +2025,7 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
             
     settings['timeInterval'] = time_window
     
-    # Get demographics.
-    metadata = import_metadata(os.path.join(sessionFolder, 'sessionMetadata.yaml'))
+    # Get demographics.    
     settings['mass_kg'] = metadata['mass_kg']
     settings['height_m'] = metadata['height_m']
     
@@ -2021,6 +2034,9 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     
     # Trial name
     settings['trial_name'] = trial_name
+    
+    # OpenSim model name
+    settings['OpenSimModel'] = OpenSimModel
     
     return settings
 
