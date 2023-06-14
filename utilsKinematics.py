@@ -29,7 +29,7 @@ from utilsProcessing import lowPassFilter
 class kinematics:
     
     def __init__(self, dataDir, trialName, 
-                 modelName='LaiArnoldModified2017_poly_withArms_weldHand_scaled',
+                 modelName='LaiUhlrich2022_scaled',
                  lowpass_cutoff_frequency_for_coordinate_values=-1):
         
         self.lowpass_cutoff_frequency_for_coordinate_values = (
