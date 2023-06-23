@@ -1959,6 +1959,14 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     # Path session folder.
     sessionFolder =  os.path.join(dataFolder, session_id)
     
+    # Download kinematics and model.
+    print('Download kinematic data and model.')
+    pathTrial = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics', 
+                             trial_name + '.mot') 
+    if not os.path.exists(pathTrial) or overwrite:
+        _, _ = download_kinematics(session_id, sessionFolder, 
+                                   trialNames=[trial_name])
+        
     # Get metadata
     metadata = import_metadata(os.path.join(sessionFolder, 'sessionMetadata.yaml'))
     OpenSimModel = metadata['openSimModel']
@@ -1969,14 +1977,6 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
          The full body model with the ISB shoulder is not yet supported for
          dynamic simulations (https://github.com/stanfordnmbl/opencap-processing/issues/61).
          Consider using the default Full body model instead (LaiUhlrich2022).""")
-    
-    # Download kinematics and model.
-    print('Download kinematic data and model.')
-    pathTrial = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics', 
-                             trial_name + '.mot') 
-    if not os.path.exists(pathTrial) or overwrite:
-        _, _ = download_kinematics(session_id, sessionFolder, 
-                                   trialNames=[trial_name])
     
     # Prepare inputs for dynamic simulations.
     # Adjust muscle wrapping.
