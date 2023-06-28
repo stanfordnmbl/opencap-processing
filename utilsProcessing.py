@@ -206,15 +206,23 @@ def segmentSTS(ikFilePath, pelvis_ty=None, timeVec=None, velSeated=0.3,
 # modelAdjustment.log.
 def adjustMuscleWrapping(
         baseDir, dataDir, subject, poseDetector='DefaultPD', 
-        cameraSetup='DefaultModel', 
-        OpenSimModel="LaiArnoldModified2017_poly_withArms_weldHand",
+        cameraSetup='DefaultModel', OpenSimModel="LaiUhlrich2022",
         overwrite=False):
     
     # Paths
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
     pathModelFolder = os.path.join(osDir, 'Model')
+    
+    # We changed the OpenSim model name after some time:
+    # from LaiArnoldModified2017_poly_withArms_weldHand to LaiUhlrich2022.
+    # This is a hack for backward compatibility.
+    if OpenSimModel == 'LaiArnoldModified2017_poly_withArms_weldHand':
+        unscaledModelName = 'LaiUhlrich2022'
+    else:
+        unscaledModelName = OpenSimModel
+    
     pathUnscaledModel = os.path.join(baseDir, 'OpenSimPipeline', 'Models',
-                                     OpenSimModel + '.osim')
+                                     unscaledModelName + '.osim')
     pathScaledModel = os.path.join(pathModelFolder,
                                    OpenSimModel + '_scaled.osim')
     pathOutputModel = os.path.join(pathModelFolder,
@@ -472,8 +480,8 @@ def getMomentArms(model, poses, muscleName, coordinateForMomentArm):
 # %% Generate model with contacts.
 def generateModelWithContacts(
         dataDir, subject, poseDetector='DefaultPD', cameraSetup='DefaultModel',
-        OpenSimModel="LaiArnoldModified2017_poly_withArms_weldHand",
-        setPatellaMasstoZero=True, overwrite=False):
+        OpenSimModel="LaiUhlrich2022", setPatellaMasstoZero=True, 
+        overwrite=False):
     
     # %% Process settings.
     osDir = os.path.join(dataDir, subject, 'OpenSimData')

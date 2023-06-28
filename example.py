@@ -34,7 +34,7 @@ specific_trial_names = ['jump']
 data_folder = os.path.join("./Data", session_id)
 
 # %% Download data.
-trial_names = download_kinematics(session_id, folder=data_folder, trialNames=specific_trial_names)
+trial_names, modelName = download_kinematics(session_id, folder=data_folder, trialNames=specific_trial_names)
 
 # %% Process data.
 kinematics, coordinates, muscle_tendon_lengths, moment_arms, center_of_mass = {}, {}, {}, {}, {}
@@ -43,7 +43,7 @@ center_of_mass['values'], center_of_mass['speeds'], center_of_mass['acceleration
 
 for trial_name in trial_names:
     # Create object from class kinematics.
-    kinematics[trial_name] = utilsKinematics.kinematics(data_folder, trial_name, lowpass_cutoff_frequency_for_coordinate_values=10)
+    kinematics[trial_name] = utilsKinematics.kinematics(data_folder, trial_name, modelName=modelName, lowpass_cutoff_frequency_for_coordinate_values=10)
     
     # Get coordinate values, speeds, and accelerations.
     coordinates['values'][trial_name] = kinematics[trial_name].get_coordinate_values(in_degrees=True) # already filtered
@@ -90,7 +90,7 @@ plot_dataframe(dataframes = [coordinates['accelerations'][trial_names[0]]],
                ylabel = 'Hip flexion acceleration (deg/s^2)',
                labels = [trial_names[0]])
 
-# Plot center of mass values.
+# Plot center of mass accelerations.
 plot_dataframe(dataframes = [center_of_mass['accelerations'][trial_names[0]]],
                xlabel = 'Time (s)',
                title = 'Center of mass accelerations',

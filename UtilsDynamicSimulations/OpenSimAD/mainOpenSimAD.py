@@ -55,7 +55,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     
     # Model info.
     # Model name.
-    OpenSimModel = 'LaiArnoldModified2017_poly_withArms_weldHand'
+    OpenSimModel = 'LaiUhlrich2022'
     if 'OpenSimModel' in settings:  
         OpenSimModel = settings['OpenSimModel']
     model_full_name = OpenSimModel + "_scaled_adjusted"
