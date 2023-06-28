@@ -725,6 +725,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                      'F' + suff_tread + '_map.npy'), allow_pickle=True).item()
     
     # Indices outputs external function.
+    if 'nContactSpheres' not in F_map['GRFs']:
+        # We updated the code to make it more generic and allow for different
+        # contact configurations. Old versions of the external functions will
+        # not work anymore. Results will not change.
+        raise ValueError("""We recently updated our code, please delete the folder 
+        ExternalFunction under Data/<session_ID>/OpenSimData/Model/ 
+        and rerun the example_kinetics.py.""")
+        
     nContactSpheres = F_map['GRFs']['nContactSpheres']
     contactSpheres = {}
     contactSpheres['right'] = F_map['GRFs']['rightContactSpheres']
