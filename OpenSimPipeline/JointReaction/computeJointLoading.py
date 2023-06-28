@@ -24,7 +24,7 @@ import glob
 
 #%% Compute knee adduction moments.
 def computeKAM(pathGenericTemplates, outputDir, modelPath, IDPath, IKPath,
-               GRFPath, grfType, Qds=[]):
+               GRFPath, grfType, contactSides, contactSpheres={}, Qds=[]):
     
     print('Computing knee adduction moments.\n')
 
@@ -122,56 +122,75 @@ def computeKAM(pathGenericTemplates, outputDir, modelPath, IDPath, IKPath,
         
     # Load and apply GRFs.
     dataSource = opensim.Storage(GRFPath)    
-    if grfType == 'sphere':
-        appliedToBody = ['calcn','calcn','calcn','calcn','toes','toes']
-        for leg in ['r','l']:
-            for i in range(len(appliedToBody)):
+    if grfType == 'sphere':        
+        for side in contactSides:
+            for c_sphere, sphere in enumerate(contactSpheres[side]):
                 newForce = opensim.ExternalForce()
-                newForce.setName('sphere' + leg + str(i+1)) 
-                newForce.set_applied_to_body(appliedToBody[i] + '_' + leg) 
+                newForce.setName('{}'.format(sphere))
+                appliedToBody = contactSpheres['bodies'][side][c_sphere]
+                newForce.set_applied_to_body(appliedToBody)                
                 newForce.set_force_expressed_in_body('ground') 
                 newForce.set_point_expressed_in_body('ground')
-                newForce.set_force_identifier(
-                    'ground_force_s' + str(i+1) + '_' + leg + '_v')
-                newForce.set_torque_identifier(
-                    'ground_torque_s' + str(i+1) + '_' + leg + '_')
-                newForce.set_point_identifier(
-                    'ground_force_s' + str(i+1) + '_' + leg + '_p')
+                newForce.set_force_identifier("ground_force_{}_v".format(sphere))
+                newForce.set_torque_identifier("ground_torque_{}_".format(sphere))
+                newForce.set_point_identifier("ground_force_{}_p".format(sphere))
                 newForce.setDataSource(dataSource)
                 if removeSpheres:
                     model.addForce(newForce)
                 elif i==0:
                     print('GRFs were not applied b/c spheres were used.')
-    elif grfType == 'sphereResultant':
-        appliedToBody = ['calcn']
-        for leg in ['r','l']:
-            for i in range(len(appliedToBody)):
-                newForce = opensim.ExternalForce()
-                newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
-                newForce.set_applied_to_body(appliedToBody[i] + '_' + 
-                                             leg.lower()) 
-                newForce.set_force_expressed_in_body('ground') 
-                newForce.set_point_expressed_in_body('ground')
-                newForce.set_force_identifier('ground_force_' + leg + '_v')
-                newForce.set_torque_identifier('ground_torque_' + leg + '_')
-                newForce.set_point_identifier('ground_force_' + leg + '_p')
-                newForce.setDataSource(dataSource)
-                model.addForce(newForce)
-    elif grfType == 'experimental':
-        appliedToBody = ['calcn']
-        for leg in ['R','L']:
-            for i in range(len(appliedToBody)):
-                newForce = opensim.ExternalForce()
-                newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
-                newForce.set_applied_to_body(appliedToBody[i] + '_' + 
-                                             leg.lower()) 
-                newForce.set_force_expressed_in_body('ground') 
-                newForce.set_point_expressed_in_body('ground')
-                newForce.set_force_identifier(leg + '_ground_force_v')
-                newForce.set_torque_identifier(leg + '_ground_torque_')
-                newForce.set_point_identifier(leg + '_ground_force_p')
-                newForce.setDataSource(dataSource)
-                model.addForce(newForce)
+    else:
+        raise ValueError("TODO")
+    # if grfType == 'sphere':
+    #     appliedToBody = ['calcn','calcn','calcn','calcn','toes','toes']
+    #     for leg in ['r','l']:
+    #         for i in range(len(appliedToBody)):
+    #             newForce = opensim.ExternalForce()
+    #             newForce.setName('sphere' + leg + str(i+1)) 
+    #             newForce.set_applied_to_body(appliedToBody[i] + '_' + leg) 
+    #             newForce.set_force_expressed_in_body('ground') 
+    #             newForce.set_point_expressed_in_body('ground')
+    #             newForce.set_force_identifier(
+    #                 'ground_force_s' + str(i+1) + '_' + leg + '_v')
+    #             newForce.set_torque_identifier(
+    #                 'ground_torque_s' + str(i+1) + '_' + leg + '_')
+    #             newForce.set_point_identifier(
+    #                 'ground_force_s' + str(i+1) + '_' + leg + '_p')
+    #             newForce.setDataSource(dataSource)
+    #             if removeSpheres:
+    #                 model.addForce(newForce)
+    #             elif i==0:
+    #                 print('GRFs were not applied b/c spheres were used.')
+    # elif grfType == 'sphereResultant':
+    #     appliedToBody = ['calcn']
+    #     for leg in ['r','l']:
+    #         for i in range(len(appliedToBody)):
+    #             newForce = opensim.ExternalForce()
+    #             newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
+    #             newForce.set_applied_to_body(appliedToBody[i] + '_' + 
+    #                                          leg.lower()) 
+    #             newForce.set_force_expressed_in_body('ground') 
+    #             newForce.set_point_expressed_in_body('ground')
+    #             newForce.set_force_identifier('ground_force_' + leg + '_v')
+    #             newForce.set_torque_identifier('ground_torque_' + leg + '_')
+    #             newForce.set_point_identifier('ground_force_' + leg + '_p')
+    #             newForce.setDataSource(dataSource)
+    #             model.addForce(newForce)
+    # elif grfType == 'experimental':
+    #     appliedToBody = ['calcn']
+    #     for leg in ['R','L']:
+    #         for i in range(len(appliedToBody)):
+    #             newForce = opensim.ExternalForce()
+    #             newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
+    #             newForce.set_applied_to_body(appliedToBody[i] + '_' + 
+    #                                          leg.lower()) 
+    #             newForce.set_force_expressed_in_body('ground') 
+    #             newForce.set_point_expressed_in_body('ground')
+    #             newForce.set_force_identifier(leg + '_ground_force_v')
+    #             newForce.set_torque_identifier(leg + '_ground_torque_')
+    #             newForce.set_point_identifier(leg + '_ground_force_p')
+    #             newForce.setDataSource(dataSource)
+    #             model.addForce(newForce)
     
     # initSystem - done editing model.
     state = model.initSystem()
@@ -270,7 +289,8 @@ def computeKAM(pathGenericTemplates, outputDir, modelPath, IDPath, IKPath,
 
 # %% Compute medial knee contact forces.
 def computeMCF(pathGenericTemplates, outputDir, modelPath, activationsPath,
-               IKPath, GRFPath, grfType, muscleForceFilePath=None, 
+               IKPath, GRFPath, grfType, contactSides, contactSpheres={},
+               muscleForceFilePath=None, 
                pathReserveGeneralizedForces=None, Qds=[],pathJRAResults=None, 
                replaceMuscles=False, visualize=False, debugMode=False):
     
@@ -435,52 +455,71 @@ def computeMCF(pathGenericTemplates, outputDir, modelPath, activationsPath,
                                   actTable.getDependentColumn(actColName)[t]))
         
         # Load and apply GRFs.
-        dataSource = opensim.Storage(GRFPath)        
-        if grfType == 'sphere':
-            appliedToBody = ['calcn','calcn','calcn','calcn','toes','toes']
-            for leg in ['r','l']:
-                for i in range(len(appliedToBody)):
+        dataSource = opensim.Storage(GRFPath)
+        if grfType == 'sphere':        
+            for side in contactSides:
+                for c_sphere, sphere in enumerate(contactSpheres[side]):
                     newForce = opensim.ExternalForce()
-                    newForce.setName('sphere' + leg + str(i+1)) 
-                    newForce.set_applied_to_body(appliedToBody[i] + '_' + leg) 
+                    newForce.setName('{}'.format(sphere))
+                    appliedToBody = contactSpheres['bodies'][side][c_sphere]
+                    newForce.set_applied_to_body(appliedToBody)                
                     newForce.set_force_expressed_in_body('ground') 
                     newForce.set_point_expressed_in_body('ground')
-                    newForce.set_force_identifier('ground_force_s' + str(i+1) + '_' + leg + '_v')
-                    newForce.set_torque_identifier('ground_torque_s' + str(i+1) + '_' + leg + '_')
-                    newForce.set_point_identifier('ground_force_s' + str(i+1) + '_' + leg + '_p')
+                    newForce.set_force_identifier("ground_force_{}_v".format(sphere))
+                    newForce.set_torque_identifier("ground_torque_{}_".format(sphere))
+                    newForce.set_point_identifier("ground_force_{}_p".format(sphere))
                     newForce.setDataSource(dataSource)
                     if removeSpheres:
                         model.addForce(newForce)
                     elif i==0:
-                        print('GRFs were not applied b/c sphere contacts were used.')
-        elif grfType == 'sphereResultant':
-            appliedToBody = ['calcn']
-            for leg in ['r','l']:
-                for i in range(len(appliedToBody)):
-                    newForce = opensim.ExternalForce()
-                    newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
-                    newForce.set_applied_to_body(appliedToBody[i] + '_' + leg.lower()) 
-                    newForce.set_force_expressed_in_body('ground') 
-                    newForce.set_point_expressed_in_body('ground')
-                    newForce.set_force_identifier('ground_force_' + leg + '_v')
-                    newForce.set_torque_identifier('ground_torque_' + leg + '_')
-                    newForce.set_point_identifier('ground_force_' + leg + '_p')
-                    newForce.setDataSource(dataSource)
-                    model.addForce(newForce)
-        elif grfType == 'experimental':
-            appliedToBody = ['calcn']
-            for leg in ['R','L']:
-                for i in range(len(appliedToBody)):
-                    newForce = opensim.ExternalForce()
-                    newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
-                    newForce.set_applied_to_body(appliedToBody[i] + '_' + leg.lower()) 
-                    newForce.set_force_expressed_in_body('ground') 
-                    newForce.set_point_expressed_in_body('ground')
-                    newForce.set_force_identifier(leg + '_ground_force_v')
-                    newForce.set_torque_identifier(leg + '_ground_torque_')
-                    newForce.set_point_identifier(leg + '_ground_force_p')
-                    newForce.setDataSource(dataSource)
-                    model.addForce(newForce)
+                        print('GRFs were not applied b/c spheres were used.')
+        else:
+            raise ValueError("TODO")
+        # if grfType == 'sphere':
+        #     appliedToBody = ['calcn','calcn','calcn','calcn','toes','toes']
+        #     for leg in ['r','l']:
+        #         for i in range(len(appliedToBody)):
+        #             newForce = opensim.ExternalForce()
+        #             newForce.setName('sphere' + leg + str(i+1)) 
+        #             newForce.set_applied_to_body(appliedToBody[i] + '_' + leg) 
+        #             newForce.set_force_expressed_in_body('ground') 
+        #             newForce.set_point_expressed_in_body('ground')
+        #             newForce.set_force_identifier('ground_force_s' + str(i+1) + '_' + leg + '_v')
+        #             newForce.set_torque_identifier('ground_torque_s' + str(i+1) + '_' + leg + '_')
+        #             newForce.set_point_identifier('ground_force_s' + str(i+1) + '_' + leg + '_p')
+        #             newForce.setDataSource(dataSource)
+        #             if removeSpheres:
+        #                 model.addForce(newForce)
+        #             elif i==0:
+        #                 print('GRFs were not applied b/c sphere contacts were used.')
+        # elif grfType == 'sphereResultant':
+        #     appliedToBody = ['calcn']
+        #     for leg in ['r','l']:
+        #         for i in range(len(appliedToBody)):
+        #             newForce = opensim.ExternalForce()
+        #             newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
+        #             newForce.set_applied_to_body(appliedToBody[i] + '_' + leg.lower()) 
+        #             newForce.set_force_expressed_in_body('ground') 
+        #             newForce.set_point_expressed_in_body('ground')
+        #             newForce.set_force_identifier('ground_force_' + leg + '_v')
+        #             newForce.set_torque_identifier('ground_torque_' + leg + '_')
+        #             newForce.set_point_identifier('ground_force_' + leg + '_p')
+        #             newForce.setDataSource(dataSource)
+        #             model.addForce(newForce)
+        # elif grfType == 'experimental':
+        #     appliedToBody = ['calcn']
+        #     for leg in ['R','L']:
+        #         for i in range(len(appliedToBody)):
+        #             newForce = opensim.ExternalForce()
+        #             newForce.setName('GRF' + '_' + leg + '_' + str(i)) 
+        #             newForce.set_applied_to_body(appliedToBody[i] + '_' + leg.lower()) 
+        #             newForce.set_force_expressed_in_body('ground') 
+        #             newForce.set_point_expressed_in_body('ground')
+        #             newForce.set_force_identifier(leg + '_ground_force_v')
+        #             newForce.set_torque_identifier(leg + '_ground_torque_')
+        #             newForce.set_point_identifier(leg + '_ground_force_p')
+        #             newForce.setDataSource(dataSource)
+        #             model.addForce(newForce)
         
         # initSystem - done editing model.
         state = model.initSystem()

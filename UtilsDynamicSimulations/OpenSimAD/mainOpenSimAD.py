@@ -725,27 +725,41 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                      'F' + suff_tread + '_map.npy'), allow_pickle=True).item()
     
     # Indices outputs external function.
-    nContactSpheres = 6
+    if 'nContactSpheres' not in F_map['GRFs']:
+        # We updated the code to make it more generic and allow for different
+        # contact configurations. Old versions of the external functions will
+        # not work anymore. Results will not change.
+        raise ValueError("""We recently updated our code, please delete the folder 
+        ExternalFunction under Data/<session_ID>/OpenSimData/Model/ 
+        and rerun the example_kinetics.py.""")
+        
+    nContactSpheres = F_map['GRFs']['nContactSpheres']
+    contactSpheres = {}
+    contactSpheres['right'] = F_map['GRFs']['rightContactSpheres']
+    contactSpheres['left'] = F_map['GRFs']['leftContactSpheres']    
+    contactSpheres['all'] = contactSpheres['right'] + contactSpheres['left']
+    contactSpheres['bodies'] = {}
+    contactSpheres['bodies']['right']  = F_map['GRFs']['rightContactSphereBodies']
+    contactSpheres['bodies']['left'] = F_map['GRFs']['leftContactSphereBodies']
+    contactSides = []
+    if contactSpheres['right']:
+        contactSides.append('right')
+    if contactSpheres['left']:
+        contactSides.append('left')        
     if heel_vGRF_threshold > 0:
         # Indices vertical ground reaction forces heel contact spheres.
-        idx_vGRF_heel = [F_map['GRFs']['Sphere_0'][1],
-                         F_map['GRFs']['Sphere_6'][1]]
-    if min_ratio_vGRF:
-        idx_vGRF = []
-        for contactSphere in range(2*nContactSpheres):
-            idx_vGRF.append(F_map['GRFs'][
-                'Sphere_{}'.format(contactSphere)][1])
+        idx_vGRF_heel = []
+        for side in contactSides:
+            idx_vGRF_heel.append(F_map['GRFs'][contactSpheres[side][0]][1])
+    if min_ratio_vGRF:            
         # Indices vertical ground reaction forces rear contact spheres.
-        idx_vGRF_rear_l = [idx_vGRF[0+nContactSpheres], 
-                           idx_vGRF[3+nContactSpheres]]
-        idx_vGRF_rear_r = [idx_vGRF[0], idx_vGRF[3]]
-        # Indices vertical ground reaction forces front contact spheres.
-        idx_vGRF_front_l = [idx_vGRF[1+nContactSpheres], 
-                            idx_vGRF[2+nContactSpheres], 
-                            idx_vGRF[4+nContactSpheres], 
-                            idx_vGRF[5+nContactSpheres]]            
-        idx_vGRF_front_r = [idx_vGRF[1], idx_vGRF[2], 
-                            idx_vGRF[4], idx_vGRF[5]]            
+        idx_vGRF_rear, idx_vGRF_front = {}, {}
+        # Warning: hard coded
+        idx_rear_spheres = [0, 3]
+        idx_front_spheres = [1, 2, 4, 5]
+        for side in contactSides:
+            idx_vGRF_rear[side] = [F_map['GRFs'][contactSpheres[side][i]][1] for i in idx_rear_spheres]
+            idx_vGRF_front[side] = [F_map['GRFs'][contactSpheres[side][i]][1] for i in idx_front_spheres]        
     if yCalcnToes:
         # Indices vertical position origins calc and toes segments.
         idx_yCalcnToes = [F_map['body_origins']['calcn_l'][1],
@@ -1389,15 +1403,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     J += (weights['reserveActuatorTerm'] * 
                           reserveActuatorTerm * h * B[j + 1])
                     
-                if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:
-                    vGRF_ratio_l = ca.sqrt((ca.sum1(Tk[idx_vGRF_front_l])) / 
-                                           (ca.sum1(Tk[idx_vGRF_rear_l])))
-                    vGRF_ratio_r = ca.sqrt((ca.sum1(Tk[idx_vGRF_front_r])) /
-                                           (ca.sum1(Tk[idx_vGRF_rear_r])))
-                    J += (weights['vGRFRatioTerm'] * 
-                          (vGRF_ratio_l) * h * B[j + 1])
-                    J += (weights['vGRFRatioTerm'] * 
-                          (vGRF_ratio_r) * h * B[j + 1])
+                if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:                    
+                    for side in contactSides:                        
+                        vGRF_ratio = ca.sqrt(
+                            (ca.sum1(Tk[idx_vGRF_front[side]])) /
+                            (ca.sum1(Tk[idx_vGRF_rear[side]])))
+                        J += (weights['vGRFRatioTerm'] * 
+                              (vGRF_ratio) * h * B[j + 1])                 
              
             # Note: we only impose the following constraints at the mesh
             # points. To be fully consistent with an orthogonal radau
@@ -1674,21 +1686,17 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             
         # %% Extract joint torques and ground reaction forces.
         # Helper indices
-        spheres = ['s{}'.format(i) for i in range(1, nContactSpheres+1)]    
-        idxGR, idxGR["GRF"], idxGR["GRF"]["all"]  = {}, {}, {}
-        idxGR["COP"], idxGR["GRM"], idxGR["GRM"]["all"] = {}, {}, {}
-        for sphere in spheres:
-            idxGR["GRF"][sphere] = {}
-            idxGR["COP"][sphere] = {}        
-        sides_all = ['right', 'left']
-        for c_side, side in enumerate(sides_all):
-            idxGR['GRF']["all"][side[0]] = list(F_map['GRFs'][side])
-            idxGR['GRM']["all"][side[0]] = list(F_map['GRMs'][side])
-            for c_sphere, sphere in enumerate(spheres):
-                idxGR['GRF'][sphere][side[0]] = list(F_map['GRFs'][
-                    'Sphere_{}'.format(c_sphere + c_side*len(spheres))])
-                idxGR['COP'][sphere][side[0]] = list(F_map['COPs'][
-                    'Sphere_{}'.format(c_sphere + c_side*len(spheres))])        
+        idxGR, idxGR['GRF'], idxGR['GRF']['all']  = {}, {}, {}
+        idxGR['COP'], idxGR['GRM'], idxGR['GRM']['all'] = {}, {}, {}
+        for sphere in contactSpheres['all']:
+            idxGR['GRF'][sphere] = {}
+            idxGR['COP'][sphere] = {}
+        for c_side, side in enumerate(contactSides):
+            idxGR['GRF']['all'][side] = list(F_map['GRFs'][side])
+            idxGR['GRM']['all'][side] = list(F_map['GRMs'][side])            
+            for c_sphere, sphere in enumerate(contactSpheres[side]):                
+                idxGR['GRF'][sphere][side] = list(F_map['GRFs'][sphere])                
+                idxGR['COP'][sphere][side] = list(F_map['COPs'][sphere])        
         
         from utilsOpenSimAD import getCOP
         QsQds_opt_nsc = np.zeros((nJoints*2, N+1))
@@ -1731,23 +1739,22 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 "Error mtp torques balance")
         # Extract GRFs, GRMs, and compute free moments and COPs. 
         GRF_all_opt, GRM_all_opt, COP_all_opt, freeT_all_opt = {}, {}, {}, {}
-        for side in sides:
-            GRF_all_opt[side] = F_out_pp[idxGR["GRF"]["all"][side], :]
-            GRM_all_opt[side] = F_out_pp[idxGR["GRM"]["all"][side], :]
-            COP_all_opt[side], freeT_all_opt[side] = getCOP(
-                GRF_all_opt[side], GRM_all_opt[side])           
-        GRF_all_opt['all'] = np.concatenate(
-            (GRF_all_opt['r'], GRF_all_opt['l']), axis=0)   
-        GRM_all_opt['all'] = np.concatenate(
-            (GRM_all_opt['r'], GRM_all_opt['l']), axis=0)
         GRF_s_opt, COP_s_opt = {}, {}
-        for side in sides:
+        GRF_all_opt['all'] = np.zeros((len(contactSides)*3, N))
+        GRM_all_opt['all'] = np.zeros((len(contactSides)*3, N))
+        for c_s, side in enumerate(contactSides):
+            GRF_all_opt[side] = F_out_pp[idxGR['GRF']['all'][side], :]
+            GRM_all_opt[side] = F_out_pp[idxGR['GRM']['all'][side], :]
+            COP_all_opt[side], freeT_all_opt[side] = getCOP(
+                GRF_all_opt[side], GRM_all_opt[side])
+            GRF_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRF_all_opt[side]
+            GRM_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRM_all_opt[side]
             GRF_s_opt[side], COP_s_opt[side] = {}, {}
-            for sphere in spheres:
+            for c_sphere, sphere in enumerate(contactSpheres[side]):                
                 GRF_s_opt[side][sphere] = (
-                    F_out_pp[idxGR["GRF"][sphere][side], :])
+                    F_out_pp[idxGR['GRF'][sphere][side], :])
                 COP_s_opt[side][sphere] = (
-                    F_out_pp[idxGR["COP"][sphere][side], :])
+                    F_out_pp[idxGR['COP'][sphere][side], :])                
         # Extract joint torques.            
         torques_opt = F_out_pp[
             [F_map['residuals'][joint] for joint in joints], :]
@@ -1758,47 +1765,35 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         Qs_opt_nsc_deg[idxRotationalJoints, :] = (
             Qs_opt_nsc_deg[idxRotationalJoints, :] * 180 / np.pi)
         # Labels
-        GR_labels, GR_labels["GRF"] = {}, {}
-        GR_labels["COP"], GR_labels["GRM"] = {}, {}
+        GR_labels, GR_labels['GRF'] = {}, {}
+        GR_labels['COP'], GR_labels['GRM'] = {}, {}
         dimensions = ['x', 'y', 'z']
-        for i in range(1,nContactSpheres+1):
-            GR_labels["GRF"]["s" + str(i)] = {}
-            GR_labels["COP"]["s" + str(i)] = {}
-            GR_labels["GRM"]["s" + str(i)] = {}
-            if i < 2:
-                GR_labels["GRF"]["all"] = {}
-                GR_labels["COP"]["all"] = {}
-                GR_labels["GRM"]["all"] = {}
-            for side in sides:
-                GR_labels["GRF"]["s" + str(i)][side] = []
-                GR_labels["COP"]["s" + str(i)][side] = []
-                GR_labels["GRM"]["s" + str(i)][side] = []
-                if i < 2:
-                    GR_labels["GRF"]["all"][side] = []
-                    GR_labels["COP"]["all"][side] = []
-                    GR_labels["GRM"]["all"][side] = []
-                for dimension in dimensions:
-                    GR_labels["GRF"]["s" + str(i)][side] = (
-                        GR_labels["GRF"]["s" + str(i)][side] + 
-                        ["ground_force_s{}_{}_v{}".format(i, side, dimension)])
-                    GR_labels["COP"]["s" + str(i)][side] = (
-                        GR_labels["COP"]["s" + str(i)][side] + 
-                        ["ground_force_s{}_{}_p{}".format(i, side, dimension)])
-                    GR_labels["GRM"]["s" + str(i)][side] = (
-                        GR_labels["GRM"]["s" + str(i)][side] + 
-                        ["ground_torque_s{}_{}_{}".format(i, side, dimension)])
-                    if i < 2:
-                        GR_labels["GRF"]["all"][side] = (
-                        GR_labels["GRF"]["all"][side] + 
-                        ["ground_force_" + side + "_v" + dimension])
-                        GR_labels["COP"]["all"][side] = (
-                        GR_labels["COP"]["all"][side] + 
-                        ["ground_force_" + side + "_p" + dimension])
-                        GR_labels["GRM"]["all"][side] = (
-                        GR_labels["GRM"]["all"][side] + 
-                        ["ground_torque_" + side + "_" + dimension])
-        GR_labels_fig = (GR_labels['GRF']['all']['r'] + 
-                         GR_labels['GRF']['all']['l'])
+        GR_labels['GRF']['all'] = {}
+        GR_labels['COP']['all'] = {}
+        GR_labels['GRM']['all'] = {}
+        GR_labels_fig = []
+        for c_side, side in enumerate(contactSides):            
+            GR_labels['GRF']['all'][side] = []
+            GR_labels['COP']['all'][side] = []
+            GR_labels['GRM']['all'][side] = []
+            GR_labels['GRF'][side] = {}
+            GR_labels['COP'][side] = {}
+            GR_labels['GRM'][side] = {}            
+            for c_sphere, sphere in enumerate(contactSpheres[side]):                
+                GR_labels['GRF'][side][sphere] = []
+                GR_labels['COP'][side][sphere] = []
+                GR_labels['GRM'][side][sphere] = []                
+                for dimension in dimensions:                    
+                    GR_labels['GRF'][side][sphere].append("ground_force_{}_v{}".format(sphere, dimension))
+                    GR_labels['COP'][side][sphere].append("ground_force_{}_p{}".format(sphere, dimension))
+                    GR_labels['GRM'][side][sphere].append("ground_torque_{}_{}".format(sphere, dimension))
+            for dimension in dimensions:                    
+                GR_labels['GRF']['all'][side].append("ground_force_{}_v{}".format(side, dimension))
+                GR_labels['COP']['all'][side].append("ground_force_{}_p{}".format(side, dimension))
+                GR_labels['GRM']['all'][side].append("ground_torque_{}_{}".format(side, dimension))
+            GR_labels_fig.append(GR_labels['GRF']['all'][side])
+        GR_labels_fig = [item for sublist in GR_labels_fig for item in sublist]
+        
         if writeGUI:
             # Kinematics and activations.
             muscleLabels = ([bothSidesMuscle + '/activation' 
@@ -1826,38 +1821,38 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 pathResults, 'kinetics_{}_{}.mot'.format(trialName, case)),
                 datatype='ID')
             # Grounds reaction forces (per sphere).
-            labels = ['time']
-            for sphere in spheres:
-                for side in sides:
-                    labels += GR_labels["GRF"][sphere][side]
-                    labels += GR_labels["COP"][sphere][side]
-            for sphere in spheres:
-                for side in sides:
-                    labels += GR_labels["GRM"][sphere][side]
-            data = np.zeros((tgridf.T[:-1].shape[0], 1+nContactSpheres*2*9))
+            labels = ['time']                    
+            data = np.zeros((tgridf.T[:-1].shape[0], 1+nContactSpheres*9))
             data[:,0] = tgridf.T[:-1].flatten()
             idx_acc = 1
-            for sphere in spheres:
-                for side in sides:
+            for c_side, side in enumerate(contactSides):
+                for c_sphere, sphere in enumerate(contactSpheres[side]):
                     data[:,idx_acc:idx_acc+3] = GRF_s_opt[side][sphere].T
                     idx_acc += 3
                     data[:,idx_acc:idx_acc+3] = COP_s_opt[side][sphere].T
-                    idx_acc += 3                
+                    idx_acc += 6
+                    labels += GR_labels['GRF'][side][sphere]
+                    labels += GR_labels['COP'][side][sphere]
+                    labels += GR_labels['GRM'][side][sphere]
             numpy_to_storage(labels, data, os.path.join(
                 pathResults, 'GRF_{}_{}.mot'.format(trialName, case)),
                 datatype='GRF')
             # Grounds reaction forces (resultant).
-            labels = (['time'] + 
-                      GR_labels["GRF"]["all"]["r"] +  
-                      GR_labels["COP"]["all"]["r"] +
-                      GR_labels["GRF"]["all"]["l"] + 
-                      GR_labels["COP"]["all"]["l"] +
-                      GR_labels["GRM"]["all"]["r"] +
-                      GR_labels["GRM"]["all"]["l"])
-            data = np.concatenate(
-                (tgridf.T[:-1], GRF_all_opt['r'].T, COP_all_opt['r'].T,
-                 GRF_all_opt['l'].T, COP_all_opt['l'].T, freeT_all_opt['r'].T, 
-                 freeT_all_opt['l'].T), axis=1)                
+            labels = ['time']
+            for c_side, side in enumerate(contactSides):
+                labels += GR_labels['GRF']['all'][side]
+                labels += GR_labels['COP']['all'][side]
+                labels += GR_labels['GRM']['all'][side]                
+            data = np.zeros((tgridf.T[:-1].shape[0], 1+len(contactSides)*9))
+            data[:,0] = tgridf.T[:-1].flatten()
+            idx_acc = 1
+            for c_side, side in enumerate(contactSides):
+                data[:,idx_acc:idx_acc+3] = GRF_all_opt[side].T
+                idx_acc += 3
+                data[:,idx_acc:idx_acc+3] = COP_all_opt[side].T
+                idx_acc += 3
+                data[:,idx_acc:idx_acc+3] = freeT_all_opt[side].T
+                idx_acc += 3     
             numpy_to_storage(labels, data, os.path.join(
                 pathResults, 'GRF_resultant_{}_{}.mot'.format(
                     trialName, case)), datatype='GRF')
@@ -2026,15 +2021,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                         reserveActuatorTerm_opt += ca.sumsqr(rActk_opt[c_j])                            
                     reserveActuatorTerm_opt /= len(reserveActuatorCoordinates)
                     reserveActuatorTerm_opt_all += (weights['reserveActuatorTerm'] * reserveActuatorTerm_opt * h * B[j + 1])
-                if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:              
-                    vGRF_heel_r_opt = GRF_s_opt['r']['s1'][1,k] + GRF_s_opt['r']['s4'][1,k]
-                    vGRF_front_r_opt = GRF_s_opt['r']['s2'][1,k] + GRF_s_opt['r']['s3'][1,k] + GRF_s_opt['r']['s5'][1,k] + GRF_s_opt['r']['s6'][1,k] 
-                    vGRF_ratio_r_opt = np.sqrt(vGRF_front_r_opt/vGRF_heel_r_opt)                        
-                    vGRF_heel_l_opt = GRF_s_opt['l']['s1'][1,k] + GRF_s_opt['l']['s4'][1,k]
-                    vGRF_front_l_opt = GRF_s_opt['l']['s2'][1,k] + GRF_s_opt['l']['s3'][1,k] + GRF_s_opt['l']['s5'][1,k] + GRF_s_opt['l']['s6'][1,k] 
-                    vGRF_ratio_l_opt = np.sqrt(vGRF_front_l_opt/vGRF_heel_l_opt)
-                    vGRFRatioTerm_opt_all += (weights['vGRFRatioTerm'] * vGRF_ratio_l_opt * h * B[j + 1])
-                    vGRFRatioTerm_opt_all += (weights['vGRFRatioTerm'] * vGRF_ratio_r_opt * h * B[j + 1])
+                if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:
+                    for side in contactSides:                    
+                        vGRF_front_opt = 0                        
+                        for idx_front_sphere in idx_front_spheres:
+                            vGRF_front_opt += GRF_s_opt[side][contactSpheres[side][idx_front_sphere]][1,k]
+                        vGRF_rear_opt = 0
+                        for idx_rear_sphere in idx_rear_spheres:
+                            vGRF_rear_opt += GRF_s_opt[side][contactSpheres[side][idx_rear_sphere]][1,k]
+                        vGRF_ratio_opt = np.sqrt(vGRF_front_opt/vGRF_rear_opt) 
+                        vGRFRatioTerm_opt_all += (weights['vGRFRatioTerm'] * vGRF_ratio_opt * h * B[j + 1])                    
                 
         # "Motor control" terms.
         JMotor_opt = (activationTerm_opt_all.full() +  
@@ -2117,6 +2113,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             c_KAM = computeKAM(pathGenericTemplates,
                                pathResults, pathModelFile, IDPath, 
                                IKPath, GRFPath, grfType='sphere',
+                               contactSides=contactSides,
+                               contactSpheres=contactSpheres,
                                Qds=Qds_opt_nsc.T)
             KAM = np.concatenate(
                 (np.expand_dims(c_KAM['KAM_r'], axis=1),
@@ -2213,6 +2211,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             c_MCF = computeMCF(pathGenericTemplates, pathResults, 
                                pathModelFile, IK_act_Path, 
                                IK_act_Path, GRFPath, grfType='sphere',
+                               contactSides=contactSides,
+                               contactSpheres=contactSpheres,
                                muscleForceFilePath=forcePath,
                                pathReserveGeneralizedForces=forcePath,
                                Qds=Qds_opt_nsc.T,
