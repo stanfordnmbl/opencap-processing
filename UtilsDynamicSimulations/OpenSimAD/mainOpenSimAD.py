@@ -45,13 +45,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     
     # Cost function weights.
     weights = {
-        'activationTerm': settings['weights']['activationTerm'],
         'jointAccelerationTerm': settings['weights']['jointAccelerationTerm'],
         'armExcitationTerm': settings['weights']['armExcitationTerm'],
-        'activationDtTerm': settings['weights']['activationDtTerm'],
-        'forceDtTerm': settings['weights']['forceDtTerm'],
         'positionTrackingTerm': settings['weights']['positionTrackingTerm'],
-        'velocityTrackingTerm': settings['weights']['velocityTrackingTerm']}
+        'velocityTrackingTerm': settings['weights']['velocityTrackingTerm']}    
+    if 'activationTerm' in settings['weights']:
+        weights['activationTerm'] = settings['weights']['activationTerm']
+    if 'forceDtTerm' in settings['weights']:
+        weights['forceDtTerm'] = settings['weights']['forceDtTerm']
+    if 'activationDtTerm' in settings['weights']:
+        weights['activationDtTerm'] = settings['weights']['activationDtTerm']
     
     # Model info.
     # Model name.
@@ -2309,7 +2312,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         # %% Compute medial knee contact forces.
         if torque_driven_model:
             computeMCF = False
-            print("TODO: Add support for contact forces with torque-driven model.")
+            print("To compute contact forces, use a muscle-driven model.")
         if computeMCF:
             # Export muscle forces and non muscle-driven torques (if existing).
             import pandas as pd

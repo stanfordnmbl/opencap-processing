@@ -124,12 +124,12 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #       - macOS   (Monterey 12.2): converged in 869 iterations
 #       - Linux   (Ubuntu 20.04):  converged in 856 iterations 
 # Select which example you would like to run.
-session_type = 'treadmill' # Options are 'overground' and 'treadmill'.
+session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 case = '0' # Change this to compare across settings.
 # Options are 'squat', 'STS', and 'jump'.
 if session_type == 'overground': 
-    trial_name = 'STS'
+    trial_name = 'DJ'
     if trial_name == 'squat': # Squat
         motion_type = 'squats'
         repetition = 1
@@ -139,6 +139,10 @@ if session_type == 'overground':
     elif trial_name == 'jump': # Jump  
         motion_type = 'jumping'
         time_window = [1.3, 2.2]
+    elif trial_name == 'DJ': # Drop jump  
+        # Example for torque-driven simulation.
+        motion_type = 'drop_jump_torque_driven'
+        time_window = [2.5, 3.5]
 # Options are 'walk_1_25ms', 'run_2_5ms', and 'run_4ms'.
 elif session_type == 'treadmill': 
     trial_name = 'walk_1_25ms'
@@ -156,7 +160,7 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = False
+solveProblem = True
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
@@ -178,14 +182,10 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   motion_type, time_window, repetition,
                                   treadmill_speed)
 
-# settings['torque_driven_model'] = True
-# settings['coordinate_optimal_forces'] = {'hip_flexion_l': 450,
-#                                          'ankle_angle_r': 300}
-
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
               solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
-plotResultsDC(dataFolder, session_id, trial_name, settings, cases=['0','1'])
+plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case])
