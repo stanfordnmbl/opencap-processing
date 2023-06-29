@@ -277,14 +277,19 @@ class bounds_tracking:
         return (upperBoundsForceDerivative, lowerBoundsForceDerivative, 
                 scalingForceDerivative)
     
-    def getBoundsCoordinateDynamics(self, coordinates, scaling):
+    def getBoundsCoordinateDynamics(self, coordinates, optimal_forces = {}, 
+                                    default_optimal_force=500):
         
         lb = [-1] 
         lb_vec = lb * len(coordinates)
         ub = [1]
         ub_vec = ub * len(coordinates)
-        s = [scaling]
-        s_vec = s * len(coordinates)
+        s_vec = []
+        for coord in coordinates:
+            if coord in optimal_forces:
+                s_vec.append(optimal_forces[coord])
+            else:
+                s_vec.append(default_optimal_force)
         upperBoundsCoordinateExcitation = pd.DataFrame([ub_vec], 
                                                 columns=coordinates)   
         lowerBoundsCoordinateExcitation = pd.DataFrame([lb_vec], 

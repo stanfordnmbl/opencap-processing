@@ -67,8 +67,9 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     
     # Set withArms to True to include arm joints.
     withArms = True
+    coordinate_optimal_forces = {}
     if "withArms" in settings:
-         withArms = settings['withArms']
+         withArms = settings['withArms']        
     
     # Set withLumbarCoordinateActuators to True to actuate the lumbar 
     # coordinates with coordinate actuators. Coordinate actuator have simple
@@ -419,6 +420,15 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     else:
         s_muscleVolume = np.ones((nMuscles,))
     s_muscleVolume = np.reshape(s_muscleVolume, (nMuscles, 1))
+    
+    # Coordinate actuator optimal forces.
+    from muscleDataOpenSimAD import get_coordinate_actuator_optimal_forces
+    coordinate_optimal_forces = get_coordinate_actuator_optimal_forces()
+    # Adjust based on settings.
+    if 'coordinate_optimal_forces' in settings:
+        for coord in settings['coordinate_optimal_forces']:
+            coordinate_optimal_forces[coord] = (
+                settings['coordinate_optimal_forces'][coord])
     
     # %% Coordinates.
     # This section specifies the coordinates of the model. This is
@@ -835,7 +845,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # States.
     if torque_driven_model:
         # Coordinate activations.
-        uw['CoordA'], lw['CoordA'], scaling['CoordA'] = bounds.getBoundsCoordinateDynamics(muscleDrivenJoints, 200)
+        uw['CoordA'], lw['CoordA'], scaling['CoordA'] = bounds.getBoundsCoordinateDynamics(muscleDrivenJoints, coordinate_optimal_forces)
         uw['CoordAk'] = ca.vec(uw['CoordA'].to_numpy().T * np.ones((1, N+1))).full()
         lw['CoordAk'] = ca.vec(lw['CoordA'].to_numpy().T * np.ones((1, N+1))).full()
         uw['CoordAj'] = ca.vec(uw['CoordA'].to_numpy().T * np.ones((1, d*N))).full()
@@ -867,14 +877,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     lw['Qdsj'] = ca.vec(lw['Qds'].to_numpy().T*np.ones((1, d*N))).full()    
     if withArms:
         # Arm activations.
-        uw['ArmA'], lw['ArmA'], scaling['ArmA'] = bounds.getBoundsCoordinateDynamics(armJoints, 150)
+        uw['ArmA'], lw['ArmA'], scaling['ArmA'] = bounds.getBoundsCoordinateDynamics(armJoints, coordinate_optimal_forces)
         uw['ArmAk'] = ca.vec(uw['ArmA'].to_numpy().T * np.ones((1, N+1))).full()
         lw['ArmAk'] = ca.vec(lw['ArmA'].to_numpy().T * np.ones((1, N+1))).full()
         uw['ArmAj'] = ca.vec(uw['ArmA'].to_numpy().T * np.ones((1, d*N))).full()
         lw['ArmAj'] = ca.vec(lw['ArmA'].to_numpy().T * np.ones((1, d*N))).full()
     if withLumbarCoordinateActuators:
         # Lumbar activations.
-        uw['LumbarA'], lw['LumbarA'], scaling['LumbarA'] = bounds.getBoundsCoordinateDynamics(lumbarJoints, 300)
+        uw['LumbarA'], lw['LumbarA'], scaling['LumbarA'] = bounds.getBoundsCoordinateDynamics(lumbarJoints, coordinate_optimal_forces)
         uw['LumbarAk'] = ca.vec(uw['LumbarA'].to_numpy().T * np.ones((1, N+1))).full()
         lw['LumbarAk'] = ca.vec(lw['LumbarA'].to_numpy().T * np.ones((1, N+1))).full()
         uw['LumbarAj'] = ca.vec(uw['LumbarA'].to_numpy().T * np.ones((1, d*N))).full()
@@ -882,7 +892,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # Controls.
     if torque_driven_model:
         # Coordinate excitations.
-        uw['CoordE'], lw['CoordE'], scaling['CoordE'] = bounds.getBoundsCoordinateDynamics(muscleDrivenJoints, 200)
+        uw['CoordE'], lw['CoordE'], scaling['CoordE'] = bounds.getBoundsCoordinateDynamics(muscleDrivenJoints, coordinate_optimal_forces)
         uw['CoordEk'] = ca.vec(uw['CoordE'].to_numpy().T * np.ones((1, N))).full()
         lw['CoordEk'] = ca.vec(lw['CoordE'].to_numpy().T * np.ones((1, N))).full()
     else:
@@ -898,12 +908,12 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         lw['FDtk'] = ca.vec(lw['FDt'].to_numpy().T * np.ones((1, N))).full()
     if withArms:
         # Arm excitations.
-        uw['ArmE'], lw['ArmE'], scaling['ArmE'] = bounds.getBoundsCoordinateDynamics(armJoints, 150)
+        uw['ArmE'], lw['ArmE'], scaling['ArmE'] = bounds.getBoundsCoordinateDynamics(armJoints, coordinate_optimal_forces)
         uw['ArmEk'] = ca.vec(uw['ArmE'].to_numpy().T * np.ones((1, N))).full()
         lw['ArmEk'] = ca.vec(lw['ArmE'].to_numpy().T * np.ones((1, N))).full()
     if withLumbarCoordinateActuators:
         # Lumbar excitations.
-        uw['LumbarE'], lw['LumbarE'], scaling['LumbarE'] = bounds.getBoundsCoordinateDynamics(lumbarJoints, 300)
+        uw['LumbarE'], lw['LumbarE'], scaling['LumbarE'] = bounds.getBoundsCoordinateDynamics(lumbarJoints, coordinate_optimal_forces)
         uw['LumbarEk'] = ca.vec(uw['LumbarE'].to_numpy().T * np.ones((1, N))).full()
         lw['LumbarEk'] = ca.vec(lw['LumbarE'].to_numpy().T * np.ones((1, N))).full()    
     # Joint velocity derivatives (accelerations).
@@ -1240,14 +1250,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 assert np.alltrue(uw['rActk'][c_j] >= ca.vec(w0['rAct'][c_j].to_numpy().T).full()), "Issue with upper bound reserve actuators"
             
         # %% Plots initial guess vs bounds.
-        # TODO: support torque-driven model
         plotGuessVsBounds = False
         if plotGuessVsBounds: 
             from plotsOpenSimAD import plotGuessVSBounds
             plotGuessVSBounds(lw, uw, w0, nJoints, N, d, guessQsEnd, 
                               guessQdsEnd, withArms=withArms, 
                               withLumbarCoordinateActuators=
-                              withLumbarCoordinateActuators)
+                              withLumbarCoordinateActuators,
+                              torque_driven_model=torque_driven_model)
             
         # %% Unscale design variables.
         if not torque_driven_model:
@@ -1745,10 +1755,10 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                            (N, nLumbarJoints))).T
             starti = starti + nLumbarJoints*N
         if not torque_driven_model:
-            nFDt_col_opt = (
+            nFDt_opt = (
                 np.reshape(w_opt[starti:starti+nMuscles*(N)], (N, nMuscles))).T
             starti = starti + nMuscles*(N)
-        Qdds_col_opt = (
+        Qdds_opt = (
             np.reshape(w_opt[starti:starti+nJoints*(N)],(N, nJoints))).T
         starti = starti + nJoints*(N)
         if withReserveActuators:
@@ -1760,31 +1770,38 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         assert (starti == w_opt.shape[0]), "error when extracting results"
         
         # %% Visualize results against bounds.
-        # TODO: support torque-driven model
         visualizeResultsBounds = False
         if visualizeResultsBounds:
             from plotsOpenSimAD import plotOptimalSolutionVSBounds
-            c_wopt = {
-                'a_opt': a_opt, 'a_col_opt': a_col_opt,
-                'nF_opt': nF_opt, 'nF_col_opt': nF_col_opt,
-                'Qs_opt': Qs_opt, 'Qs_col_opt': Qs_col_opt,
-                'Qds_opt': Qds_opt, 'Qds_col_opt': Qds_col_opt,
-                'aDt_opt': aDt_opt, 'nFDt_col_opt': nFDt_col_opt,
-                'Qdds_col_opt': Qdds_col_opt}
-            plotOptimalSolutionVSBounds(lw, uw, c_wopt)
+            c_wopt = {'Qs_opt': Qs_opt, 'Qs_col_opt': Qs_col_opt,
+                      'Qds_opt': Qds_opt, 'Qds_col_opt': Qds_col_opt,
+                      'Qdds_opt': Qdds_opt}
+            if torque_driven_model:                
+                c_wopt['aCoord_opt'] = aCoord_opt
+                c_wopt['aCoord_col_opt'] = aCoord_col_opt
+                c_wopt['eCoord_opt'] = eCoord_opt                
+            else:
+                c_wopt['a_opt'] = a_opt
+                c_wopt['a_col_opt'] = a_col_opt
+                c_wopt['nF_opt'] = nF_opt
+                c_wopt['nF_col_opt'] = nF_col_opt
+                c_wopt['aDt_opt'] = aDt_opt
+                c_wopt['nFDt_opt'] = nFDt_opt
+            plotOptimalSolutionVSBounds(lw, uw, c_wopt, 
+                                        torque_driven_model=torque_driven_model)
             
         # %% Unscale results. 
         Qs_opt_nsc = Qs_opt * (
             scaling['Qs'].to_numpy().T * np.ones((1, N+1)))
         Qds_opt_nsc = Qds_opt * (
             scaling['Qds'].to_numpy().T * np.ones((1, N+1)))
-        Qdds_col_opt_nsc = Qdds_col_opt * (
+        Qdds_opt_nsc = Qdds_opt * (
             scaling['Qdds'].to_numpy().T * np.ones((1, N)))
         if torque_driven_model:
             aCoord_opt_nsc = aCoord_opt * (
                 scaling['CoordA'].to_numpy().T * np.ones((1, N+1)))
         else:
-            nFDt_col_opt_nsc = nFDt_col_opt * (
+            nFDt_opt_nsc = nFDt_opt * (
                 scaling['FDt'].to_numpy().T * np.ones((1, N)))
         if withReserveActuators:
             rAct_opt_nsc = {}
@@ -1836,7 +1853,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         QsQds_opt_nsc = np.zeros((nJoints*2, N+1))
         QsQds_opt_nsc[::2, :] = Qs_opt_nsc[idxJoints4F, :]
         QsQds_opt_nsc[1::2, :] = Qds_opt_nsc[idxJoints4F, :]
-        Qdds_opt_nsc = Qdds_col_opt_nsc[idxJoints4F, :]
+        Qdds_opt_nsc = Qdds_opt_nsc[idxJoints4F, :]
         if treadmill:
             Tj_temp = F(ca.vertcat(
                 ca.vertcat(QsQds_opt_nsc[:, 0], Qdds_opt_nsc[:, 0]), 
@@ -2067,8 +2084,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 eCoordk_opt = eCoord_opt[:, k]
             else:
                 aDtk_opt = aDt_opt[:, k]
-                nFDtk_opt = nFDt_col_opt[:, k] 
-                nFDtk_opt_nsc = nFDt_col_opt_nsc[:, k]
+                nFDtk_opt = nFDt_opt[:, k] 
+                nFDtk_opt_nsc = nFDt_opt_nsc[:, k]
             if withArms:
                 eArmk_opt = eArm_opt[:, k]
             if withLumbarCoordinateActuators:
@@ -2077,7 +2094,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 rActk_opt = {}
                 for c_j in reserveActuatorCoordinates:
                     rActk_opt[c_j] = rAct_opt[c_j][:, k] 
-            Qddsk_opt = Qdds_col_opt[:, k]            
+            Qddsk_opt = Qdds_opt[:, k]            
             # Joint positions and velocities are intertwined.
             QsQdskj_opt_nsc = ca.DM(nJoints*2, d+1)
             QsQdskj_opt_nsc[::2, :] = Qskj_opt_nsc
@@ -2420,7 +2437,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             'coordinate_speeds_toTrack': refData_Qds_nsc,
             'coordinate_speeds': Qds_opt_nsc, 
             'coordinate_accelerations_toTrack': refData_Qdds_nsc,
-            'coordinate_accelerations': Qdds_col_opt_nsc,
+            'coordinate_accelerations': Qdds_opt_nsc,
             'torques': torques_opt,
             'torques_BWht': torques_BWht_opt,
             'GRF': GRF_all_opt['all'],

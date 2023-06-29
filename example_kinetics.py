@@ -156,7 +156,7 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
@@ -179,6 +179,8 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   treadmill_speed)
 
 # settings['torque_driven_model'] = True
+# settings['coordinate_optimal_forces'] = {'hip_flexion_l': 450,
+#                                          'ankle_angle_r': 300}
 
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
@@ -186,4 +188,4 @@ run_tracking(baseDir, dataFolder, session_id, settings, case=case,
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
-# plotResultsDC(dataFolder, session_id, trial_name, settings, cases=['0','1'])
+plotResultsDC(dataFolder, session_id, trial_name, settings, cases=['0','1'])

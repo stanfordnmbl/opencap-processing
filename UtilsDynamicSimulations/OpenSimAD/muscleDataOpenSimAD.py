@@ -331,3 +331,37 @@ def passiveJointTorqueData(joint, model_type='rajagopal2016'):
     theta = thetaAll[joint]
     
     return k, theta
+
+# %% Coordinate actuator optimal forces.
+# These are arbitrary values.
+def get_coordinate_actuator_optimal_forces():
+    
+    coordinate_optimal_forces = {
+        'hip_flexion_l': 200,
+        'hip_flexion_r': 200,
+        'hip_adduction_l': 200,
+        'hip_adduction_r': 200,
+        'hip_rotation_l': 200,
+        'hip_rotation_r': 200,
+        'knee_angle_l': 200,
+        'knee_angle_r': 100,
+        'ankle_angle_l': 200,
+        'ankle_angle_r': 200, 
+        'subtalar_angle_l': 200,
+        'subtalar_angle_r': 200,        
+        'lumbar_extension': 300,
+        'lumbar_bending': 300,
+        'lumbar_rotation': 300,        
+        'arm_flex_l': 150,
+        'arm_add_l': 150,
+        'arm_rot_l': 150,
+        'arm_flex_r': 150,
+        'arm_add_r': 150,
+        'arm_rot_r': 150,
+        'elbow_flex_l': 150, 
+        'elbow_flex_r': 150,
+        'pro_sup_l': 150,
+        'pro_sup_l': 150,
+        'pro_sup_r': 150}
+    
+    return coordinate_optimal_forces
