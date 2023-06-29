@@ -31,13 +31,13 @@ def plotGuessVSBounds(lw, uw, w0, nJoints, N, d, guessQsEnd,
     
     # States.
     if torque_driven_model:
-        # Arm activation at mesh points.
+        # Coordinate activation at mesh points.
         lwp = lw['CoordA'].to_numpy().T
         uwp = uw['CoordA'].to_numpy().T
         y = w0['CoordA'].to_numpy().T
         title='Coordinate activation at mesh points' 
         plotVSBounds(y,lwp,uwp,title) 
-        # Arm activation at collocation points.
+        # Coordinate activation at collocation points.
         lwp = lw['CoordA'].to_numpy().T
         uwp = uw['CoordA'].to_numpy().T
         y = w0['CoordAj'].to_numpy().T

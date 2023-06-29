@@ -129,7 +129,7 @@ session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 case = '0' # Change this to compare across settings.
 # Options are 'squat', 'STS', and 'jump'.
 if session_type == 'overground': 
-    trial_name = 'DJ'
+    trial_name = 'squat'
     if trial_name == 'squat': # Squat
         motion_type = 'squats'
         repetition = 1
@@ -139,19 +139,19 @@ if session_type == 'overground':
     elif trial_name == 'jump': # Jump  
         motion_type = 'jumping'
         time_window = [1.3, 2.2]
-    elif trial_name == 'DJ': # Drop jump  
-        # Example for torque-driven simulation.
-        motion_type = 'drop_jump_torque_driven'
-        time_window = [2.5, 3.5]
 # Options are 'walk_1_25ms', 'run_2_5ms', and 'run_4ms'.
 elif session_type == 'treadmill': 
     trial_name = 'walk_1_25ms'
+    torque_driven_model = False # Example with torque-driven model.
     if trial_name == 'walk_1_25ms': # Walking, 1.25 m/s
         motion_type = 'walking'
         time_window = [1.0, 2.5]
         treadmill_speed = 1.25
     elif trial_name == 'run_2_5ms': # Running, 2.5 m/s
-        motion_type = 'running'
+        if torque_driven_model:
+            motion_type = 'running_torque_driven'
+        else:
+            motion_type = 'running'
         time_window = [1.4, 2.6]
         treadmill_speed = 2.5
     elif trial_name == 'run_4ms': # Running with periodic constraints, 4.0 m/s
@@ -160,7 +160,7 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to

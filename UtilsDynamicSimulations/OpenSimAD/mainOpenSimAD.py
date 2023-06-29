@@ -72,7 +72,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     withArms = True
     coordinate_optimal_forces = {}
     if "withArms" in settings:
-         withArms = settings['withArms']        
+         withArms = settings['withArms']
     
     # Set withLumbarCoordinateActuators to True to actuate the lumbar 
     # coordinates with coordinate actuators. Coordinate actuator have simple
@@ -307,7 +307,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         ipopt_tolerance = settings['ipopt_tolerance']
 
     # Set torque_driven_model to True to replace the muscle actuators with
-    # ideal torque actuators.
+    # ideal torque actuators. The default optimal forces of the ideal torque
+    # actuators are defined in the function
+    # get_coordinate_actuator_optimal_forces in muscleDataOpenSimAD. You can
+    # also specify the optimal forces as part of the problem settings. For
+    # example, to set the optimal force of the right hip flexion to 400, add
+    # coordinate_optimal_forces['hip_flexion_r'] = 400 in the settings dict.
+    # See example under drop_jump_torque_driven in settingsOpenSimAD.
     torque_driven_model = False
     if 'torque_driven_model' in settings:
         torque_driven_model = settings['torque_driven_model']
@@ -671,70 +677,71 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         leftPolynomialJoints.remove('mtp_angle_l')
         rightPolynomialJoints.remove('mtp_angle_r')    
     
-    # Load polynomials if computed already, compute otherwise.    
-    loadPolynomialData = True
-    if (not os.path.exists(os.path.join(
-            pathModelFolder, model_full_name + '_polynomial_r_{}.npy'.format(type_bounds_polynomials)))
-            or not os.path.exists(os.path.join(
-            pathModelFolder, model_full_name + '_polynomial_l_{}.npy'.format(type_bounds_polynomials)))):
-        loadPolynomialData = False        
-    from muscleDataOpenSimAD import getPolynomialData
-    polynomialData = {}
-    polynomialData['r'] = getPolynomialData(
-        loadPolynomialData, pathModelFolder, model_full_name, pathDummyMotion, 
-        rightPolynomialJoints, rightSideMuscles, 
-        type_bounds_polynomials=type_bounds_polynomials, side='r')
-    polynomialData['l'] = getPolynomialData(
-        loadPolynomialData, pathModelFolder, model_full_name, pathDummyMotion, 
-        leftPolynomialJoints, leftSideMuscles, 
-        type_bounds_polynomials=type_bounds_polynomials, side='l')     
-    if loadPolynomialData:
-        polynomialData['r'] = polynomialData['r'].item()
-        polynomialData['l'] = polynomialData['l'].item()
-    # Coefficients should not be larger than 1.
-    sides = ['r', 'l']
-    for side in sides:
-        for c_pol in polynomialData[side]:
-            assert (np.max(polynomialData[side][c_pol]['coefficients']) < 1), (
-                "coeffs {}".format(side))
-            
-    # The function f_polynomial takes as inputs joint positions and velocities
-    # from one side, and returns muscle-tendon lengths, velocities, and moment
-    # arms for the muscle of that side.
-    nPolynomials = len(leftPolynomialJoints)
-    f_polynomial = {}
-    f_polynomial['r'] = polynomialApproximation(
-        rightSideMuscles, polynomialData['r'], nPolynomials)
-    f_polynomial['l'] = polynomialApproximation(
-        leftSideMuscles, polynomialData['l'], nPolynomials)
+    if not torque_driven_model:
+        # Load polynomials if computed already, compute otherwise.    
+        loadPolynomialData = True
+        if (not os.path.exists(os.path.join(
+                pathModelFolder, model_full_name + '_polynomial_r_{}.npy'.format(type_bounds_polynomials)))
+                or not os.path.exists(os.path.join(
+                pathModelFolder, model_full_name + '_polynomial_l_{}.npy'.format(type_bounds_polynomials)))):
+            loadPolynomialData = False        
+        from muscleDataOpenSimAD import getPolynomialData
+        polynomialData = {}
+        polynomialData['r'] = getPolynomialData(
+            loadPolynomialData, pathModelFolder, model_full_name, pathDummyMotion, 
+            rightPolynomialJoints, rightSideMuscles, 
+            type_bounds_polynomials=type_bounds_polynomials, side='r')
+        polynomialData['l'] = getPolynomialData(
+            loadPolynomialData, pathModelFolder, model_full_name, pathDummyMotion, 
+            leftPolynomialJoints, leftSideMuscles, 
+            type_bounds_polynomials=type_bounds_polynomials, side='l')     
+        if loadPolynomialData:
+            polynomialData['r'] = polynomialData['r'].item()
+            polynomialData['l'] = polynomialData['l'].item()
+        # Coefficients should not be larger than 1.
+        sides = ['r', 'l']
+        for side in sides:
+            for c_pol in polynomialData[side]:
+                assert (np.max(polynomialData[side][c_pol]['coefficients']) < 1), (
+                    "coeffs {}".format(side))
+                
+        # The function f_polynomial takes as inputs joint positions and velocities
+        # from one side, and returns muscle-tendon lengths, velocities, and moment
+        # arms for the muscle of that side.
+        nPolynomials = len(leftPolynomialJoints)
+        f_polynomial = {}
+        f_polynomial['r'] = polynomialApproximation(
+            rightSideMuscles, polynomialData['r'], nPolynomials)
+        f_polynomial['l'] = polynomialApproximation(
+            leftSideMuscles, polynomialData['l'], nPolynomials)
+        
+        # Helper indices.
+        leftPolynomialJointIndices = getIndices(joints, leftPolynomialJoints)
+        rightPolynomialJointIndices = getIndices(joints, rightPolynomialJoints)    
+        leftPolynomialMuscleIndices = (
+            list(range(nSideMuscles)) + 
+            list(range(nSideMuscles, nSideMuscles)))
+        rightPolynomialMuscleIndices = list(range(nSideMuscles))
+        from utilsOpenSimAD import getMomentArmIndices
+        momentArmIndices = getMomentArmIndices(
+            rightSideMuscles, leftPolynomialJoints,rightPolynomialJoints, 
+            polynomialData['r'])    
     
-    # Helper indices.
-    leftPolynomialJointIndices = getIndices(joints, leftPolynomialJoints)
-    rightPolynomialJointIndices = getIndices(joints, rightPolynomialJoints)    
-    leftPolynomialMuscleIndices = (
-        list(range(nSideMuscles)) + 
-        list(range(nSideMuscles, nSideMuscles)))
-    rightPolynomialMuscleIndices = list(range(nSideMuscles))
-    from utilsOpenSimAD import getMomentArmIndices
-    momentArmIndices = getMomentArmIndices(
-        rightSideMuscles, leftPolynomialJoints,rightPolynomialJoints, 
-        polynomialData['r'])    
-
-    # Plot polynomial approximations (when possible) for sanity check.
-    plotPolynomials = False
-    if plotPolynomials:
-        from polynomialsOpenSimAD import testPolynomials
-        path_data4PolynomialFitting = os.path.join(
-            pathModelFolder, 
-            'data4PolynomialFitting_{}.npy'.format(model_full_name))
-        data4PolynomialFitting = np.load(path_data4PolynomialFitting, 
-                                         allow_pickle=True).item()            
-        testPolynomials(
-            data4PolynomialFitting, rightPolynomialJoints, rightSideMuscles,
-            f_polynomial['r'], polynomialData['r'], momentArmIndices)
-        testPolynomials(
-            data4PolynomialFitting, leftPolynomialJoints, leftSideMuscles,
-            f_polynomial['l'], polynomialData['l'], momentArmIndices)
+        # Plot polynomial approximations (when possible) for sanity check.
+        plotPolynomials = False
+        if plotPolynomials:
+            from polynomialsOpenSimAD import testPolynomials
+            path_data4PolynomialFitting = os.path.join(
+                pathModelFolder, 
+                'data4PolynomialFitting_{}.npy'.format(model_full_name))
+            data4PolynomialFitting = np.load(path_data4PolynomialFitting, 
+                                             allow_pickle=True).item()            
+            testPolynomials(
+                data4PolynomialFitting, rightPolynomialJoints, rightSideMuscles,
+                f_polynomial['r'], polynomialData['r'], momentArmIndices)
+            testPolynomials(
+                data4PolynomialFitting, leftPolynomialJoints, leftSideMuscles,
+                f_polynomial['l'], polynomialData['l'], momentArmIndices)
     
     # %% External functions.
     # The external function is written in C++ and compiled as a library, which

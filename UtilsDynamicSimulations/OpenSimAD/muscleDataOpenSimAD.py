@@ -361,7 +361,6 @@ def get_coordinate_actuator_optimal_forces():
         'elbow_flex_l': 150,
         'elbow_flex_r': 150,
         'pro_sup_l': 150,
-        'pro_sup_l': 150,
         'pro_sup_r': 150}
     
     return coordinate_optimal_forces
