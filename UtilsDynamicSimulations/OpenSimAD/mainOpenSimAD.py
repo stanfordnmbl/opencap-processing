@@ -313,7 +313,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # also specify the optimal forces as part of the problem settings. For
     # example, to set the optimal force of the right hip flexion to 400, add
     # coordinate_optimal_forces['hip_flexion_r'] = 400 in the settings dict.
-    # See example under drop_jump_torque_driven in settingsOpenSimAD.
+    # See example under running_torque_driven in settingsOpenSimAD.
     torque_driven_model = False
     if 'torque_driven_model' in settings:
         torque_driven_model = settings['torque_driven_model']
