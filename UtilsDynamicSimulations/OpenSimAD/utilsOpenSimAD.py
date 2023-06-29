@@ -1950,8 +1950,9 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
         if i < NMuscles:
             color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
             for c, case in enumerate(cases):
-                ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                        optimaltrajectories[case]['muscle_activations'][i:i+1,:-1].T, c=next(color), label='video-based DC ' + cases[c])         
+                if 'muscle_activations' in optimaltrajectories[case]:
+                    ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                            optimaltrajectories[case]['muscle_activations'][i:i+1,:-1].T, c=next(color), label='video-based DC ' + cases[c])         
             ax.set_title(muscles[i])
             ax.set_ylim((0,1))
             handles, labels = ax.get_legend_handles_labels()
