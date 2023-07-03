@@ -277,73 +277,27 @@ class bounds_tracking:
         return (upperBoundsForceDerivative, lowerBoundsForceDerivative, 
                 scalingForceDerivative)
     
-    def getBoundsArmExcitation(self, armJoints):
+    def getBoundsCoordinateDynamics(self, coordinates, optimal_forces = {}, 
+                                    default_optimal_force=500):
         
         lb = [-1] 
-        lb_vec = lb * len(armJoints)
+        lb_vec = lb * len(coordinates)
         ub = [1]
-        ub_vec = ub * len(armJoints)
-        s = [150]
-        s_vec = s * len(armJoints)
-        upperBoundsArmExcitation = pd.DataFrame([ub_vec], 
-                                                columns=armJoints)   
-        lowerBoundsArmExcitation = pd.DataFrame([lb_vec], 
-                                                columns=armJoints)            
-        scalingArmExcitation = pd.DataFrame([s_vec], columns=armJoints)
+        ub_vec = ub * len(coordinates)
+        s_vec = []
+        for coord in coordinates:
+            if coord in optimal_forces:
+                s_vec.append(optimal_forces[coord])
+            else:
+                s_vec.append(default_optimal_force)
+        upperBoundsCoordinateExcitation = pd.DataFrame([ub_vec], 
+                                                columns=coordinates)   
+        lowerBoundsCoordinateExcitation = pd.DataFrame([lb_vec], 
+                                                columns=coordinates)            
+        scalingCoordinateExcitation = pd.DataFrame([s_vec], columns=coordinates)
         
-        return (upperBoundsArmExcitation, lowerBoundsArmExcitation,
-                scalingArmExcitation)
-    
-    def getBoundsArmActivation(self, armJoints):
-        
-        lb = [-1] 
-        lb_vec = lb * len(armJoints)
-        ub = [1]
-        ub_vec = ub * len(armJoints)
-        s = [150]
-        s_vec = s * len(armJoints)
-        upperBoundsArmActivation = pd.DataFrame([ub_vec], 
-                                                columns=armJoints)   
-        lowerBoundsArmActivation = pd.DataFrame([lb_vec], 
-                                                columns=armJoints) 
-        scalingArmActivation = pd.DataFrame([s_vec], columns=armJoints)                  
-        
-        return (upperBoundsArmActivation, lowerBoundsArmActivation, 
-                scalingArmActivation)
-    
-    def getBoundsLumbarExcitation(self, lumbarJoints):
-        
-        lb = [-1] 
-        lb_vec = lb * len(lumbarJoints)
-        ub = [1]
-        ub_vec = ub * len(lumbarJoints)
-        s = [300]
-        s_vec = s * len(lumbarJoints)
-        upperBoundsLumbarExcitation = pd.DataFrame([ub_vec], 
-                                                   columns=lumbarJoints)   
-        lowerBoundsLumbarExcitation = pd.DataFrame([lb_vec], 
-                                                   columns=lumbarJoints)            
-        scalingLumbarExcitation = pd.DataFrame([s_vec], columns=lumbarJoints)
-        
-        return (upperBoundsLumbarExcitation, lowerBoundsLumbarExcitation,
-                scalingLumbarExcitation)
-    
-    def getBoundsLumbarActivation(self, lumbarJoints):
-        
-        lb = [-1] 
-        lb_vec = lb * len(lumbarJoints)
-        ub = [1]
-        ub_vec = ub * len(lumbarJoints)
-        s = [300]
-        s_vec = s * len(lumbarJoints)
-        upperBoundsLumbarActivation = pd.DataFrame([ub_vec], 
-                                                   columns=lumbarJoints)   
-        lowerBoundsLumbarActivation = pd.DataFrame([lb_vec], 
-                                                   columns=lumbarJoints) 
-        scalingLumbarActivation = pd.DataFrame([s_vec], columns=lumbarJoints)                  
-        
-        return (upperBoundsLumbarActivation, lowerBoundsLumbarActivation, 
-                scalingLumbarActivation)
+        return (upperBoundsCoordinateExcitation, lowerBoundsCoordinateExcitation,
+                scalingCoordinateExcitation)
     
     def getBoundsReserveActuators(self, joint, value):
         

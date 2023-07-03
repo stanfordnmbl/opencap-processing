@@ -139,9 +139,66 @@ def get_setup(motion_type):
         'cutoff_freq_Qdds': 12,
         'splineQds': True,
         'meshDensity': 100,
+        'yCalcnToes': True}
+    
+    setups['running_torque_driven'] = {
+        'ipopt_tolerance': 3,
+        'weights': {
+            'positionTrackingTerm': 100,
+            'velocityTrackingTerm': 10,
+            'accelerationTrackingTerm': 50,
+            'armExcitationTerm': 0.001,
+            'lumbarExcitationTerm': 0.001,
+            'jointAccelerationTerm': 0.001,
+            'coordinateExcitationTerm': 10},            
+        'coordinates_toTrack': {
+            'pelvis_tilt': {"weight": 10},
+            'pelvis_list': {"weight": 10},
+            'pelvis_rotation': {"weight": 10},
+            'pelvis_tx': {"weight": 10},
+            'pelvis_ty': {"weight": 10},
+            'pelvis_tz': {"weight": 10}, 
+            'hip_flexion_l': {"weight": 20},
+            'hip_adduction_l': {"weight": 10},
+            'hip_rotation_l': {"weight": 1},
+            'hip_flexion_r': {"weight": 20},
+            'hip_adduction_r': {"weight": 10},
+            'hip_rotation_r': {"weight": 1},
+            'knee_angle_l': {"weight": 10},
+            'knee_angle_r': {"weight": 10},
+            'ankle_angle_l': {"weight": 10},
+            'ankle_angle_r': {"weight": 10},
+            'subtalar_angle_l': {"weight": 10},
+            'subtalar_angle_r': {"weight": 10},
+            'lumbar_extension': {"weight": 10},
+            'lumbar_bending': {"weight": 10},
+            'lumbar_rotation': {"weight": 10},
+            'arm_flex_l': {"weight": 10},
+            'arm_add_l': {"weight": 10},
+            'arm_rot_l': {"weight": 10},
+            'arm_flex_r': {"weight": 10},
+            'arm_add_r': {"weight": 10},
+            'arm_rot_r': {"weight": 10},
+            'elbow_flex_l': {"weight": 10},
+            'elbow_flex_r': {"weight": 10},
+            'pro_sup_l': {"weight": 10},
+            'pro_sup_r': {"weight": 10}},
+        'coordinate_constraints': {
+            'pelvis_tx': {"env_bound": 0.1}},
+        'ignorePassiveFiberForce': True,
+        'filter_Qs_toTrack': True,
+        'cutoff_freq_Qs': 12,
+        'filter_Qds_toTrack': True,
+        'cutoff_freq_Qds': 12,
+        'filter_Qdds_toTrack': True,
+        'cutoff_freq_Qdds': 12,
+        'splineQds': True,
+        'meshDensity': 100,
         'yCalcnToes': True,
-        
-        }
+        'torque_driven_model': True,
+        'coordinate_optimal_forces': {
+            'hip_flexion_r': 400,
+            'hip_flexion_l': 400}}
     
     setups['walking'] = {
         'ipopt_tolerance': 3,
@@ -194,7 +251,6 @@ def get_setup(motion_type):
         'filter_Qs_toTrack': True,
         'cutoff_freq_Qs': 6,
         'meshDensity': 100}
-    
     
     setups['drop_jump'] = {
         'weights': {

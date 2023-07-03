@@ -26,33 +26,48 @@ from utilsOpenSimAD import plotVSvaryingBounds
 
 def plotGuessVSBounds(lw, uw, w0, nJoints, N, d, guessQsEnd, 
                       guessQdsEnd, withArms=True, 
-                      withLumbarCoordinateActuators=True):
+                      withLumbarCoordinateActuators=True,
+                      torque_driven_model=False):
     
     # States.
-    # Muscle activation at mesh points.    
-    lwp = lw['A'].to_numpy().T
-    uwp = uw['A'].to_numpy().T
-    y = w0['A'].to_numpy().T
-    title='Muscle activation at mesh points'            
-    plotVSBounds(y,lwp,uwp,title)  
-    # Muscle activation at collocation points.
-    lwp = lw['A'].to_numpy().T
-    uwp = uw['A'].to_numpy().T
-    y = w0['Aj'].to_numpy().T
-    title='Muscle activation at collocation points' 
-    plotVSBounds(y,lwp,uwp,title)  
-    # Muscle force at mesh points.
-    lwp = lw['F'].to_numpy().T
-    uwp = uw['F'].to_numpy().T
-    y = w0['F'].to_numpy().T
-    title='Muscle force at mesh points' 
-    plotVSBounds(y,lwp,uwp,title)  
-    # Muscle force at collocation points.
-    lwp = lw['F'].to_numpy().T
-    uwp = uw['F'].to_numpy().T
-    y = w0['Fj'].to_numpy().T
-    title='Muscle force at collocation points' 
-    plotVSBounds(y,lwp,uwp,title)
+    if torque_driven_model:
+        # Coordinate activation at mesh points.
+        lwp = lw['CoordA'].to_numpy().T
+        uwp = uw['CoordA'].to_numpy().T
+        y = w0['CoordA'].to_numpy().T
+        title='Coordinate activation at mesh points' 
+        plotVSBounds(y,lwp,uwp,title) 
+        # Coordinate activation at collocation points.
+        lwp = lw['CoordA'].to_numpy().T
+        uwp = uw['CoordA'].to_numpy().T
+        y = w0['CoordAj'].to_numpy().T
+        title='Coordinate activation at collocation points' 
+        plotVSBounds(y,lwp,uwp,title)
+    else:
+        # Muscle activation at mesh points.    
+        lwp = lw['A'].to_numpy().T
+        uwp = uw['A'].to_numpy().T
+        y = w0['A'].to_numpy().T
+        title='Muscle activation at mesh points'            
+        plotVSBounds(y,lwp,uwp,title)  
+        # Muscle activation at collocation points.
+        lwp = lw['A'].to_numpy().T
+        uwp = uw['A'].to_numpy().T
+        y = w0['Aj'].to_numpy().T
+        title='Muscle activation at collocation points' 
+        plotVSBounds(y,lwp,uwp,title)  
+        # Muscle force at mesh points.
+        lwp = lw['F'].to_numpy().T
+        uwp = uw['F'].to_numpy().T
+        y = w0['F'].to_numpy().T
+        title='Muscle force at mesh points' 
+        plotVSBounds(y,lwp,uwp,title)  
+        # Muscle force at collocation points.
+        lwp = lw['F'].to_numpy().T
+        uwp = uw['F'].to_numpy().T
+        y = w0['Fj'].to_numpy().T
+        title='Muscle force at collocation points' 
+        plotVSBounds(y,lwp,uwp,title)        
     # Joint position at mesh points.
     lwp = np.reshape(
         lw['Qsk'], (nJoints, N+1), order='F')
@@ -108,12 +123,20 @@ def plotGuessVSBounds(lw, uw, w0, nJoints, N, d, guessQsEnd,
         title='Lumbar activation at collocation points' 
         plotVSBounds(y,lwp,uwp,title)
     # Controls.
-    # Muscle activation derivative at mesh points.
-    lwp = lw['ADt'].to_numpy().T
-    uwp = uw['ADt'].to_numpy().T
-    y = w0['ADt'].to_numpy().T
-    title='Muscle activation derivative at mesh points' 
-    plotVSBounds(y,lwp,uwp,title) 
+    if torque_driven_model:
+        # Coordinate excitation at mesh points.
+        lwp = lw['CoordE'].to_numpy().T
+        uwp = uw['CoordE'].to_numpy().T
+        y = w0['CoordE'].to_numpy().T
+        title='Coordinate excitation at mesh points' 
+        plotVSBounds(y,lwp,uwp,title)
+    else:
+        # Muscle activation derivative at mesh points.
+        lwp = lw['ADt'].to_numpy().T
+        uwp = uw['ADt'].to_numpy().T
+        y = w0['ADt'].to_numpy().T
+        title='Muscle activation derivative at mesh points' 
+        plotVSBounds(y,lwp,uwp,title) 
     if withArms:
         # Arm excitation at mesh points.
         lwp = lw['ArmE'].to_numpy().T
@@ -127,13 +150,14 @@ def plotGuessVSBounds(lw, uw, w0, nJoints, N, d, guessQsEnd,
         uwp = uw['LumbarE'].to_numpy().T
         y = w0['LumbarE'].to_numpy().T
         title='Lumbar excitation at mesh points' 
-        plotVSBounds(y,lwp,uwp,title)                    
-    # Muscle force derivative at mesh points.
-    lwp = lw['FDt'].to_numpy().T
-    uwp = uw['FDt'].to_numpy().T
-    y = w0['FDt'].to_numpy().T
-    title='Muscle force derivative at mesh points' 
-    plotVSBounds(y,lwp,uwp,title)
+        plotVSBounds(y,lwp,uwp,title)
+    if not torque_driven_model:             
+        # Muscle force derivative at mesh points.
+        lwp = lw['FDt'].to_numpy().T
+        uwp = uw['FDt'].to_numpy().T
+        y = w0['FDt'].to_numpy().T
+        title='Muscle force derivative at mesh points' 
+        plotVSBounds(y,lwp,uwp,title)
     # Joint velocity derivative (acceleration) at mesh points.
     lwp = lw['Qdds'].to_numpy().T
     uwp = uw['Qdds'].to_numpy().T
@@ -141,32 +165,46 @@ def plotGuessVSBounds(lw, uw, w0, nJoints, N, d, guessQsEnd,
     title='Joint velocity derivative (acceleration) at mesh points' 
     plotVSBounds(y,lwp,uwp,title)
     
-def plotOptimalSolutionVSBounds(lw, uw, c_wopt):
+def plotOptimalSolutionVSBounds(lw, uw, c_wopt, torque_driven_model=False):
     # States
-    # Muscle activation at mesh points
-    lwp = lw['A'].to_numpy().T
-    uwp = uw['A'].to_numpy().T
-    y = c_wopt['a_opt']
-    title='Muscle activation at mesh points'            
-    plotVSBounds(y,lwp,uwp,title)  
-    # Muscle activation at collocation points
-    lwp = lw['A'].to_numpy().T
-    uwp = uw['A'].to_numpy().T
-    y = c_wopt['a_col_opt']
-    title='Muscle activation at collocation points' 
-    plotVSBounds(y,lwp,uwp,title)  
-    # Muscle force at mesh points
-    lwp = lw['F'].to_numpy().T
-    uwp = uw['F'].to_numpy().T
-    y = c_wopt['nF_opt']
-    title='Muscle force at mesh points' 
-    plotVSBounds(y,lwp,uwp,title)  
-    # Muscle force at collocation points
-    lwp = lw['F'].to_numpy().T
-    uwp = uw['F'].to_numpy().T
-    y = c_wopt['nF_col_opt']
-    title='Muscle force at collocation points' 
-    plotVSBounds(y,lwp,uwp,title)
+    if torque_driven_model:
+        # Coordinate activation at mesh points
+        lwp = lw['CoordA'].to_numpy().T
+        uwp = uw['CoordA'].to_numpy().T
+        y = c_wopt['aCoord_opt']
+        title='Coordinate activation at mesh points'            
+        plotVSBounds(y,lwp,uwp,title)  
+        # Coordinate activation at collocation points
+        lwp = lw['CoordA'].to_numpy().T
+        uwp = uw['CoordA'].to_numpy().T
+        y = c_wopt['aCoord_col_opt']
+        title='Coordinate activation at collocation points' 
+        plotVSBounds(y,lwp,uwp,title)
+    else:
+        # Muscle activation at mesh points
+        lwp = lw['A'].to_numpy().T
+        uwp = uw['A'].to_numpy().T
+        y = c_wopt['a_opt']
+        title='Muscle activation at mesh points'            
+        plotVSBounds(y,lwp,uwp,title)  
+        # Muscle activation at collocation points
+        lwp = lw['A'].to_numpy().T
+        uwp = uw['A'].to_numpy().T
+        y = c_wopt['a_col_opt']
+        title='Muscle activation at collocation points' 
+        plotVSBounds(y,lwp,uwp,title)  
+        # Muscle force at mesh points
+        lwp = lw['F'].to_numpy().T
+        uwp = uw['F'].to_numpy().T
+        y = c_wopt['nF_opt']
+        title='Muscle force at mesh points' 
+        plotVSBounds(y,lwp,uwp,title)  
+        # Muscle force at collocation points
+        lwp = lw['F'].to_numpy().T
+        uwp = uw['F'].to_numpy().T
+        y = c_wopt['nF_col_opt']
+        title='Muscle force at collocation points' 
+        plotVSBounds(y,lwp,uwp,title)
     # Joint position at mesh points
     lwp = lw['Qs'].to_numpy().T
     uwp = uw['Qs'].to_numpy().T
@@ -192,22 +230,31 @@ def plotOptimalSolutionVSBounds(lw, uw, c_wopt):
     title='Joint velocity at collocation points' 
     plotVSBounds(y,lwp,uwp,title)
     # Controls
-    # Muscle activation derivative at mesh points
-    lwp = lw['ADt'].to_numpy().T
-    uwp = uw['ADt'].to_numpy().T
-    y = c_wopt['aDt_opt']
-    title='Muscle activation derivative at mesh points' 
-    plotVSBounds(y,lwp,uwp,title)
+    if torque_driven_model:
+        # Muscle activation derivative at mesh points
+        lwp = lw['CoordE'].to_numpy().T
+        uwp = uw['CoordE'].to_numpy().T
+        y = c_wopt['eCoord_opt']
+        title='Coordinate excitation at mesh points' 
+        plotVSBounds(y,lwp,uwp,title)
+    else:
+        # Muscle activation derivative at mesh points
+        lwp = lw['ADt'].to_numpy().T
+        uwp = uw['ADt'].to_numpy().T
+        y = c_wopt['aDt_opt']
+        title='Muscle activation derivative at mesh points' 
+        plotVSBounds(y,lwp,uwp,title)
     # Slack controls
-    # Muscle force derivative at collocation points
-    lwp = lw['FDt'].to_numpy().T
-    uwp = uw['FDt'].to_numpy().T
-    y = c_wopt['nFDt_col_opt']
-    title='Muscle force derivative at collocation points' 
-    plotVSBounds(y,lwp,uwp,title)
+    if not torque_driven_model:
+        # Muscle force derivative at collocation points
+        lwp = lw['FDt'].to_numpy().T
+        uwp = uw['FDt'].to_numpy().T
+        y = c_wopt['nFDt_opt']
+        title='Muscle force derivative at collocation points' 
+        plotVSBounds(y,lwp,uwp,title)
     # Joint velocity derivative (acceleration) at collocation points
     lwp = lw['Qdds'].to_numpy().T
     uwp = uw['Qdds'].to_numpy().T
-    y = c_wopt['Qdds_col_opt']
+    y = c_wopt['Qdds_opt']
     title='Joint velocity derivative (acceleration) at collocation points' 
     plotVSBounds(y,lwp,uwp,title)
