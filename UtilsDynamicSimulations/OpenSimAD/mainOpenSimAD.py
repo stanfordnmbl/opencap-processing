@@ -2470,14 +2470,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             optimaltrajectories[case]['MCF'] = MCF
             optimaltrajectories[case]['MCF_BW'] = MCF_BW
             optimaltrajectories[case]['MCF_labels'] = MCF_labels              
-    optimaltrajectories[case]['iter'] = stats['iter_count']
+        optimaltrajectories[case]['iter'] = stats['iter_count']
 
-    if torque_driven_model:
-        optimaltrajectories[case]['coordinate_activations'] = aCoord_opt_nsc
-    else:
-        optimaltrajectories[case]['muscle_activations'] = a_opt        
-        optimaltrajectories[case]['passive_muscle_torques'] = pMT_opt
-        optimaltrajectories[case]['passive_muscle_torques'] = aMT_opt
-            
-    np.save(os.path.join(pathResults, 'optimaltrajectories.npy'),
-            optimaltrajectories)
+        if torque_driven_model:
+            optimaltrajectories[case]['coordinate_activations'] = aCoord_opt_nsc
+        else:
+            optimaltrajectories[case]['muscle_activations'] = a_opt        
+            optimaltrajectories[case]['passive_muscle_torques'] = pMT_opt
+            optimaltrajectories[case]['passive_muscle_torques'] = aMT_opt
+                
+        np.save(os.path.join(pathResults, 'optimaltrajectories.npy'),
+                optimaltrajectories)
