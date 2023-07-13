@@ -37,14 +37,14 @@ specific_trial_names = None
 data_folder = os.path.join("./../Data", session_id)
 
 # %% Download data.
-trial_names = download_kinematics(session_id, folder=data_folder, trialNames=specific_trial_names)
+trial_names, modelName = download_kinematics(session_id, folder=data_folder, trialNames=specific_trial_names)
 
 # %% Get center of mass kinematics.
 kinematics, center_of_mass = {}, {}
 center_of_mass['values'], center_of_mass['speeds'], center_of_mass['accelerations'] = {}, {}, {}
 for trial_name in trial_names:
     # Create object from class kinematics.
-    kinematics[trial_name] = utilsKinematics.kinematics(data_folder, trial_name, lowpass_cutoff_frequency_for_coordinate_values=10)
+    kinematics[trial_name] = utilsKinematics.kinematics(data_folder, trial_name, modelName=modelName, lowpass_cutoff_frequency_for_coordinate_values=10)
     # Get center of mass values, speeds, and accelerations.
     center_of_mass['values'][trial_name] = kinematics[trial_name].get_center_of_mass_values(lowpass_cutoff_frequency=10)
     center_of_mass['speeds'][trial_name] = kinematics[trial_name].get_center_of_mass_speeds(lowpass_cutoff_frequency=10)
