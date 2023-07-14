@@ -1811,9 +1811,9 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                 if joints[i] in optimaltrajectories[case]['coordinates']:                        
                     idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['coordinate_values_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
+                            optimaltrajectories[case]['coordinate_values_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='Reference kinematics ' + cases[c])
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['coordinate_values'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])          
+                            optimaltrajectories[case]['coordinate_values'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='Muscle-driven simulation ' + cases[c])          
             ax.set_title(joints[i])
             handles, labels = ax.get_legend_handles_labels()
             plt.legend(handles, labels, loc='upper right')
@@ -1837,9 +1837,9 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                     if joints[i] in optimaltrajectories[case]['coordinates']:                        
                         idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_speeds_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
+                                optimaltrajectories[case]['coordinate_speeds_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='Reference kinematics ' + cases[c])
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_speeds'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])
+                                optimaltrajectories[case]['coordinate_speeds'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='Muscle-driven simulation ' + cases[c])
                 handles, labels = ax.get_legend_handles_labels()
                 plt.legend(handles, labels, loc='upper right')
         plt.setp(axs[-1, :], xlabel='Time (s)')
@@ -1862,9 +1862,9 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                     if joints[i] in optimaltrajectories[case]['coordinates']:                        
                         idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_accelerations_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='video-based IK ' + cases[c])
+                                optimaltrajectories[case]['coordinate_accelerations_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, linestyle='dashed', label='Reference kinematics ' + cases[c])
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_accelerations'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, label='video-based DC ' + cases[c])     
+                                optimaltrajectories[case]['coordinate_accelerations'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, label='Muscle-driven simulation ' + cases[c])     
                 ax.set_title(joints[i])
                 handles, labels = ax.get_legend_handles_labels()
                 plt.legend(handles, labels, loc='upper right')
@@ -1885,7 +1885,7 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                                 optimaltrajectories[case]['torques_ref'][idx_coord:idx_coord+1,:].T, c='black', label='mocap-based ID ' + cases[c])
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['torques'][idx_coord:idx_coord+1,:].T, c=next(color), label='video-based DC ' + cases[c])      
+                            optimaltrajectories[case]['torques'][idx_coord:idx_coord+1,:].T, c=next(color), label='Muscle-driven simulation ' + cases[c])      
             ax.set_title(joints[i])
             handles, labels = ax.get_legend_handles_labels()
             plt.legend(handles, labels, loc='upper right')
@@ -1908,7 +1908,7 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                             optimaltrajectories[case]['GRF_ref'][i:i+1,:].T, c='black', label='measured GRF ' + cases[c])
                 ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                        optimaltrajectories[case]['GRF'][i:i+1,:].T, c=next(color), label='video-based DC ' + cases[c])         
+                        optimaltrajectories[case]['GRF'][i:i+1,:].T, c=next(color), label='Muscle-driven simulation ' + cases[c])         
             ax.set_title(GRF_labels[i])
             handles, labels = ax.get_legend_handles_labels()
             plt.legend(handles, labels, loc='upper right')
@@ -1932,7 +1932,7 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                                 optimaltrajectories[case]['GRM_ref'][i:i+1,:].T, c='black', label='measured GRM ' + cases[c])
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['GRM'][i:i+1,:].T, c=next(color), label='video-based DC ' + cases[c])         
+                            optimaltrajectories[case]['GRM'][i:i+1,:].T, c=next(color), label='Muscle-driven simulation ' + cases[c])         
                 ax.set_title(GRF_labels[i])
                 handles, labels = ax.get_legend_handles_labels()
                 plt.legend(handles, labels, loc='upper right')
@@ -1952,7 +1952,7 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
             for c, case in enumerate(cases):
                 if 'muscle_activations' in optimaltrajectories[case]:
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['muscle_activations'][i:i+1,:-1].T, c=next(color), label='video-based DC ' + cases[c])         
+                            optimaltrajectories[case]['muscle_activations'][i:i+1,:-1].T, c=next(color), label='Muscle-driven simulation ' + cases[c])         
             ax.set_title(muscles[i])
             ax.set_ylim((0,1))
             handles, labels = ax.get_legend_handles_labels()
