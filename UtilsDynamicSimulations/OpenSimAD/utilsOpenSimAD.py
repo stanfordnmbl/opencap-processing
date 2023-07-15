@@ -1961,42 +1961,42 @@ def plotResultsDC(dataDir, subject, motion_filename, settings,
     plt.setp(axs[:, 0], ylabel='()')
     fig.align_ylabels()
     
-    # %% Joint torques: breakdown.  
-    if not mainPlots:
-        muscleDrivenJoints = optimaltrajectories[cases[0]][
-            'muscle_driven_joints']
-        nMuscleDrivenJoints = len(muscleDrivenJoints)
-        ny = np.ceil(np.sqrt(nMuscleDrivenJoints))
-        fig, axs = plt.subplots(3, 4, sharex=True)
-        fig.suptitle('Net torque contributions') 
-        for i, ax in enumerate(axs.flat):
-            if i < nMuscleDrivenJoints:
-                color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
-                for c, case in enumerate(cases):
-                    c_col = next(color)
-                    if muscleDrivenJoints[i] in optimaltrajectories[case]['muscle_driven_joints']:                        
-                        idx_coord = optimaltrajectories[case]['muscle_driven_joints'].index(muscleDrivenJoints[i])
-                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['passive_muscle_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='dashed', label='passive muscle torque ' + cases[c])
-                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['active_muscle_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='solid', label='active muscle torque ' + cases[c])                
-                        c_sum = optimaltrajectories[case]['passive_muscle_torques'][idx_coord:idx_coord+1,:].T + optimaltrajectories[case]['active_muscle_torques'][idx_coord:idx_coord+1,:].T             
-                    if muscleDrivenJoints[i] in optimaltrajectories[case]['limit_torques_joints']:                        
-                          idx_coord = optimaltrajectories[case]['limit_torques_joints'].index(muscleDrivenJoints[i])
-                          ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['passive_limit_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='dotted', label='limit torque ' + cases[c])                    
-                          c_sum += optimaltrajectories[case]['passive_limit_torques'][idx_coord:idx_coord+1,:].T             
-                    if muscleDrivenJoints[i] in optimaltrajectories[case]['muscle_driven_joints']:                        
-                          idx_coord = optimaltrajectories[case]['muscle_driven_joints'].index(muscleDrivenJoints[i])
-                          ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                  c_sum, c=c_col, linestyle='solid', linewidth=3, label='net torque ' + cases[c])
-                ax.set_title(muscleDrivenJoints[i])
-                handles, labels = ax.get_legend_handles_labels()
-                plt.legend(handles, labels, loc='upper right')
-        plt.setp(axs[-1, :], xlabel='Time (s)')
-        plt.setp(axs[:, 0], ylabel='(Nm)')
-        fig.align_ylabels()
-    plt.show()    
+    # # %% Joint torques: breakdown.  
+    # if not mainPlots:
+    #     muscleDrivenJoints = optimaltrajectories[cases[0]][
+    #         'muscle_driven_joints']
+    #     nMuscleDrivenJoints = len(muscleDrivenJoints)
+    #     ny = np.ceil(np.sqrt(nMuscleDrivenJoints))
+    #     fig, axs = plt.subplots(3, 4, sharex=True)
+    #     fig.suptitle('Net torque contributions') 
+    #     for i, ax in enumerate(axs.flat):
+    #         if i < nMuscleDrivenJoints:
+    #             color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
+    #             for c, case in enumerate(cases):
+    #                 c_col = next(color)
+    #                 if muscleDrivenJoints[i] in optimaltrajectories[case]['muscle_driven_joints']:                        
+    #                     idx_coord = optimaltrajectories[case]['muscle_driven_joints'].index(muscleDrivenJoints[i])
+    #                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+    #                             optimaltrajectories[case]['passive_muscle_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='dashed', label='passive muscle torque ' + cases[c])
+    #                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+    #                             optimaltrajectories[case]['active_muscle_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='solid', label='active muscle torque ' + cases[c])                
+    #                     c_sum = optimaltrajectories[case]['passive_muscle_torques'][idx_coord:idx_coord+1,:].T + optimaltrajectories[case]['active_muscle_torques'][idx_coord:idx_coord+1,:].T             
+    #                 if muscleDrivenJoints[i] in optimaltrajectories[case]['limit_torques_joints']:                        
+    #                       idx_coord = optimaltrajectories[case]['limit_torques_joints'].index(muscleDrivenJoints[i])
+    #                       ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+    #                             optimaltrajectories[case]['passive_limit_torques'][idx_coord:idx_coord+1,:].T, c=c_col, linestyle='dotted', label='limit torque ' + cases[c])                    
+    #                       c_sum += optimaltrajectories[case]['passive_limit_torques'][idx_coord:idx_coord+1,:].T             
+    #                 if muscleDrivenJoints[i] in optimaltrajectories[case]['muscle_driven_joints']:                        
+    #                       idx_coord = optimaltrajectories[case]['muscle_driven_joints'].index(muscleDrivenJoints[i])
+    #                       ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+    #                               c_sum, c=c_col, linestyle='solid', linewidth=3, label='net torque ' + cases[c])
+    #             ax.set_title(muscleDrivenJoints[i])
+    #             handles, labels = ax.get_legend_handles_labels()
+    #             plt.legend(handles, labels, loc='upper right')
+    #     plt.setp(axs[-1, :], xlabel='Time (s)')
+    #     plt.setp(axs[:, 0], ylabel='(Nm)')
+    #     fig.align_ylabels()
+    # plt.show()    
     
 # %% Process inputs for optimal control problem.   
 def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,

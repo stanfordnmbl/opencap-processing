@@ -33,8 +33,10 @@
 # %% Directories, paths, and imports. You should not need to change anything.
 import os
 import sys
+sys.path.append("..")
 
-baseDir = os.getcwd()
+cwd = os.getcwd()
+baseDir = os.path.join(cwd, '..')
 opensimADDir = os.path.join(baseDir, 'UtilsDynamicSimulations', 'OpenSimAD')
 sys.path.append(baseDir)
 sys.path.append(opensimADDir)
@@ -124,15 +126,15 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #       - macOS   (Monterey 12.2): converged in 869 iterations
 #       - Linux   (Ubuntu 20.04):  converged in 856 iterations 
 # Select which example you would like to run.
-session_id = "6a3a18d2-b718-4f63-8104-0a2d7e50c719"
-case = '0' # Change this to compare across settings.
-
-trial_name = 'walking'
+session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
+case = 'periodic_torque_driven_2' # Change this to compare across settings.
+trial_name = 'walk_1_25ms'
 motion_type = 'walking'
-time_window = [1.0, 2.5]
+time_window = [2.8, 4.0]
+treadmill_speed = 1.25
     
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
@@ -154,10 +156,112 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   motion_type, time_window, repetition,
                                   treadmill_speed)
 
-# # %% Simulation.
-# run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-#              solveProblem=solveProblem, analyzeResults=analyzeResults)
+if case == 'periodic_torque_driven':
+    settings['torque_driven_model'] = True
 
-# # %% Plots.
-# # To compare different cases, add to the cases list, eg cases=['0','1'].
-# plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case])
+    settings['periodicConstraints'] = {
+        'Qs': ['lowerLimbJoints'],
+        'Qds': ['lowerLimbJoints'],
+        'muscles': ['all'],
+        'lumbar': ['all']}
+    
+    settings['weights'] = {
+        'positionTrackingTerm': 10,
+        'velocityTrackingTerm': 10,
+        'accelerationTrackingTerm': 50,
+        'armExcitationTerm': 0.001,
+        'lumbarExcitationTerm': 0.001,
+        'jointAccelerationTerm': 0.001,
+        'coordinateExcitationTerm': 1}
+
+elif case == 'periodic_muscle_driven':
+    settings['periodicConstraints'] = {
+        'Qs': ['lowerLimbJoints'],
+        'Qds': ['lowerLimbJoints'],
+        'muscles': ['all'],
+        'lumbar': ['all']}
+elif case == 'periodic_muscle_driven_2':
+    settings['periodicConstraints'] = {
+        'Qs': ['lowerLimbJoints'],
+        'Qds': ['lowerLimbJoints'],
+        'muscles': ['all'],
+        'lumbar': ['all']}
+    settings['meshDensity'] = 50
+elif case == 'periodic_torque_driven_2':
+    settings['torque_driven_model'] = True
+
+    settings['periodicConstraints'] = {
+        'Qs': ['lowerLimbJoints'],
+        'Qds': ['lowerLimbJoints'],
+        'muscles': ['all'],
+        'lumbar': ['all']}
+    
+    settings['weights'] = {
+        'positionTrackingTerm': 10,
+        'velocityTrackingTerm': 10,
+        'accelerationTrackingTerm': 50,
+        'armExcitationTerm': 0.001,
+        'lumbarExcitationTerm': 0.001,
+        'jointAccelerationTerm': 0.001,
+        'coordinateExcitationTerm': 1}
+    settings['meshDensity'] = 50
+elif case == 'periodic_torque_driven_3':
+    settings['torque_driven_model'] = True
+
+    settings['periodicConstraints'] = {
+        'Qs': ['lowerLimbJoints'],
+        'Qds': ['lowerLimbJoints'],
+        'muscles': ['all'],
+        'lumbar': ['all']}
+    
+    settings['weights'] = {
+        'positionTrackingTerm': 10,
+        'velocityTrackingTerm': 10,
+        'accelerationTrackingTerm': 100,
+        'armExcitationTerm': 0.001,
+        'lumbarExcitationTerm': 0.001,
+        'jointAccelerationTerm': 0.001,
+        'coordinateExcitationTerm': 1}
+    settings['meshDensity'] = 50
+    
+elif case == 'periodic_torque_driven_4':
+    settings['torque_driven_model'] = True
+
+    settings['periodicConstraints'] = {
+        'Qs': ['lowerLimbJoints'],
+        'Qds': ['lowerLimbJoints'],
+        'muscles': ['all'],
+        'lumbar': ['all']}
+    
+    settings['weights'] = {
+        'positionTrackingTerm': 10,
+        'velocityTrackingTerm': 10,
+        'accelerationTrackingTerm': 50,
+        'armExcitationTerm': 0.001,
+        'lumbarExcitationTerm': 0.001,
+        'jointAccelerationTerm': 0.001,
+        'coordinateExcitationTerm': 1}
+    settings['meshDensity'] = 50
+    
+    settings['filter_Qs_toTrack'] = True,
+    settings['cutoff_freq_Qs'] = 6
+    settings['filter_Qds_toTrack'] = True,
+    settings['cutoff_freq_Qds'] = 6
+    settings['filter_Qdds_toTrack'] = True,
+    settings['cutoff_freq_Qdds'] = 6
+    settings['splineQds'] = True,
+
+# %% Simulation.
+run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
+              solveProblem=solveProblem, analyzeResults=analyzeResults)
+
+# %% Plots.
+# To compare different cases, add to the cases list, eg cases=['0','1'].
+case0 = 'periodic_muscle_driven'
+case1 = 'periodic_muscle_driven_2'
+case2 = 'periodic_torque_driven'
+case3 = 'periodic_torque_driven_2'
+case4 = 'periodic_torque_driven_3'
+case5 = 'periodic_torque_driven_4'
+plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case3, case5], mainPlots=False)
+test=1
