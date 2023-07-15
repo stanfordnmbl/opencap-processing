@@ -1866,10 +1866,10 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         Qdds_opt_nsc_4F = Qdds_opt_nsc[idxJoints4F, :]
         if treadmill:
             Tj_temp = F(ca.vertcat(
-                ca.vertcat(QsQds_opt_nsc[:, 0],  Qdds_opt_nsc_4F[:, 0]), 
+                ca.vertcat(QsQds_opt_nsc[:, 0], Qdds_opt_nsc_4F[:, 0]), 
                 -settings['treadmill_speed']))
         else:
-            Tj_temp = F(ca.vertcat(QsQds_opt_nsc[:, 0],  Qdds_opt_nsc_4F[:, 0]))          
+            Tj_temp = F(ca.vertcat(QsQds_opt_nsc[:, 0], Qdds_opt_nsc_4F[:, 0]))          
         F_out_pp = np.zeros((Tj_temp.shape[0], N))
         if withMTP:
             mtpT = np.zeros((nMtpJoints, N))
@@ -1878,10 +1878,10 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         for k in range(N):
             if treadmill:
                 Tk = F(ca.vertcat(
-                    ca.vertcat(QsQds_opt_nsc[:, k],  Qdds_opt_nsc_4F[:, k]), 
+                    ca.vertcat(QsQds_opt_nsc[:, k], Qdds_opt_nsc_4F[:, k]), 
                     -settings['treadmill_speed']))
             else:
-                Tk = F(ca.vertcat(QsQds_opt_nsc[:, k],  Qdds_opt_nsc_4F[:, k]))
+                Tk = F(ca.vertcat(QsQds_opt_nsc[:, k], Qdds_opt_nsc_4F[:, k]))
             F_out_pp[:, k] = Tk.full().T
             if withArms:
                 for cj, joint in enumerate(armJoints):
