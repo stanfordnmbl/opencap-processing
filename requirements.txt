@@ -9,3 +9,4 @@ casadi
 pyyaml
 joblib
 cmake
+seaborn

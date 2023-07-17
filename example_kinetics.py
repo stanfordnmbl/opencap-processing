@@ -39,7 +39,7 @@ opensimADDir = os.path.join(baseDir, 'UtilsDynamicSimulations', 'OpenSimAD')
 sys.path.append(baseDir)
 sys.path.append(opensimADDir)
 
-from utilsOpenSimAD import processInputsOpenSimAD, plotResultsDC
+from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
 
 # %% User inputs.
@@ -184,8 +184,8 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
 
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-             solveProblem=solveProblem, analyzeResults=analyzeResults)
+              solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
-plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case])
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, cases=[case])
