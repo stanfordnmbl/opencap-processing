@@ -33,6 +33,7 @@ import platform
 import urllib.request
 import requests
 import zipfile
+import seaborn as sns
 
 from utils import (storage_to_numpy, storage_to_dataframe, 
                    download_kinematics, import_metadata, numpy_to_storage)
@@ -1793,6 +1794,8 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     optimaltrajectories = {}
     for case in cases:
         optimaltrajectories[case] = c_tr[case]
+        
+    colors = sns.color_palette('colorblind', len(cases))
 
     # %% Plot settings
     linewidth = 2
@@ -1811,19 +1814,20 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     fig.suptitle('Coordinate values', fontsize=fontsizeSubTitle, fontweight='bold')
     for i, ax in enumerate(axs.flat):
         if i < nJoints:
-            color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
             if joints[i] in rotationalJoints:
                 scale_angles = 180 / np.pi
             else:
                 scale_angles = 1
+            plotReference = False
             for c, case in enumerate(cases):
-                c_col = next(color)
                 if joints[i] in optimaltrajectories[case]['coordinates']:                        
-                    idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
+                    idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])                    
+                    if not plotReference:
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['coordinate_values_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
+                        plotReference = True
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['coordinate_values_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
-                    ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['coordinate_values'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
+                            optimaltrajectories[case]['coordinate_values'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
             ax.set_title(joints[i], fontsize=fontsizeTitle, fontweight='bold')
             handles, labels = ax.get_legend_handles_labels()
     fig.align_ylabels()
@@ -1858,19 +1862,20 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         fig.suptitle('Coordinate speeds', fontsize=fontsizeSubTitle, fontweight='bold')
         for i, ax in enumerate(axs.flat):
             if i < nJoints:
-                color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
                 if joints[i] in rotationalJoints:
                     scale_angles = 180 / np.pi
                 else:
                     scale_angles = 1
+                plotReference = False
                 for c, case in enumerate(cases):
-                    c_col = next(color)
                     if joints[i] in optimaltrajectories[case]['coordinates']:                        
                         idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
+                        if not plotReference:
+                            ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                    optimaltrajectories[case]['coordinate_speeds_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
+                            plotReference = True
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_speeds_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
-                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_speeds'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=c_col, label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
+                                optimaltrajectories[case]['coordinate_speeds'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
                 ax.set_title(joints[i], fontsize=fontsizeTitle, fontweight='bold')
                 handles, labels = ax.get_legend_handles_labels()
         fig.align_ylabels()
@@ -1905,19 +1910,20 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         fig.suptitle('Coordinate accelerations', fontsize=fontsizeSubTitle, fontweight='bold')
         for i, ax in enumerate(axs.flat):
             if i < nJoints:
-                color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
                 if joints[i] in rotationalJoints:
                     scale_angles = 180 / np.pi
                 else:
                     scale_angles = 1
+                plotReference = False
                 for c, case in enumerate(cases):
-                    c_col = next(color)
                     if joints[i] in optimaltrajectories[case]['coordinates']:                        
                         idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
+                        if not plotReference:
+                            ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                    optimaltrajectories[case]['coordinate_accelerations_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
+                            plotReference = True
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_accelerations_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
-                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_accelerations'][idx_coord:idx_coord+1,:].T * scale_angles, c=c_col, label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
+                                optimaltrajectories[case]['coordinate_accelerations'][idx_coord:idx_coord+1,:].T * scale_angles, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
                 ax.set_title(joints[i], fontsize=fontsizeTitle, fontweight='bold')
                 handles, labels = ax.get_legend_handles_labels()
         fig.align_ylabels()
@@ -1947,19 +1953,21 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         plt.show()
         
     # %% Joint torques.
-    fig, axs = plt.subplots(int(ny), int(ny), sharex=True)
+    fig, axs = plt.subplots(int(ny), int(ny))
     fig.suptitle('Joint torques', fontsize=fontsizeSubTitle, fontweight='bold')
     for i, ax in enumerate(axs.flat):
         if i < nJoints:
-            color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
+            plotReference = False
             for c, case in enumerate(cases):
                 if joints[i] in optimaltrajectories[case]['coordinates']:                        
                     idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
                     if 'torques_ref' in optimaltrajectories[case]:
-                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['torques_ref'][idx_coord:idx_coord+1,:].T, c='black', label='Mocap ' + cases[c], linewidth=linewidth)
+                        if not plotReference:
+                            ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                    optimaltrajectories[case]['torques_ref'][idx_coord:idx_coord+1,:].T, c='black', label='Mocap ' + cases[c], linewidth=linewidth)
+                            plotReference = True
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['torques'][idx_coord:idx_coord+1,:].T, c=next(color), label='Dynamic simulation: ' + cases[c], linewidth=linewidth)     
+                            optimaltrajectories[case]['torques'][idx_coord:idx_coord+1,:].T, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)     
             ax.set_title(joints[i], fontsize=fontsizeTitle, fontweight='bold')
             handles, labels = ax.get_legend_handles_labels()
     fig.align_ylabels()
@@ -1978,6 +1986,8 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         axs.flatten()[i].set_xlabel('Time (s)', fontsize=fontsizeLabel, fontweight='bold')
     for ax in axs[:, 0]:
         ax.set_ylabel('(Nm)', fontsize=fontsizeLabel, fontweight='bold')
+    for ax in axs[0, 3:4]:
+        ax.set_ylabel('(N)', fontsize=fontsizeLabel, fontweight='bold') 
     # Add legend.
     fig.legend(handles, labels, loc='upper right', fontsize=fontsizeLegend)
     # Change subplot spacing.
@@ -1990,11 +2000,10 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     # %% GRFs.
     GRF_labels = optimaltrajectories[cases[0]]['GRF_labels']
     NGRF = len(GRF_labels)
-    fig, axs = plt.subplots(2, 3, sharex=True)
+    fig, axs = plt.subplots(2, 3)
     fig.suptitle('Ground reaction forces', fontsize=fontsizeSubTitle, fontweight='bold')
     for i, ax in enumerate(axs.flat):
         if i < NGRF:
-            color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
             plotedGRF = False
             for c, case in enumerate(cases):
                 if 'GRF_ref' in optimaltrajectories[case] and not plotedGRF:
@@ -2002,7 +2011,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                             optimaltrajectories[case]['GRF_ref'][i:i+1,:].T, c='black', label='Mocap ' + cases[c], linewidth=linewidth)   
                 ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                        optimaltrajectories[case]['GRF'][i:i+1,:].T, c=next(color), label='Dynamic simulation: ' + cases[c], linewidth=linewidth)          
+                        optimaltrajectories[case]['GRF'][i:i+1,:].T, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)          
             ax.set_title(GRF_labels[i], fontsize=fontsizeTitle, fontweight='bold')
             handles, labels = ax.get_legend_handles_labels()
     fig.align_ylabels()    
@@ -2026,11 +2035,10 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     if not mainPlots:
         GRF_labels = optimaltrajectories[cases[0]]['GRF_labels']
         NGRF = len(GRF_labels)
-        fig, axs = plt.subplots(2, 3, sharex=True)
+        fig, axs = plt.subplots(2, 3)
         fig.suptitle('Ground reaction moments', fontsize=fontsizeSubTitle, fontweight='bold')
         for i, ax in enumerate(axs.flat):
             if i < NGRF:
-                color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
                 plotedGRF = False
                 for c, case in enumerate(cases):
                     if 'GRM_ref' in optimaltrajectories[case] and not plotedGRF:
@@ -2038,7 +2046,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                                 optimaltrajectories[case]['GRM_ref'][i:i+1,:].T, c='black', label='Mocap ' + cases[c], linewidth=linewidth)   
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['GRM'][i:i+1,:].T, c=next(color), label='Dynamic simulation: ' + cases[c], linewidth=linewidth)          
+                            optimaltrajectories[case]['GRM'][i:i+1,:].T, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)          
                 ax.set_title(GRF_labels[i], fontsize=fontsizeTitle, fontweight='bold')
                 handles, labels = ax.get_legend_handles_labels()
         fig.align_ylabels()    
@@ -2070,15 +2078,14 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     muscles = optimaltrajectories[cases[0]]['muscles']
     NMuscles = len(muscles)
     ny = np.ceil(np.sqrt(NMuscles))   
-    fig, axs = plt.subplots(int(ny), int(ny), sharex=True)
+    fig, axs = plt.subplots(int(ny), int(ny))
     fig.suptitle('Muscle activations', fontsize=fontsizeSubTitle, fontweight='bold') 
     for i, ax in enumerate(axs.flat):
         if i < NMuscles:
-            color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
             for c, case in enumerate(cases):
                 if 'muscle_activations' in optimaltrajectories[case]:
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['muscle_activations'][i:i+1,:-1].T, c=next(color), label='Dynamic simulation: ' + cases[c], linewidth=linewidth)         
+                            optimaltrajectories[case]['muscle_activations'][i:i+1,:-1].T, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)         
             ax.set_title(muscles[i], fontsize=fontsizeTitle, fontweight='bold')
             ax.set_ylim((0,1))
             handles, labels = ax.get_legend_handles_labels()

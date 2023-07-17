@@ -320,7 +320,7 @@ def getPolynomialCoefficients(data4PolynomialFitting, joints,
                               muscles, order_min=3, order_max=9,
                               threshold=0.0015,
                               removeBadHipFlexionEntries=True,
-                              side='r'):
+                              side='r', debugMode=False):
     
     # Get joint coordinates.   
     idxJoints = [data4PolynomialFitting['coordinate_names'].index(joint) for joint in joints]
@@ -395,8 +395,9 @@ def getPolynomialCoefficients(data4PolynomialFitting, joints,
         jointCoordinates = np.delete(jointCoordinates, idx_bad, 0)
         muscleTendonLengths = np.delete(muscleTendonLengths, idx_bad, 0)
         momentArms = np.delete(momentArms, idx_bad, 0)
-        print("{} entries removed for the polynomial fitting because of bad \
-hip and ankle moment arms - mostly because of bad scaling of wrapping surfaces".format(
+        if debugMode:
+            print("{} entries removed for the polynomial fitting because of bad \
+    hip and ankle moment arms - mostly because of bad scaling of wrapping surfaces".format(
         idx_bad_hip.shape[0]))
     
     # Detect which muscles actuate which joints.
@@ -448,9 +449,10 @@ hip and ankle moment arms - mostly because of bad scaling of wrapping surfaces".
                 is_fullfilled = True
             elif order == order_max:
                 is_fullfilled = True
-                print("Max order ({}) for {}: rmse_lmte {}, max_rmse_ma {}".format(
-                    order_max, muscle, round(muscleTendonLengths_diff_rms, 4),
-                    round(np.max(momentArms_diff_rms), 4)))            
+                if debugMode:
+                    print("Max order ({}) for {}: rmse_lmte {}, max_rmse_ma {}".format(
+                        order_max, muscle, round(muscleTendonLengths_diff_rms, 4),
+                        round(np.max(momentArms_diff_rms), 4)))            
             else:
                 order += 1
                 

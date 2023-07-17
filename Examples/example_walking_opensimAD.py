@@ -2,9 +2,9 @@
     ---------------------------------------------------------------------------
     OpenCap processing: example_walking_opensimAD.py
     ---------------------------------------------------------------------------
-    Copyright 2022 Stanford University and the Authors
+    Copyright 2023 Stanford University and the Authors
     
-    Author(s): Antoine Falisse, Scott Uhlrich
+    Author(s): Antoine Falisse
     
     Licensed under the Apache License, Version 2.0 (the "License"); you may not
     use this file except in compliance with the License. You may obtain a copy
@@ -31,7 +31,6 @@
             
     Please contact us for any questions: https://www.opencap.ai/#contact
 
-
     This example shows how to run dynamic simulations of walking using
     data collected with OpenCap. The code uses OpenSimAD, a custom version
     of OpenSim that supports automatic differentiation (AD).
@@ -41,7 +40,8 @@
     musculoskeletal model. Please note that both examples are meant to
     demonstrate how to run dynamic simualtions and are not meant to be 
     biomechanically valid. We only made sure the simulations converged to
-    solutions that were visually reasonable.
+    solutions that were visually reasonable. You can find more examples of
+    dynamic simulations using OpenSimAD in example_kinetics.py.
 '''
 
 # %% Directories, paths, and imports. You should not need to change anything.
@@ -54,59 +54,11 @@ sys.path.append(opensimADDir)
 
 from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
+from utilsAuthentication import get_token
 
-# %% User inputs.
-'''
-Please provide:
-    
-    session_id:     This is a 36 character-long string. You can find the ID of
-                    all your sessions at https://app.opencap.ai/sessions.
-                    
-    trial_name:     This is the name of the trial you want to simulate. You can
-                    find all trial names after loading a session.
-                    
-    motion_type:    This is the type of activity you want to simulate. Options
-                    are 'running', 'walking', 'drop_jump', 'sit-to-stand', and
-                    'squats'. We provide pre-defined settings that worked well
-                    for this set of activities. If your activity is different,
-                    select 'other' to use generic settings or set your own
-                    settings in settingsOpenSimAD. See for example how we tuned
-                    the 'running' settings to include periodic constraints in
-                    the 'my_periodic_running' settings.
-                    
-    time_window:    This is the time interval you want to simulate. It is
-                    recommended to simulate trials shorter than 2s. Set to []
-                    to simulate full trial. For 'squats' or 'sit_to_stand', we
-                    built segmenters to separate the different repetitions. In
-                    such case, instead of providing the time_window, you can
-                    provide the index of the repetition (see below) and the
-                    time_window will be automatically computed.
-                    
-    repetition:     Only if motion_type is 'sit_to_stand' or 'squats'. This
-                    is the index of the repetition you want to simulate (0 is 
-                    first). There is no need to set the time_window. 
-                    
-    case:           This is a string that will be appended to the file names
-                    of the results. Dynamic simulations are optimization
-                    problems, and it is common to have to play with some
-                    settings to get the problem to converge or converge to a
-                    meaningful solution. It is useful to keep track of which
-                    solution corresponds to which settings; you can then easily
-                    compare results generated with different settings.
-                    
-    (optional)
-    treadmill_speed:This an optional parameter that indicates the speed of
-                    the treadmill in m/s. A positive value indicates that the
-                    subject is moving forward. You should ignore this parameter
-                    or set it to 0 if the trial was not measured on a
-                    treadmill. By default, treadmill_speed is set to 0.
-    
-See example inputs below for different activities. Please note that we did not
-verify the biomechanical validity of the results; we only made sure the
-simulations converged to kinematic solutions that were visually reasonable.
-
-Please contact us for any questions: https://www.opencap.ai/#contact
-'''
+# %% OpenCap authentication. Visit https://app.opencap.ai/login to create an
+# account if you don't have one yet.
+get_token(saveEnvPath=os.getcwd())
 
 # %% Inputs common to both examples.
 
@@ -139,7 +91,6 @@ treadmill_speed = 1.25
     
 # Insert the path to where you want the data to be downloaded.
 dataFolder = os.path.join(baseDir, 'Data')
-
 
 # %% Sub-example 1: walking simulation with torque-driven model.
 # Insert a string to "name" you case.
@@ -214,11 +165,11 @@ settings['meshDensity'] = 50
 # might vary depending on the machine you are using.
 #   - Windows (Windows 10):    converged in 96 iterations (~30s)
 #   - macOS   (Monterey 12.2): converged in 107 iterations (~40s)
-#   - Linux   (Ubuntu 20.04):  converged in  iterations
+#   - Linux   (Ubuntu 20.04):  converged in 109 iterations (~50s)
 run_tracking(baseDir, dataFolder, session_id, settings, case=case)
 
 # Plot some results.
-# plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
 
 # %% Sub-example 2: walking simulation with muscle-driven model.
 # Insert a string to "name" you case.
@@ -273,12 +224,12 @@ settings['meshDensity'] = 50
 # might vary depending on the machine you are using.
 #   - Windows (Windows 10):    converged in 625 iterations (~17min)
 #   - macOS   (Monterey 12.2): converged in 697 iterations (~20min)
-#   - Linux   (Ubuntu 20.04):  converged in  iterations
+#   - Linux   (Ubuntu 20.04):  converged in 834 iterations (~33min)
 run_tracking(baseDir, dataFolder, session_id, settings, case=case)
 
 # Plot some results.
-# plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
 
 # %% Comparison torque-driven vs. muscle-driven model.
-# plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings,
-#                      ['torque_driven', 'muscle_driven'])
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings,
+                     ['torque_driven', 'muscle_driven'])
