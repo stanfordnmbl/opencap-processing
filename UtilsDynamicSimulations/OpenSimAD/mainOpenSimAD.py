@@ -34,7 +34,7 @@ import copy
 
 # %% Settings.
 def run_tracking(baseDir, dataDir, subject, settings, case='0',
-                 solveProblem=False, analyzeResults=True, writeGUI=True,
+                 solveProblem=True, analyzeResults=True, writeGUI=True,
                  computeKAM=True, computeMCF=True):
     
     # %% Settings.
