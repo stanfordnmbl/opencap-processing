@@ -512,46 +512,47 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # Specify which states should have periodic constraints.
     # See settingsOpenSimAD for example.
     if periodicConstraints:        
-        if 'Qs' in periodicConstraints:
-            if 'lowerLimbJoints' in periodicConstraints['Qs']:
+        if 'coordinateValues' in periodicConstraints:
+            if 'lowerLimbJoints' in periodicConstraints['coordinateValues']:
                 idxPeriodicQs = getIndices(joints, lowerLimbJoints)
             else:
                 idxPeriodicQs = []
-                for joint in periodicConstraints['Qs']:
+                for joint in periodicConstraints['coordinateValues']:
                     idxPeriodicQs.append(joints.index(joint))
-        if 'Qds' in periodicConstraints:
-            if 'lowerLimbJoints' in periodicConstraints['Qds']:
+        if 'coordinateSpeeds' in periodicConstraints:
+            if 'lowerLimbJoints' in periodicConstraints['coordinateSpeeds']:
                 idxPeriodicQds = getIndices(joints, lowerLimbJoints)
             else:
                 idxPeriodicQds = []
-                for joint in periodicConstraints['Qds']:
+                for joint in periodicConstraints['coordinateSpeeds']:
                     idxPeriodicQds.append(joints.index(joint))
-        if 'muscles' in periodicConstraints:
-            if torque_driven_model:
-                if 'all' in periodicConstraints['muscles']:
-                    idxPeriodicMuscles = getIndices(muscleDrivenJoints, 
-                                                        muscleDrivenJoints)
-                else:
-                    idxPeriodicMuscles = []
-                    for c_m in periodicConstraints['muscles']:
-                        idxPeriodicMuscles.append(muscleDrivenJoints.index(c_m))
+
+        if 'muscleActivationsForces' in periodicConstraints:
+            if 'all' in periodicConstraints['muscleActivationsForces']:
+                idxPeriodicMuscles = getIndices(bothSidesMuscles, 
+                                                bothSidesMuscles)
             else:
-                if 'all' in periodicConstraints['muscles']:
-                    idxPeriodicMuscles = getIndices(bothSidesMuscles, 
-                                                        bothSidesMuscles)
-                else:
-                    idxPeriodicMuscles = []
-                    for c_m in periodicConstraints['Qds']:
-                        idxPeriodicMuscles.append(bothSidesMuscles.index(c_m))
-        if 'lumbar' in periodicConstraints:
-            if 'all' in periodicConstraints['lumbar']:
+                idxPeriodicMuscles = []
+                for c_m in periodicConstraints['muscleActivationsForces']:
+                    idxPeriodicMuscles.append(bothSidesMuscles.index(c_m))
+        if 'lumbarJointActivations' in periodicConstraints:
+            if 'all' in periodicConstraints['lumbarJointActivations']:
                 idxPeriodicLumbar = getIndices(lumbarJoints, 
-                                                    lumbarJoints)
+                                                lumbarJoints)
             else:
                 idxPeriodicLumbar = []
-                for c_m in periodicConstraints['lumbar']:
+                for c_m in periodicConstraints['lumbarJointActivations']:
                     idxPeriodicLumbar.append(lumbarJoints.index(c_m))
-        
+
+        if ('lowerLimbJointActivations' in periodicConstraints 
+            and torque_driven_model):
+            if 'all' in periodicConstraints['lowerLimbJointActivations']:
+                    idxPeriodicMuscles = getIndices(muscleDrivenJoints, 
+                                                    muscleDrivenJoints)
+            else:
+                idxPeriodicMuscles = []
+                for c_m in periodicConstraints['lowerLimbJointActivations']:
+                    idxPeriodicMuscles.append(muscleDrivenJoints.index(c_m))
     
         
     # %% Coordinate actuator activation dynamics.
@@ -1630,26 +1631,29 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             
         # Periodic constraints.
         if periodicConstraints:
-            # Joint positions.
-            if 'Qs' in periodicConstraints:
+            # Coordinate values.
+            if 'coordinateValues' in periodicConstraints:
                 opti.subject_to(Qs[idxPeriodicQs, -1] - 
                                 Qs[idxPeriodicQs, 0] == 0)
-            # Joint velocities.
-            if 'Qds' in periodicConstraints:
+            # Coordinate speeds.
+            if 'coordinateSpeeds' in periodicConstraints:
                 opti.subject_to(Qds[idxPeriodicQds, -1] - 
                                 Qds[idxPeriodicQds, 0] == 0)
             # Muscle activations and forces.
-            if 'muscles' in periodicConstraints:
-                if torque_driven_model:
-                    opti.subject_to(aCoord[idxPeriodicMuscles, -1] - 
-                                    aCoord[idxPeriodicMuscles, 0] == 0)
-                else:
-                    opti.subject_to(a[idxPeriodicMuscles, -1] - 
-                                    a[idxPeriodicMuscles, 0] == 0)
-                    opti.subject_to(nF[idxPeriodicMuscles, -1] - 
-                                    nF[idxPeriodicMuscles, 0] == 0)
-            if 'lumbar' in periodicConstraints:
-                # Lumbar activations
+            if 'muscleActivationsForces' in periodicConstraints:
+                opti.subject_to(a[idxPeriodicMuscles, -1] - 
+                                a[idxPeriodicMuscles, 0] == 0)
+                opti.subject_to(nF[idxPeriodicMuscles, -1] - 
+                                nF[idxPeriodicMuscles, 0] == 0)
+                
+            # Coordinate activations.
+            if ('lowerLimbJointActivations' in periodicConstraints and
+                torque_driven_model):
+                opti.subject_to(aCoord[idxPeriodicMuscles, -1] - 
+                                aCoord[idxPeriodicMuscles, 0] == 0)
+
+            # Lumbar activations.
+            if 'lumbarJointActivations' in periodicConstraints:                
                 opti.subject_to(aLumbar[idxPeriodicLumbar, -1] - 
                                 aLumbar[idxPeriodicLumbar, 0] == 0)
                 

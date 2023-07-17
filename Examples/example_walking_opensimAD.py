@@ -1,6 +1,6 @@
 '''
     ---------------------------------------------------------------------------
-    OpenCap processing: example_kinetics.py
+    OpenCap processing: example_walking_opensimAD.py
     ---------------------------------------------------------------------------
     Copyright 2022 Stanford University and the Authors
     
@@ -21,27 +21,38 @@
     Install requirements:
         - Visit https://github.com/stanfordnmbl/opencap-processing for details.        
         - Third-party software packages:
-            - CMake: https://cmake.org/download/.
-            - (Windows only)
-                - Visual studio: https://visualstudio.microsoft.com/downloads/.
-                    - Make sure you install C++ support.
-                    - Code tested with community editions 2017-2019-2022.
+            - Windows
+                - Visual studio: https://visualstudio.microsoft.com/downloads/
+                    - Make sure you install C++ support
+                    - Code tested with community editions 2017-2019-2022
+            - Linux
+                - OpenBLAS libraries
+                    - sudo apt-get install libopenblas-base
             
     Please contact us for any questions: https://www.opencap.ai/#contact
+
+
+    This example shows how to run dynamic simulations of walking using
+    data collected with OpenCap. The code uses OpenSimAD, a custom version
+    of OpenSim that supports automatic differentiation (AD).
+
+    This example is made of two sub-examples. The first one uses a torque-driven
+    musculoskeletal model and the second one uses a muscle-driven
+    musculoskeletal model. Please note that both examples are meant to
+    demonstrate how to run dynamic simualtions and are not meant to be 
+    biomechanically valid. We only made sure the simulations converged to
+    solutions that were visually reasonable.
 '''
 
 # %% Directories, paths, and imports. You should not need to change anything.
 import os
 import sys
-sys.path.append("..")
-
-cwd = os.getcwd()
-baseDir = os.path.join(cwd, '..')
-opensimADDir = os.path.join(baseDir, 'UtilsDynamicSimulations', 'OpenSimAD')
+baseDir = os.path.join(os.getcwd(), '..')
 sys.path.append(baseDir)
+opensimADDir = os.path.join(baseDir, 'UtilsDynamicSimulations', 'OpenSimAD')
 sys.path.append(opensimADDir)
 
-from utilsOpenSimAD import processInputsOpenSimAD, plotResultsDC
+from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
 
 # %% User inputs.
@@ -97,171 +108,177 @@ simulations converged to kinematic solutions that were visually reasonable.
 Please contact us for any questions: https://www.opencap.ai/#contact
 '''
 
-# We provide a few examples for overground and treadmill activities.
-# We tested these examples locally. Here are some pointers about how many
-# iterations the examples took to converge. Please note that these numbers 
-# might change depending on the machine and operating system.
-#   - squat:
-#       - Windows (Windows 10):    converged in 595 iterations
-#       - macOS   (Monterey 12.2): converged in 624 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 431 iterations
-#   - STS:
-#       - Windows (Windows 10):    converged in 422 iterations
-#       - macOS   (Monterey 12.2): converged in 412 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 419 iterations
-#   - jump:
-#       - Windows (Windows 10):    converged in 2321 iterations
-#       - macOS   (Monterey 12.2): converged in 3457 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 2457 iterations 
-#   - walk_1_25ms:
-#       - Windows (Windows 10):    converged in 776 iterations
-#       - macOS   (Monterey 12.2): converged in 597 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 602 iterations 
-#   - run_2_5ms:
-#       - Windows (Windows 10):    converged in 2022 iterations
-#       - macOS   (Monterey 12.2): converged in 1698 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 2104 iterations 
-#   - run_4ms:
-#       - Windows (Windows 10):    converged in 861 iterations
-#       - macOS   (Monterey 12.2): converged in 869 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 856 iterations 
-# Select which example you would like to run.
+# %% Inputs common to both examples.
+
+# Insert your session ID here. You can find the ID of all your sessions at
+# https://app.opencap.ai/sessions.
+# Visit https://app.opencap.ai/session/<session_id> to visualize the data of
+# your session.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-case = 'periodic_torque_driven_2' # Change this to compare across settings.
+
+# Insert the name of the trial you want to simulate.
 trial_name = 'walk_1_25ms'
+
+# Insert the type of activity you want to simulate. We have pre-defined settings
+# for different activities (more details above). Visit 
+# ./UtilsDynamicSimulations/OpenSimAD/settingsOpenSimAD.py to see all available
+# activities and their settings. If your activity is not in the list, select
+# 'other' to use generic settings or set your own settings.
 motion_type = 'walking'
-time_window = [2.8, 4.0]
+
+# Insert the time interval you want to simulate. It is recommended to simulate
+# trials shorter than 2s (more details above). Set to [] to simulate full trial.
+# We here selected a time window that corresponds to a full gait stride in order
+# to use poeriodic constraints.
+time_window = [5.7333333, 6.9333333]
+
+# Insert the speed of the treadmill in m/s. A positive value indicates that the
+# subject is moving forward. You should ignore this parameter or set it to 0 if
+# the trial was not measured on a treadmill.
 treadmill_speed = 1.25
     
-# Set to True to solve the optimal control problem.
-solveProblem = False
-# Set to True to analyze the results of the optimal control problem. If you
-# solved the problem already, and only want to analyze/process the results, you
-# can set solveProblem to False and run this script with analyzeResults set to
-# True. This is useful if you do additional post-processing but do not want to
-# re-run the problem.
-analyzeResults = True
-
-# Path to where you want the data to be downloaded.
+# Insert the path to where you want the data to be downloaded.
 dataFolder = os.path.join(baseDir, 'Data')
 
-# %% Setup. 
-if not 'time_window' in locals():
-    time_window = None
-if not 'repetition' in locals():
-    repetition = None
-if not 'treadmill_speed' in locals():
-    treadmill_speed = 0
-settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name, 
-                                  motion_type, time_window, repetition,
-                                  treadmill_speed)
 
-if case == 'periodic_torque_driven':
-    settings['torque_driven_model'] = True
+# %% Sub-example 1: walking simulation with torque-driven model.
+# Insert a string to "name" you case.
+case = 'torque_driven'
 
-    settings['periodicConstraints'] = {
-        'Qs': ['lowerLimbJoints'],
-        'Qds': ['lowerLimbJoints'],
-        'muscles': ['all'],
-        'lumbar': ['all']}
-    
-    settings['weights'] = {
-        'positionTrackingTerm': 10,
-        'velocityTrackingTerm': 10,
-        'accelerationTrackingTerm': 50,
-        'armExcitationTerm': 0.001,
-        'lumbarExcitationTerm': 0.001,
-        'jointAccelerationTerm': 0.001,
-        'coordinateExcitationTerm': 1}
+# Prepare inputs for dynamic simulation (this will be skipped if already done):
+#   - Download data from OpenCap database
+#   - Adjust wrapping surfaces
+#   - Add foot-ground contacts
+#   - Generate external function (OpenSimAD)
+settings = processInputsOpenSimAD(
+    baseDir, dataFolder, session_id, trial_name, motion_type, 
+    time_window=time_window, treadmill_speed=treadmill_speed)
 
-elif case == 'periodic_muscle_driven':
-    settings['periodicConstraints'] = {
-        'Qs': ['lowerLimbJoints'],
-        'Qds': ['lowerLimbJoints'],
-        'muscles': ['all'],
-        'lumbar': ['all']}
-elif case == 'periodic_muscle_driven_2':
-    settings['periodicConstraints'] = {
-        'Qs': ['lowerLimbJoints'],
-        'Qds': ['lowerLimbJoints'],
-        'muscles': ['all'],
-        'lumbar': ['all']}
-    settings['meshDensity'] = 50
-elif case == 'periodic_torque_driven_2':
-    settings['torque_driven_model'] = True
+# Adjust settings for this example.
+# Set the model to be torque-driven.
+settings['torque_driven_model'] = True
 
-    settings['periodicConstraints'] = {
-        'Qs': ['lowerLimbJoints'],
-        'Qds': ['lowerLimbJoints'],
-        'muscles': ['all'],
-        'lumbar': ['all']}
-    
-    settings['weights'] = {
-        'positionTrackingTerm': 10,
-        'velocityTrackingTerm': 10,
-        'accelerationTrackingTerm': 50,
-        'armExcitationTerm': 0.001,
-        'lumbarExcitationTerm': 0.001,
-        'jointAccelerationTerm': 0.001,
-        'coordinateExcitationTerm': 1}
-    settings['meshDensity'] = 50
-elif case == 'periodic_torque_driven_3':
-    settings['torque_driven_model'] = True
+# Adjust the weights of the objective function and remove the default
+# muscle-related weigths. The objective function contains terms for tracking
+# coordinate values (positionTrackingTerm), speeds (velocityTrackingTerm), and
+# accelerations (accelerationTrackingTerm), as well as terms for minimizing
+# excitations of the ideal torque actuators at the arms (armExcitationTerm),
+# lumbar (lumbarExcitationTerm), and lower-extremity (coordinateExcitationTerm)
+# joints. The objective function also contains a regularization term that
+# minimizes the coordinate accelerations (jointAccelerationTerm).
+settings['weights'] = {
+    'positionTrackingTerm': 10,
+    'velocityTrackingTerm': 10,
+    'accelerationTrackingTerm': 50,
+    'armExcitationTerm': 0.001,
+    'lumbarExcitationTerm': 0.001,
+    'coordinateExcitationTerm': 1,
+    'jointAccelerationTerm': 0.001,}
 
-    settings['periodicConstraints'] = {
-        'Qs': ['lowerLimbJoints'],
-        'Qds': ['lowerLimbJoints'],
-        'muscles': ['all'],
-        'lumbar': ['all']}
-    
-    settings['weights'] = {
-        'positionTrackingTerm': 10,
-        'velocityTrackingTerm': 10,
-        'accelerationTrackingTerm': 100,
-        'armExcitationTerm': 0.001,
-        'lumbarExcitationTerm': 0.001,
-        'jointAccelerationTerm': 0.001,
-        'coordinateExcitationTerm': 1}
-    settings['meshDensity'] = 50
-    
-elif case == 'periodic_torque_driven_4':
-    settings['torque_driven_model'] = True
+# Add periodic constraints to the problem. This will constrain initial and
+# final states of the problem to be the same. This is useful for obtaining
+# faster convergence. Please note that the walking trial we selected might not
+# be perfectly periodic. We here add periodic constraints to show how to do it.
+# We here add periodic constraints for the coordinate values (coordinateValues)
+# and coordinate speeds (coordinateSpeeds) of the lower-extremity joints
+# (lowerLimbJoints). We also add periodic constraints for the activations of the
+# ideal torque actuators at the lower-extremity (lowerLimbJointActivations) and
+# lumbar (lumbarJointActivations) joints. 
+settings['periodicConstraints'] = {
+    'coordinateValues': ['lowerLimbJoints'],
+    'coordinateSpeeds': ['lowerLimbJoints'],
+    'lowerLimbJointActivations': ['all'],
+    'lumbarJointActivations': ['all']}
 
-    settings['periodicConstraints'] = {
-        'Qs': ['lowerLimbJoints'],
-        'Qds': ['lowerLimbJoints'],
-        'muscles': ['all'],
-        'lumbar': ['all']}
-    
-    settings['weights'] = {
-        'positionTrackingTerm': 10,
-        'velocityTrackingTerm': 10,
-        'accelerationTrackingTerm': 50,
-        'armExcitationTerm': 0.001,
-        'lumbarExcitationTerm': 0.001,
-        'jointAccelerationTerm': 0.001,
-        'coordinateExcitationTerm': 1}
-    settings['meshDensity'] = 50
-    
-    settings['filter_Qs_toTrack'] = True,
-    settings['cutoff_freq_Qs'] = 6
-    settings['filter_Qds_toTrack'] = True,
-    settings['cutoff_freq_Qds'] = 6
-    settings['filter_Qdds_toTrack'] = True,
-    settings['cutoff_freq_Qdds'] = 6
-    settings['splineQds'] = True,
+# Filter the data to be tracked. We here filter the coordinate values (Qs) with
+# a 6 Hz (cutoff_freq_Qs) low-pass filter, the coordinate speeds (Qds) with a 6
+# Hz (cutoff_freq_Qds) low-pass filter, and the coordinate accelerations (Qdds)
+# with a 6 Hz (cutoff_freq_Qdds) low-pass filter. We also compute the coordinate
+# accelerations by first splining the coordinate speeds (splineQds=True) and
+# then taking the first time derivative (default is to spline the coordinate
+# values and then take the second time derivative).
+settings['filter_Qs_toTrack'] = True
+settings['cutoff_freq_Qs'] = 6
+settings['filter_Qds_toTrack'] = True
+settings['cutoff_freq_Qds'] = 6
+settings['filter_Qdds_toTrack'] = True
+settings['cutoff_freq_Qdds'] = 6
+settings['splineQds'] = True
 
-# %% Simulation.
-run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-              solveProblem=solveProblem, analyzeResults=analyzeResults)
+# We set the mesh density to 50. We recommend using a mesh density of 100 by
+# default, but we here use a lower value to reduce the computation time.
+settings['meshDensity'] = 50
 
-# %% Plots.
-# To compare different cases, add to the cases list, eg cases=['0','1'].
-case0 = 'periodic_muscle_driven'
-case1 = 'periodic_muscle_driven_2'
-case2 = 'periodic_torque_driven'
-case3 = 'periodic_torque_driven_2'
-case4 = 'periodic_torque_driven_3'
-case5 = 'periodic_torque_driven_4'
-plotResultsDC(dataFolder, session_id, trial_name, settings, cases=[case3, case5], mainPlots=False)
-test=1
+# Run the dynamic simulation.
+# Here are some reference numbers for convergence of the problem. Note that it
+# might vary depending on the machine you are using.
+#   - Windows (Windows 10):    converged in 96 iterations (~30s)
+#   - macOS   (Monterey 12.2): converged in  iterations
+#   - Linux   (Ubuntu 20.04):  converged in  iterations
+run_tracking(baseDir, dataFolder, session_id, settings, case=case)
+
+# Plot some results.
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+
+# %% Sub-example 2: walking simulation with muscle-driven model.
+# Insert a string to "name" you case.
+case = 'muscle_driven'
+
+# Prepare inputs for dynamic simulation (this will be skipped if already done):
+#   - Download data from OpenCap database
+#   - Adjust wrapping surfaces
+#   - Add foot-ground contacts
+#   - Generate external function (OpenSimAD)
+settings = processInputsOpenSimAD(
+    baseDir, dataFolder, session_id, trial_name, motion_type, 
+    time_window=time_window, treadmill_speed=treadmill_speed)
+
+# Add periodic constraints to the problem. This will constrain initial and
+# final states of the problem to be the same. This is useful for obtaining
+# faster convergence. Please note that the walking trial we selected might not
+# be perfectly periodic. We here add periodic constraints to show how to do it.
+# We here add periodic constraints for the coordinate values (coordinateValues)
+# and coordinate speeds (coordinateSpeeds) of the lower-extremity joints
+# (lowerLimbJoints). We also add periodic constraints for the activations and
+# forces of all muscles acuating the lower-extremity (muscleActivationsForces)
+# and for activations of the ideal torque actuators at the lumbar
+# (lumbarJointActivations) joints. 
+settings['periodicConstraints'] = {
+    'coordinateValues': ['lowerLimbJoints'],
+    'coordinateSpeeds': ['lowerLimbJoints'],
+    'muscleActivationsForces': ['all'],
+    'lumbarJointActivations': ['all']}
+
+# Filter the data to be tracked. We here filter the coordinate values (Qs) with
+# a 6 Hz (cutoff_freq_Qs) low-pass filter, the coordinate speeds (Qds) with a 6
+# Hz (cutoff_freq_Qds) low-pass filter, and the coordinate accelerations (Qdds)
+# with a 6 Hz (cutoff_freq_Qdds) low-pass filter. We also compute the coordinate
+# accelerations by first splining the coordinate speeds (splineQds=True) and
+# then taking the first time derivative (default is to spline the coordinate
+# values and then take the second time derivative).
+settings['filter_Qs_toTrack'] = True
+settings['cutoff_freq_Qs'] = 6
+settings['filter_Qds_toTrack'] = True
+settings['cutoff_freq_Qds'] = 6
+settings['filter_Qdds_toTrack'] = True
+settings['cutoff_freq_Qdds'] = 6
+settings['splineQds'] = True
+
+# We set the mesh density to 50. We recommend using a mesh density of 100 by
+# default, but we here use a lower value to reduce the computation time.
+settings['meshDensity'] = 50
+
+# Run the dynamic simulation.
+# Here are some reference numbers for convergence of the problem. Note that it
+# might vary depending on the machine you are using.
+#   - Windows (Windows 10):    converged in 625 iterations (~17min)
+#   - macOS   (Monterey 12.2): converged in  iterations
+#   - Linux   (Ubuntu 20.04):  converged in  iterations
+run_tracking(baseDir, dataFolder, session_id, settings, case=case)
+
+# Plot some results.
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+
+# %% Comparison torque-driven vs. muscle-driven model.
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings,
+                     ['torque_driven', 'muscle_driven'])
