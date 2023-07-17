@@ -51,7 +51,7 @@ def filterNumpyArray(array, time, cutoff_frequency=6, order=4):
     arrayFilt = signal.filtfilt(
         b, a, array, axis=0, 
         padtype='odd', padlen=3*(max(len(b),len(a))-1))    
-    print('numpy array filtered at {}Hz.'.format(cutoff_frequency)) 
+    # print('numpy array filtered at {}Hz.'.format(cutoff_frequency)) 
     
     return arrayFilt
 

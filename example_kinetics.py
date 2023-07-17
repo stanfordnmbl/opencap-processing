@@ -126,7 +126,7 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-case = '10' # Change this to compare across settings.
+case = '0' # Change this to compare across settings.
 # Options are 'squat', 'STS', and 'jump'.
 if session_type == 'overground': 
     trial_name = 'STS'
@@ -182,12 +182,10 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   motion_type, time_window, repetition,
                                   treadmill_speed)
 
-settings['torque_driven_model'] = True
-
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
               solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
-plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, cases=[case, '11'], mainPlots=False)
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, cases=[case])
