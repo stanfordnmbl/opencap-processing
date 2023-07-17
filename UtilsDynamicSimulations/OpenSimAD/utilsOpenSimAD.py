@@ -1809,7 +1809,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     joints = optimaltrajectories[cases[0]]['coordinates']
     nJoints = len(joints)
     rotationalJoints = optimaltrajectories[cases[0]]['rotationalCoordinates']
-    ny = np.ceil(np.sqrt(nJoints))   
+    ny = np.ceil(np.sqrt(nJoints))
     fig, axs = plt.subplots(int(ny), int(ny))
     fig.suptitle('Coordinate values', fontsize=fontsizeSubTitle, fontweight='bold')
     for i, ax in enumerate(axs.flat):
@@ -1854,7 +1854,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     # Clean up ticks and labels.    
     for i in range(0, mm):
         axs.flatten()[i].set_xticklabels([])
-    plt.show()
+    plt.draw()
         
     # %% Joint speeds.
     if not mainPlots:
@@ -1902,7 +1902,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         # Clean up ticks and labels.
         for i in range(0, mm):
             axs.flatten()[i].set_xticklabels([])
-        plt.show()
+        plt.draw()
         
     # %% Joint accelerations.
     if not mainPlots:
@@ -1950,7 +1950,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         # Clean up ticks and labels.
         for i in range(0, mm):
             axs.flatten()[i].set_xticklabels([])
-        plt.show()
+        plt.draw()
         
     # %% Joint torques.
     fig, axs = plt.subplots(int(ny), int(ny))
@@ -1995,7 +1995,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     # Clean up ticks and labels.
     for i in range(0, mm):
         axs.flatten()[i].set_xticklabels([])
-    plt.show()
+    plt.draw()
         
     # %% GRFs.
     GRF_labels = optimaltrajectories[cases[0]]['GRF_labels']
@@ -2029,7 +2029,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     fig.legend(handles, labels, loc='upper right', fontsize=fontsizeLegend)
     # Change subplot spacing.
     fig.subplots_adjust(hspace=0.4, wspace=0.4)
-    plt.show()
+    plt.draw()
         
     # %% GRMs.
     if not mainPlots:
@@ -2064,7 +2064,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         fig.legend(handles, labels, loc='upper right', fontsize=fontsizeLegend)
         # Change subplot spacing.
         fig.subplots_adjust(hspace=0.4, wspace=0.4)
-        plt.show()
+        plt.draw()
         
     # %% Muscle activations.
     plotMuscleActivations = False
@@ -2077,7 +2077,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
 
     muscles = optimaltrajectories[cases[0]]['muscles']
     NMuscles = len(muscles)
-    ny = np.ceil(np.sqrt(NMuscles))   
+    ny = np.ceil(np.sqrt(NMuscles))
     fig, axs = plt.subplots(int(ny), int(ny))
     fig.suptitle('Muscle activations', fontsize=fontsizeSubTitle, fontweight='bold') 
     for i, ax in enumerate(axs.flat):
@@ -2112,7 +2112,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     # Clean up ticks and labels.
     for i in range(0, mm):
         axs.flatten()[i].set_xticklabels([])
-    plt.show()
+    plt.draw()
     
     # # %% Joint torques: breakdown.  
     # if not mainPlots:

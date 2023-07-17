@@ -44,6 +44,11 @@
     dynamic simulations using OpenSimAD in example_kinetics.py.
 '''
 
+# %% Select the example you want to run.
+runTorqueDrivenProblem = True
+runMuscleDrivenProblem = True
+runComparison= True
+
 # %% Directories, paths, and imports. You should not need to change anything.
 import os
 import sys
@@ -161,15 +166,16 @@ settings['splineQds'] = True
 settings['meshDensity'] = 50
 
 # Run the dynamic simulation.
-# Here are some reference numbers for convergence of the problem. Note that it
-# might vary depending on the machine you are using.
-#   - Windows (Windows 10):    converged in 96 iterations (~30s)
-#   - macOS   (Monterey 12.2): converged in 107 iterations (~40s)
-#   - Linux   (Ubuntu 20.04):  converged in 109 iterations (~50s)
-run_tracking(baseDir, dataFolder, session_id, settings, case=case)
+if runTorqueDrivenProblem:
+    # Here are some reference numbers for convergence of the problem. Note that
+    # it might vary depending on the machine you are using.
+    #   - Windows (Windows 10):    converged in 96 iterations (~30s)
+    #   - macOS   (Monterey 12.2): converged in 107 iterations (~40s)
+    #   - Linux   (Ubuntu 20.04):  converged in 109 iterations (~50s)
+    run_tracking(baseDir, dataFolder, session_id, settings, case=case)
 
-# Plot some results.
-plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+    # Plot some results.
+    plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
 
 # %% Sub-example 2: walking simulation with muscle-driven model.
 # Insert a string to "name" you case.
@@ -220,16 +226,18 @@ settings['splineQds'] = True
 settings['meshDensity'] = 50
 
 # Run the dynamic simulation.
-# Here are some reference numbers for convergence of the problem. Note that it
-# might vary depending on the machine you are using.
-#   - Windows (Windows 10):    converged in 625 iterations (~17min)
-#   - macOS   (Monterey 12.2): converged in 697 iterations (~20min)
-#   - Linux   (Ubuntu 20.04):  converged in 834 iterations (~33min)
-run_tracking(baseDir, dataFolder, session_id, settings, case=case)
+if runMuscleDrivenProblem:
+    # Here are some reference numbers for convergence of the problem. Note that
+    # it might vary depending on the machine you are using.
+    #   - Windows (Windows 10):    converged in 625 iterations (~17min)
+    #   - macOS   (Monterey 12.2): converged in 697 iterations (~20min)
+    #   - Linux   (Ubuntu 20.04):  converged in 834 iterations (~33min)
+    run_tracking(baseDir, dataFolder, session_id, settings, case=case)
 
-# Plot some results.
-plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+    # Plot some results.
+    plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
 
 # %% Comparison torque-driven vs. muscle-driven model.
-plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings,
-                     ['torque_driven', 'muscle_driven'])
+if runComparison:
+    plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings,
+                        ['torque_driven', 'muscle_driven'])
