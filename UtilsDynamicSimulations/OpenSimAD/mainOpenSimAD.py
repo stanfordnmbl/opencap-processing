@@ -34,7 +34,7 @@ import copy
 
 # %% Settings.
 def run_tracking(baseDir, dataDir, subject, settings, case='0',
-                 solveProblem=True, analyzeResults=True, writeGUI=True,
+                 solveProblem=False, analyzeResults=True, writeGUI=True,
                  computeKAM=True, computeMCF=True):
     
     # %% Settings.
@@ -341,7 +341,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     with open(pathSettings, 'w') as file:
         yaml.dump(settings, file)
         
-    print('Processing {}'.format(trialName))
+    print('Processing {} - Case {}'.format(trialName, case))
     
     # %% Muscles.
     # This section specifies the muscles and some of their parameters. This is
@@ -2279,23 +2279,23 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         if trackQdds:
             JTerms["accelerationTerm_sc"] = JTerms["accelerationTerm"] / JAll_opt[0][0]                
         # Print out contributions to the cost function.
-        print("\nCONTRIBUTION TO THE COST FUNCTION")
+        print("\nContributions to the objective function:")
         if torque_driven_model:
-            print("Coordinate excitations: {}%".format(np.round(JTerms["coordinateExcitationTerm_sc"] * 100, 2)))
+            print("\tCoordinate excitations: {}%".format(np.round(JTerms["coordinateExcitationTerm_sc"] * 100, 2)))
         else:
-            print("Muscle activations: {}%".format(np.round(JTerms["activationTerm_sc"] * 100, 2)))
-            print("Muscle activation derivatives: {}%".format(np.round(JTerms["activationDtTerm_sc"] * 100, 2)))
-            print("Muscle-tendon force derivatives: {}%".format(np.round(JTerms["forceDtTerm_sc"] * 100, 2)))
+            print("\tMuscle activations: {}%".format(np.round(JTerms["activationTerm_sc"] * 100, 2)))
+            print("\tMuscle activation derivatives: {}%".format(np.round(JTerms["activationDtTerm_sc"] * 100, 2)))
+            print("\tMuscle-tendon force derivatives: {}%".format(np.round(JTerms["forceDtTerm_sc"] * 100, 2)))
         if withArms:
-            print("Arm excitations: {}%".format(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)))
+            print("\tArm excitations: {}%".format(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)))
         if withLumbarCoordinateActuators:
-            print("Lumbar excitations: {}%".format(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)))
-        print("Joint accelerations: {}%".format(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)))        
-        print("Position tracking: {}%".format(np.round(JTerms["positionTerm_sc"] * 100, 2)))
-        print("Velocity tracking: {}%".format(np.round(JTerms["velocityTerm_sc"] * 100, 2)))
+            print("\tLumbar excitations: {}%".format(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)))
+        print("\tJoint accelerations: {}%".format(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)))        
+        print("\tPosition tracking: {}%".format(np.round(JTerms["positionTerm_sc"] * 100, 2)))
+        print("\tVelocity tracking: {}%".format(np.round(JTerms["velocityTerm_sc"] * 100, 2)))
         if trackQdds:
-            print("Acceleration tracking: {}%".format(np.round(JTerms["accelerationTerm_sc"] * 100, 2)))           
-        print("# Iterations: {}\n".format(stats["iter_count"]))
+            print("\tAcceleration tracking: {}%".format(np.round(JTerms["accelerationTerm_sc"] * 100, 2)))           
+        print("\nNumber of iterations: {}\n".format(stats["iter_count"]))
             
         # %% Compute knee adduction moments.
         if computeKAM:            
@@ -2323,7 +2323,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         # %% Compute medial knee contact forces.
         if torque_driven_model:
             computeMCF = False
-            print("To compute contact forces, use a muscle-driven model.")
+            print("To compute medial knee contact forces, use a muscle-driven model.\n")
         if computeMCF:
             # Export muscle forces and non muscle-driven torques (if existing).
             import pandas as pd

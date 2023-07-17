@@ -230,6 +230,8 @@ def adjustMuscleWrapping(
     
     if overwrite is False and os.path.exists(pathOutputModel):
         return
+    else:
+        print('Adjust muscle wrapping surfaces.')
         
     # Set up logging.
     logPath = os.path.join(pathModelFolder,'modelAdjustment.log')
@@ -494,6 +496,8 @@ def generateModelWithContacts(
     
     if overwrite is False and os.path.exists(pathOutputModel):
         return
+    else:
+        print('Add foot-ground contacts.')
         
     # %% Add contact spheres to the scaled model.
     # The parameters of the foot-ground contacts are based on previous work. We

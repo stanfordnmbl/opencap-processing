@@ -452,7 +452,7 @@ def filterDataFrame(dataFrame, cutoff_frequency=6, order=4):
     dataFrameFilt = pd.concat(
         [pd.DataFrame(data=dataFrame['time'].to_numpy(), columns=['time']), 
          output], axis=1)    
-    print('dataFrame filtered at {}Hz.'.format(cutoff_frequency))    
+    # print('dataFrame filtered at {}Hz.'.format(cutoff_frequency))    
     
     return dataFrameFilt
 
@@ -544,6 +544,8 @@ def generateExternalFunction(
     if (overwrite is False and os.path.exists(pathOutputFile) and 
         os.path.exists(pathOutputMap) and os.path.exists(pathOutputDll)):
         return      
+    else:
+        print('Generate external function to leverage automatic differentiation.')
     
     # %% Generate external Function (.cpp file)
     opensim.Logger.setLevelString('error')
@@ -2149,11 +2151,11 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     # Path session folder.
     sessionFolder =  os.path.join(dataFolder, session_id)
     
-    # Download kinematics and model.
-    print('Download kinematic data and model.')
+    # Download kinematics and model.    
     pathTrial = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics', 
                              trial_name + '.mot') 
     if not os.path.exists(pathTrial) or overwrite:
+        print('Download kinematic data and/or model.')
         _, _ = download_kinematics(session_id, sessionFolder, 
                                    trialNames=[trial_name])
         
@@ -2169,16 +2171,13 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
          Consider using the default Full body model instead (LaiUhlrich2022).""")
     
     # Prepare inputs for dynamic simulations.
-    # Adjust muscle wrapping.
-    print('Adjust muscle wrapping surfaces.')
+    # Adjust muscle wrapping.    
     adjustMuscleWrapping(baseDir, dataFolder, session_id,
                          OpenSimModel=OpenSimModel, overwrite=overwrite)
-    # Add foot-ground contacts to musculoskeletal model.
-    print('Add foot-ground contacts.')
+    # Add foot-ground contacts to musculoskeletal model.    
     generateModelWithContacts(dataFolder, session_id, 
                               OpenSimModel=OpenSimModel, overwrite=overwrite)
-    # Generate external function.
-    print('Generate external function to leverage automatic differentiation.')
+    # Generate external function.    
     generateExternalFunction(baseDir, dataFolder, session_id,
                              OpenSimModel=OpenSimModel,
                              overwrite=overwrite, 
