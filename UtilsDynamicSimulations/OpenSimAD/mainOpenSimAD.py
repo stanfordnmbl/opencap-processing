@@ -734,8 +734,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             from polynomialsOpenSimAD import testPolynomials
             path_data4PolynomialFitting = os.path.join(
                 pathModelFolder, 
-                'data4PolynomialFitting_{}_{}.npy'.format(model_full_name,
-                                                          type_bounds_polynomials))
+                'data4PolynomialFitting_{}_{}.npy'.format(
+                    model_full_name, type_bounds_polynomials))
             data4PolynomialFitting = np.load(path_data4PolynomialFitting, 
                                              allow_pickle=True).item()            
             testPolynomials(
