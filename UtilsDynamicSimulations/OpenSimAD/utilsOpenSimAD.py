@@ -1854,7 +1854,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     # Clean up ticks and labels.    
     for i in range(0, mm):
         axs.flatten()[i].set_xticklabels([])
-    plt.draw()
+    plt.show()
         
     # %% Joint speeds.
     if not mainPlots:
@@ -1902,7 +1902,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         # Clean up ticks and labels.
         for i in range(0, mm):
             axs.flatten()[i].set_xticklabels([])
-        plt.draw()
+        plt.show()
         
     # %% Joint accelerations.
     if not mainPlots:
@@ -1950,7 +1950,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         # Clean up ticks and labels.
         for i in range(0, mm):
             axs.flatten()[i].set_xticklabels([])
-        plt.draw()
+        plt.show()
         
     # %% Joint torques.
     fig, axs = plt.subplots(int(ny), int(ny))
@@ -1995,7 +1995,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     # Clean up ticks and labels.
     for i in range(0, mm):
         axs.flatten()[i].set_xticklabels([])
-    plt.draw()
+    plt.show()
         
     # %% GRFs.
     GRF_labels = optimaltrajectories[cases[0]]['GRF_labels']
@@ -2029,7 +2029,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     fig.legend(handles, labels, loc='upper right', fontsize=fontsizeLegend)
     # Change subplot spacing.
     fig.subplots_adjust(hspace=0.4, wspace=0.4)
-    plt.draw()
+    plt.show()
         
     # %% GRMs.
     if not mainPlots:
@@ -2064,7 +2064,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         fig.legend(handles, labels, loc='upper right', fontsize=fontsizeLegend)
         # Change subplot spacing.
         fig.subplots_adjust(hspace=0.4, wspace=0.4)
-        plt.draw()
+        plt.show()
         
     # %% Muscle activations.
     plotMuscleActivations = False
@@ -2112,7 +2112,7 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     # Clean up ticks and labels.
     for i in range(0, mm):
         axs.flatten()[i].set_xticklabels([])
-    plt.draw()
+    plt.show()
     
     # # %% Joint torques: breakdown.  
     # if not mainPlots:

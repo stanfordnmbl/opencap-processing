@@ -47,7 +47,7 @@
 # %% Select the example you want to run.
 runTorqueDrivenProblem = True
 runMuscleDrivenProblem = False
-runComparison= False
+runComparison = False
 
 # %% Directories, paths, and imports. You should not need to change anything.
 import os
