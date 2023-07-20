@@ -182,6 +182,10 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   motion_type, time_window, repetition,
                                   treadmill_speed)
 
+settings['withReserveActuators'] = True,
+settings['reserveActuatorCoordinates'] = {
+    'hip_rotation_l': 30, 'hip_rotation_r': 30}
+
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
               solveProblem=solveProblem, analyzeResults=analyzeResults)
