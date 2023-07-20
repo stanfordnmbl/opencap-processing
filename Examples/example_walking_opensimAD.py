@@ -169,7 +169,7 @@ settings['meshDensity'] = 50
 if runTorqueDrivenProblem:
     # Here are some reference numbers for convergence of the problem. Note that
     # it might vary depending on the machine you are using.
-    #   - Windows (Windows 10):    converged in 96 iterations (~30s)
+    #   - Windows (Windows 10):    converged in 99 iterations (~30s)
     #   - macOS   (Monterey 12.2): converged in 107 iterations (~40s)
     #   - Linux   (Ubuntu 20.04):  converged in 109 iterations (~50s)
     run_tracking(baseDir, dataFolder, session_id, settings, case=case)
