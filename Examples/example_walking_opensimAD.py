@@ -169,9 +169,9 @@ settings['meshDensity'] = 50
 if runTorqueDrivenProblem:
     # Here are some reference numbers for convergence of the problem. Note that
     # it might vary depending on the machine you are using.
-    #   - Windows (Windows 10):    converged in 99 iterations (~30s)
-    #   - macOS   (Monterey 12.2): converged in 107 iterations (~40s)
-    #   - Linux   (Ubuntu 20.04):  converged in 109 iterations (~50s)
+    #   - Windows (Windows 10):    converged in 99 iterations
+    #   - macOS   (Monterey 12.2): converged in 110 iterations 
+    #   - Linux   (Ubuntu 20.04):  converged in 109 iterations
     run_tracking(baseDir, dataFolder, session_id, settings, case=case)
 
     # Plot some results.
@@ -229,9 +229,9 @@ settings['meshDensity'] = 50
 if runMuscleDrivenProblem:
     # Here are some reference numbers for convergence of the problem. Note that
     # it might vary depending on the machine you are using.
-    #   - Windows (Windows 10):    converged in 625 iterations (~17min)
-    #   - macOS   (Monterey 12.2): converged in 697 iterations (~20min)
-    #   - Linux   (Ubuntu 20.04):  converged in 834 iterations (~33min)
+    #   - Windows (Windows 10):    converged in 586 iterations
+    #   - macOS   (Monterey 12.2): converged in 499 iterations
+    #   - Linux   (Ubuntu 20.04):  converged in 645 iterations
     run_tracking(baseDir, dataFolder, session_id, settings, case=case)
 
     # Plot some results.
