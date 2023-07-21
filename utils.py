@@ -59,6 +59,14 @@ def get_session_json(session_id):
     
     return sessionJson
 
+# Returns a list of all sessions of the user.
+def get_user_sessions():
+    sessions = requests.get(
+        API_URL + "sessions/valid/", 
+        headers = {"Authorization": "Token {}".format(API_TOKEN)}).json()
+    
+    return sessions
+
 def get_trial_json(trial_id):
     trialJson = requests.get(
         API_URL + "trials/{}/".format(trial_id),
