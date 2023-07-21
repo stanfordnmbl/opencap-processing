@@ -109,8 +109,10 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         withReserveActuators = settings['withReserveActuators']
     if withReserveActuators:
         reserveActuatorCoordinates = settings['reserveActuatorCoordinates']
-        weights['reserveActuatorTerm'] = (
-            settings['weights']['reserveActuatorTerm'])
+        weights['reserveActuatorTerm'] = 0.001
+        if 'reserveActuatorTerm' in settings['weights']:
+            weights['reserveActuatorTerm'] = (
+                settings['weights']['reserveActuatorTerm'])
     
     # Set ignorePassiveFiberForce to True to ignore passive muscle forces.
     ignorePassiveFiberForce = False
@@ -1538,19 +1540,21 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             # Skeleton dynamics.
             if torque_driven_model:
                 for cj, joint in enumerate(muscleDrivenJoints):                        
-                    coordAct_joint = (
-                        scaling['CoordE'].iloc[0][joint] * 
-                        aCoordkj[cj, 0])
+                    coordActk_joint = (
+                        scaling['CoordE'].iloc[0][joint] * aCoordkj[cj, 0])
+                    # Add contribution of reserve actuator.
+                    if withReserveActuators and joint in reserveActuatorCoordinates:
+                        coordActk_joint += rActk_nsc[joint]
                     diffTk_joint = f_diffTorques(
                         Tk[F_map['residuals'][joint]],
-                        coordAct_joint, 
-                        passiveTorque_k[joint])
+                        coordActk_joint, passiveTorque_k[joint])
                     opti.subject_to(diffTk_joint == 0)
             else:
                 # Muscle-driven joint torques.
                 for joint in muscleDrivenJoints:                
                     Fk_joint = Fk[momentArmIndices[joint]]
                     mTk_joint = ca.sum1(dMk[joint]*Fk_joint)
+                    # Add contribution of reserve actuator.
                     if withReserveActuators and joint in reserveActuatorCoordinates:
                         mTk_joint += rActk_nsc[joint]
                     diffTk_joint = f_diffTorques(
@@ -1558,36 +1562,48 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                         passiveTorque_k[joint])
                     opti.subject_to(diffTk_joint == 0)
                 
+            # TODO: clean up lumbar vs arms vs MTP for consistency.
             # Torque-driven joint torques.            
             # Lumbar joints.
             if withLumbarCoordinateActuators:
                 for cj, joint in enumerate(lumbarJoints):                        
-                    coordAct_lumbar = (
-                        scaling['LumbarE'].iloc[0][joint] * 
-                        aLumbarkj[cj, 0])
+                    coordAct_lumbark = (
+                        scaling['LumbarE'].iloc[0][joint] * aLumbarkj[cj, 0])
+                    passiveTorque_Lumbark = passiveTorque_k[joint]
+                    # Add contribution of reserve actuator.
+                    if withReserveActuators and joint in reserveActuatorCoordinates:
+                        passiveTorque_Lumbark += rActk_nsc[joint]
                     diffTk_lumbar = f_diffTorques(
-                        Tk[F_map['residuals'][joint]],
-                        coordAct_lumbar, 
-                        passiveTorque_k[joint])
+                        Tk[F_map['residuals'][joint]], coordAct_lumbark, 
+                        passiveTorque_Lumbark)
                     opti.subject_to(diffTk_lumbar == 0)
             
             # Arm joints.
+            # Note: there isn't really a reason to have scaled constraints.
+            # Should revise in future versions.
             if withArms:
-                for cj, joint in enumerate(armJoints):
+                for cj, joint in enumerate(armJoints):                    
+                    passiveTorque_Armsk = linearPassiveTorqueArms_k[joint]
+                    # Add contribution of reserve actuator.
+                    if withReserveActuators and joint in reserveActuatorCoordinates:
+                        passiveTorque_Armsk += rActk_nsc[joint]
                     diffTk_joint = f_diffTorques(
                         Tk[F_map['residuals'][joint] ] / 
                         scaling['ArmE'].iloc[0][joint],
-                        aArmkj[cj, 0], linearPassiveTorqueArms_k[joint] /
+                        aArmkj[cj, 0], passiveTorque_Armsk /
                         scaling['ArmE'].iloc[0][joint])
                     opti.subject_to(diffTk_joint == 0)
             
             # Mtp joints.
             if withMTP:
-                for joint in mtpJoints:
+                for joint in mtpJoints:                    
+                    passiveTorque_MTPk = (passiveTorque_k[joint] + 
+                                          linearPassiveTorqueMtp_k[joint])
+                    # Add contribution of reserve actuator.
+                    if withReserveActuators and joint in reserveActuatorCoordinates:
+                        passiveTorque_MTPk += rActk_nsc[joint]
                     diffTk_joint = f_diffTorques(
-                        Tk[F_map['residuals'][joint] ], 
-                        0, (passiveTorque_k[joint] +  
-                            linearPassiveTorqueMtp_k[joint]))
+                        Tk[F_map['residuals'][joint]], 0, passiveTorque_MTPk)
                     opti.subject_to(diffTk_joint == 0)
             
             if not torque_driven_model:
