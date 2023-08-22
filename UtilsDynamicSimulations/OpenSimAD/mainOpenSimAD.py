@@ -1689,6 +1689,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         
         # Create NLP solver.
         opti.minimize(J)
+
+        # s_opts = {}
+        # s_opts["ipopt.hessian_approximation"] = "limited-memory"
+        # s_opts["ipopt.mu_strategy"] = "adaptive"
+        # s_opts["ipopt.max_iter"] = 5000
+        # s_opts["ipopt.tol"] = 10**(-ipopt_tolerance)
+        # s_opts["expand"] = False
+        # s_opts["detect_simple_bounds"] = True
+        # opti.solver("ipopt", s_opts)
+        # sol = opti.solve()
         
         # Solve problem.
         # When using the default opti, bounds are replaced by constraints,
@@ -1699,806 +1709,806 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         np.save(os.path.join(pathResults, 'w_opt_{}.npy'.format(case)), w_opt)
         np.save(os.path.join(pathResults, 'stats_{}.npy'.format(case)), stats)
         
-    # %% Analyze results.
-    if analyzeResults:
-        w_opt = np.load(os.path.join(pathResults, 'w_opt_{}.npy'.format(case)))
-        stats = np.load(os.path.join(pathResults, 'stats_{}.npy'.format(case)), 
-                        allow_pickle=True).item()  
-        if not stats['success'] == True:
-            print('PROBLEM DID NOT CONVERGE - {} - {} - {} \n\n'.format( 
-                  stats['return_status'], subject, trialName))
-            return
+    # # %% Analyze results.
+    # if analyzeResults:
+    #     w_opt = np.load(os.path.join(pathResults, 'w_opt_{}.npy'.format(case)))
+    #     stats = np.load(os.path.join(pathResults, 'stats_{}.npy'.format(case)), 
+    #                     allow_pickle=True).item()  
+    #     if not stats['success'] == True:
+    #         print('PROBLEM DID NOT CONVERGE - {} - {} - {} \n\n'.format( 
+    #               stats['return_status'], subject, trialName))
+    #         return
         
-        # Extract results.
-        starti = 0
-        if offset_ty:
-            offset_opt = w_opt[starti:starti+1]
-            starti += 1
-        if torque_driven_model:
-            aCoord_opt = (
-                np.reshape(w_opt[starti:starti+nMuscleDrivenJoints*(N+1)],
-                           (N+1, nMuscleDrivenJoints))).T
-            starti = starti + nMuscleDrivenJoints*(N+1)    
-            aCoord_col_opt = (
-                np.reshape(w_opt[starti:starti+nMuscleDrivenJoints*(d*N)],
-                           (d*N, nMuscleDrivenJoints))).T
-            starti = starti + nMuscleDrivenJoints*(d*N)
-        else:
-            a_opt = (
-                np.reshape(w_opt[starti:starti+nMuscles*(N+1)], (N+1, nMuscles))).T
-            starti = starti + nMuscles*(N+1)
-            a_col_opt = (
-                np.reshape(w_opt[starti:starti+nMuscles*(d*N)], (d*N, nMuscles))).T    
-            starti = starti + nMuscles*(d*N)
-            nF_opt = (
-                np.reshape(w_opt[starti:starti+nMuscles*(N+1)], (N+1, nMuscles))).T  
-            starti = starti + nMuscles*(N+1)
-            nF_col_opt = (
-                np.reshape(w_opt[starti:starti+nMuscles*(d*N)], (d*N, nMuscles))).T
-            starti = starti + nMuscles*(d*N)
-        Qs_opt = (
-            np.reshape(w_opt[starti:starti+nJoints*(N+1)], (N+1, nJoints))  ).T  
-        starti = starti + nJoints*(N+1)    
-        Qs_col_opt = (
-            np.reshape(w_opt[starti:starti+nJoints*(d*N)], (d*N, nJoints))).T
-        starti = starti + nJoints*(d*N)
-        Qds_opt = (
-            np.reshape(w_opt[starti:starti+nJoints*(N+1)], (N+1, nJoints)) ).T   
-        starti = starti + nJoints*(N+1)    
-        Qds_col_opt = (
-            np.reshape(w_opt[starti:starti+nJoints*(d*N)], (d*N, nJoints))).T
-        starti = starti + nJoints*(d*N)    
-        if withArms:
-            aArm_opt = (
-                np.reshape(w_opt[starti:starti+nArmJoints*(N+1)],
-                           (N+1, nArmJoints))).T
-            starti = starti + nArmJoints*(N+1)    
-            aArm_col_opt = (
-                np.reshape(w_opt[starti:starti+nArmJoints*(d*N)],
-                           (d*N, nArmJoints))).T
-            starti = starti + nArmJoints*(d*N)
-        if withLumbarCoordinateActuators:
-            aLumbar_opt = (
-                np.reshape(w_opt[starti:starti+nLumbarJoints*(N+1)],
-                           (N+1, nLumbarJoints))).T
-            starti = starti + nLumbarJoints*(N+1)    
-            aLumbar_col_opt = (
-                np.reshape(w_opt[starti:starti+nLumbarJoints*(d*N)],
-                           (d*N, nLumbarJoints))).T
-            starti = starti + nLumbarJoints*(d*N)
-        if torque_driven_model:
-            eCoord_opt = (
-                np.reshape(w_opt[starti:starti+nMuscleDrivenJoints*N],
-                           (N, nMuscleDrivenJoints))).T
-            starti = starti + nMuscleDrivenJoints*N
-        else:
-            aDt_opt = (
-                np.reshape(w_opt[starti:starti+nMuscles*N], (N, nMuscles))).T
-            starti = starti + nMuscles*N 
-        if withArms:
-            eArm_opt = (
-                np.reshape(w_opt[starti:starti+nArmJoints*N],
-                           (N, nArmJoints))).T
-            starti = starti + nArmJoints*N
-        if withLumbarCoordinateActuators:
-            eLumbar_opt = (
-                np.reshape(w_opt[starti:starti+nLumbarJoints*N],
-                           (N, nLumbarJoints))).T
-            starti = starti + nLumbarJoints*N
-        if not torque_driven_model:
-            nFDt_opt = (
-                np.reshape(w_opt[starti:starti+nMuscles*(N)], (N, nMuscles))).T
-            starti = starti + nMuscles*(N)
-        Qdds_opt = (
-            np.reshape(w_opt[starti:starti+nJoints*(N)],(N, nJoints))).T
-        starti = starti + nJoints*(N)
-        if withReserveActuators:
-            rAct_opt = {}
-            for c_j in reserveActuatorCoordinates:
-                rAct_opt[c_j] = (
-                    np.reshape(w_opt[starti:starti+1*(N)], (N, 1))).T
-                starti = starti + 1*(N)
-        assert (starti == w_opt.shape[0]), "error when extracting results"
+    #     # Extract results.
+    #     starti = 0
+    #     if offset_ty:
+    #         offset_opt = w_opt[starti:starti+1]
+    #         starti += 1
+    #     if torque_driven_model:
+    #         aCoord_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscleDrivenJoints*(N+1)],
+    #                        (N+1, nMuscleDrivenJoints))).T
+    #         starti = starti + nMuscleDrivenJoints*(N+1)    
+    #         aCoord_col_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscleDrivenJoints*(d*N)],
+    #                        (d*N, nMuscleDrivenJoints))).T
+    #         starti = starti + nMuscleDrivenJoints*(d*N)
+    #     else:
+    #         a_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscles*(N+1)], (N+1, nMuscles))).T
+    #         starti = starti + nMuscles*(N+1)
+    #         a_col_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscles*(d*N)], (d*N, nMuscles))).T    
+    #         starti = starti + nMuscles*(d*N)
+    #         nF_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscles*(N+1)], (N+1, nMuscles))).T  
+    #         starti = starti + nMuscles*(N+1)
+    #         nF_col_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscles*(d*N)], (d*N, nMuscles))).T
+    #         starti = starti + nMuscles*(d*N)
+    #     Qs_opt = (
+    #         np.reshape(w_opt[starti:starti+nJoints*(N+1)], (N+1, nJoints))  ).T  
+    #     starti = starti + nJoints*(N+1)    
+    #     Qs_col_opt = (
+    #         np.reshape(w_opt[starti:starti+nJoints*(d*N)], (d*N, nJoints))).T
+    #     starti = starti + nJoints*(d*N)
+    #     Qds_opt = (
+    #         np.reshape(w_opt[starti:starti+nJoints*(N+1)], (N+1, nJoints)) ).T   
+    #     starti = starti + nJoints*(N+1)    
+    #     Qds_col_opt = (
+    #         np.reshape(w_opt[starti:starti+nJoints*(d*N)], (d*N, nJoints))).T
+    #     starti = starti + nJoints*(d*N)    
+    #     if withArms:
+    #         aArm_opt = (
+    #             np.reshape(w_opt[starti:starti+nArmJoints*(N+1)],
+    #                        (N+1, nArmJoints))).T
+    #         starti = starti + nArmJoints*(N+1)    
+    #         aArm_col_opt = (
+    #             np.reshape(w_opt[starti:starti+nArmJoints*(d*N)],
+    #                        (d*N, nArmJoints))).T
+    #         starti = starti + nArmJoints*(d*N)
+    #     if withLumbarCoordinateActuators:
+    #         aLumbar_opt = (
+    #             np.reshape(w_opt[starti:starti+nLumbarJoints*(N+1)],
+    #                        (N+1, nLumbarJoints))).T
+    #         starti = starti + nLumbarJoints*(N+1)    
+    #         aLumbar_col_opt = (
+    #             np.reshape(w_opt[starti:starti+nLumbarJoints*(d*N)],
+    #                        (d*N, nLumbarJoints))).T
+    #         starti = starti + nLumbarJoints*(d*N)
+    #     if torque_driven_model:
+    #         eCoord_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscleDrivenJoints*N],
+    #                        (N, nMuscleDrivenJoints))).T
+    #         starti = starti + nMuscleDrivenJoints*N
+    #     else:
+    #         aDt_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscles*N], (N, nMuscles))).T
+    #         starti = starti + nMuscles*N 
+    #     if withArms:
+    #         eArm_opt = (
+    #             np.reshape(w_opt[starti:starti+nArmJoints*N],
+    #                        (N, nArmJoints))).T
+    #         starti = starti + nArmJoints*N
+    #     if withLumbarCoordinateActuators:
+    #         eLumbar_opt = (
+    #             np.reshape(w_opt[starti:starti+nLumbarJoints*N],
+    #                        (N, nLumbarJoints))).T
+    #         starti = starti + nLumbarJoints*N
+    #     if not torque_driven_model:
+    #         nFDt_opt = (
+    #             np.reshape(w_opt[starti:starti+nMuscles*(N)], (N, nMuscles))).T
+    #         starti = starti + nMuscles*(N)
+    #     Qdds_opt = (
+    #         np.reshape(w_opt[starti:starti+nJoints*(N)],(N, nJoints))).T
+    #     starti = starti + nJoints*(N)
+    #     if withReserveActuators:
+    #         rAct_opt = {}
+    #         for c_j in reserveActuatorCoordinates:
+    #             rAct_opt[c_j] = (
+    #                 np.reshape(w_opt[starti:starti+1*(N)], (N, 1))).T
+    #             starti = starti + 1*(N)
+    #     assert (starti == w_opt.shape[0]), "error when extracting results"
         
-        # %% Visualize results against bounds.
-        visualizeResultsBounds = False
-        if visualizeResultsBounds:
-            from plotsOpenSimAD import plotOptimalSolutionVSBounds
-            c_wopt = {'Qs_opt': Qs_opt, 'Qs_col_opt': Qs_col_opt,
-                      'Qds_opt': Qds_opt, 'Qds_col_opt': Qds_col_opt,
-                      'Qdds_opt': Qdds_opt}
-            if torque_driven_model:                
-                c_wopt['aCoord_opt'] = aCoord_opt
-                c_wopt['aCoord_col_opt'] = aCoord_col_opt
-                c_wopt['eCoord_opt'] = eCoord_opt                
-            else:
-                c_wopt['a_opt'] = a_opt
-                c_wopt['a_col_opt'] = a_col_opt
-                c_wopt['nF_opt'] = nF_opt
-                c_wopt['nF_col_opt'] = nF_col_opt
-                c_wopt['aDt_opt'] = aDt_opt
-                c_wopt['nFDt_opt'] = nFDt_opt
-            plotOptimalSolutionVSBounds(lw, uw, c_wopt, 
-                                        torque_driven_model=torque_driven_model)
+    #     # %% Visualize results against bounds.
+    #     visualizeResultsBounds = False
+    #     if visualizeResultsBounds:
+    #         from plotsOpenSimAD import plotOptimalSolutionVSBounds
+    #         c_wopt = {'Qs_opt': Qs_opt, 'Qs_col_opt': Qs_col_opt,
+    #                   'Qds_opt': Qds_opt, 'Qds_col_opt': Qds_col_opt,
+    #                   'Qdds_opt': Qdds_opt}
+    #         if torque_driven_model:                
+    #             c_wopt['aCoord_opt'] = aCoord_opt
+    #             c_wopt['aCoord_col_opt'] = aCoord_col_opt
+    #             c_wopt['eCoord_opt'] = eCoord_opt                
+    #         else:
+    #             c_wopt['a_opt'] = a_opt
+    #             c_wopt['a_col_opt'] = a_col_opt
+    #             c_wopt['nF_opt'] = nF_opt
+    #             c_wopt['nF_col_opt'] = nF_col_opt
+    #             c_wopt['aDt_opt'] = aDt_opt
+    #             c_wopt['nFDt_opt'] = nFDt_opt
+    #         plotOptimalSolutionVSBounds(lw, uw, c_wopt, 
+    #                                     torque_driven_model=torque_driven_model)
             
-        # %% Unscale results. 
-        Qs_opt_nsc = Qs_opt * (
-            scaling['Qs'].to_numpy().T * np.ones((1, N+1)))
-        Qds_opt_nsc = Qds_opt * (
-            scaling['Qds'].to_numpy().T * np.ones((1, N+1)))
-        Qdds_opt_nsc = Qdds_opt * (
-            scaling['Qdds'].to_numpy().T * np.ones((1, N)))
-        if torque_driven_model:
-            aCoord_opt_nsc = aCoord_opt * (
-                scaling['CoordA'].to_numpy().T * np.ones((1, N+1)))
-        else:
-            nFDt_opt_nsc = nFDt_opt * (
-                scaling['FDt'].to_numpy().T * np.ones((1, N)))
-        if withReserveActuators:
-            rAct_opt_nsc = {}
-            for c_j in reserveActuatorCoordinates:
-                rAct_opt_nsc[c_j] = rAct_opt[c_j] * (
-                    scaling['rAct'][c_j].to_numpy().T * np.ones((1, N)))
-        if offset_ty:
-            offset_opt_nsc = offset_opt * scaling['Offset']
+    #     # %% Unscale results. 
+    #     Qs_opt_nsc = Qs_opt * (
+    #         scaling['Qs'].to_numpy().T * np.ones((1, N+1)))
+    #     Qds_opt_nsc = Qds_opt * (
+    #         scaling['Qds'].to_numpy().T * np.ones((1, N+1)))
+    #     Qdds_opt_nsc = Qdds_opt * (
+    #         scaling['Qdds'].to_numpy().T * np.ones((1, N)))
+    #     if torque_driven_model:
+    #         aCoord_opt_nsc = aCoord_opt * (
+    #             scaling['CoordA'].to_numpy().T * np.ones((1, N+1)))
+    #     else:
+    #         nFDt_opt_nsc = nFDt_opt * (
+    #             scaling['FDt'].to_numpy().T * np.ones((1, N)))
+    #     if withReserveActuators:
+    #         rAct_opt_nsc = {}
+    #         for c_j in reserveActuatorCoordinates:
+    #             rAct_opt_nsc[c_j] = rAct_opt[c_j] * (
+    #                 scaling['rAct'][c_j].to_numpy().T * np.ones((1, N)))
+    #     if offset_ty:
+    #         offset_opt_nsc = offset_opt * scaling['Offset']
         
-        # %% Extract passive joint torques.
-        if withMTP:           
-            linearPassiveTorqueMtp_opt = np.zeros((nMtpJoints, N+1))
-            passiveTorqueMtp_opt = np.zeros((nMtpJoints, N+1))
-            for k in range(N+1):                    
-                for cj, joint in enumerate(mtpJoints):
-                    linearPassiveTorqueMtp_opt[cj, k] = (
-                        f_linearPassiveMtpTorque(
-                            Qs_opt_nsc[joints.index(joint), k],
-                            Qds_opt_nsc[joints.index(joint), k]))
-                    if enableLimitTorques:
-                        passiveTorqueMtp_opt[cj, k] = (
-                            f_passiveTorque[joint](
-                                Qs_opt_nsc[joints.index(joint),k], 
-                                Qds_opt_nsc[joints.index(joint),k]))                        
-        if withArms:
-            linearPassiveTorqueArms_opt = np.zeros((nArmJoints, N+1))
-            for k in range(N+1):  
-                for cj, joint in enumerate(armJoints):
-                    linearPassiveTorqueArms_opt[cj, k] = (
-                        f_linearPassiveArmTorque(
-                            Qs_opt_nsc[joints.index(joint), k],
-                            Qds_opt_nsc[joints.index(joint), k]))
+    #     # %% Extract passive joint torques.
+    #     if withMTP:           
+    #         linearPassiveTorqueMtp_opt = np.zeros((nMtpJoints, N+1))
+    #         passiveTorqueMtp_opt = np.zeros((nMtpJoints, N+1))
+    #         for k in range(N+1):                    
+    #             for cj, joint in enumerate(mtpJoints):
+    #                 linearPassiveTorqueMtp_opt[cj, k] = (
+    #                     f_linearPassiveMtpTorque(
+    #                         Qs_opt_nsc[joints.index(joint), k],
+    #                         Qds_opt_nsc[joints.index(joint), k]))
+    #                 if enableLimitTorques:
+    #                     passiveTorqueMtp_opt[cj, k] = (
+    #                         f_passiveTorque[joint](
+    #                             Qs_opt_nsc[joints.index(joint),k], 
+    #                             Qds_opt_nsc[joints.index(joint),k]))                        
+    #     if withArms:
+    #         linearPassiveTorqueArms_opt = np.zeros((nArmJoints, N+1))
+    #         for k in range(N+1):  
+    #             for cj, joint in enumerate(armJoints):
+    #                 linearPassiveTorqueArms_opt[cj, k] = (
+    #                     f_linearPassiveArmTorque(
+    #                         Qs_opt_nsc[joints.index(joint), k],
+    #                         Qds_opt_nsc[joints.index(joint), k]))
             
-        # %% Extract joint torques and ground reaction forces.
-        # Helper indices
-        idxGR, idxGR['GRF'], idxGR['GRF']['all']  = {}, {}, {}
-        idxGR['COP'], idxGR['GRM'], idxGR['GRM']['all'] = {}, {}, {}
-        for sphere in contactSpheres['all']:
-            idxGR['GRF'][sphere] = {}
-            idxGR['COP'][sphere] = {}
-        for c_side, side in enumerate(contactSides):
-            idxGR['GRF']['all'][side] = list(F_map['GRFs'][side])
-            idxGR['GRM']['all'][side] = list(F_map['GRMs'][side])            
-            for c_sphere, sphere in enumerate(contactSpheres[side]):                
-                idxGR['GRF'][sphere][side] = list(F_map['GRFs'][sphere])                
-                idxGR['COP'][sphere][side] = list(F_map['COPs'][sphere])        
+    #     # %% Extract joint torques and ground reaction forces.
+    #     # Helper indices
+    #     idxGR, idxGR['GRF'], idxGR['GRF']['all']  = {}, {}, {}
+    #     idxGR['COP'], idxGR['GRM'], idxGR['GRM']['all'] = {}, {}, {}
+    #     for sphere in contactSpheres['all']:
+    #         idxGR['GRF'][sphere] = {}
+    #         idxGR['COP'][sphere] = {}
+    #     for c_side, side in enumerate(contactSides):
+    #         idxGR['GRF']['all'][side] = list(F_map['GRFs'][side])
+    #         idxGR['GRM']['all'][side] = list(F_map['GRMs'][side])            
+    #         for c_sphere, sphere in enumerate(contactSpheres[side]):                
+    #             idxGR['GRF'][sphere][side] = list(F_map['GRFs'][sphere])                
+    #             idxGR['COP'][sphere][side] = list(F_map['COPs'][sphere])        
         
-        from utilsOpenSimAD import getCOP
-        QsQds_opt_nsc = np.zeros((nJoints*2, N+1))
-        QsQds_opt_nsc[::2, :] = Qs_opt_nsc[idxJoints4F, :]
-        QsQds_opt_nsc[1::2, :] = Qds_opt_nsc[idxJoints4F, :]
-        Qdds_opt_nsc_4F = Qdds_opt_nsc[idxJoints4F, :]
-        if treadmill:
-            Tj_temp = F(ca.vertcat(
-                ca.vertcat(QsQds_opt_nsc[:, 0], Qdds_opt_nsc_4F[:, 0]), 
-                -settings['treadmill_speed']))
-        else:
-            Tj_temp = F(ca.vertcat(QsQds_opt_nsc[:, 0], Qdds_opt_nsc_4F[:, 0]))          
-        F_out_pp = np.zeros((Tj_temp.shape[0], N))
-        if withMTP:
-            mtpT = np.zeros((nMtpJoints, N))
-        if withArms:
-            armT = np.zeros((nArmJoints, N))
-        for k in range(N):
-            if treadmill:
-                Tk = F(ca.vertcat(
-                    ca.vertcat(QsQds_opt_nsc[:, k], Qdds_opt_nsc_4F[:, k]), 
-                    -settings['treadmill_speed']))
-            else:
-                Tk = F(ca.vertcat(QsQds_opt_nsc[:, k], Qdds_opt_nsc_4F[:, k]))
-            F_out_pp[:, k] = Tk.full().T
-            if withArms:
-                for cj, joint in enumerate(armJoints):
-                    armT[cj, k] = f_diffTorques(
-                        F_out_pp[F_map['residuals'][joint], k] / 
-                        scaling['ArmE'].iloc[0][joint], 
-                        aArm_opt[cj, k], 
-                        linearPassiveTorqueArms_opt[cj, k] / 
-                        scaling['ArmE'].iloc[0][joint])                
-        # Sanity checks.
-        if stats['success'] and withArms:
-            assert np.all(np.abs(armT) < 10**(-ipopt_tolerance)), (
-                "Error arm torques balance")                    
-        if stats['success'] and withMTP:
-            assert np.all(np.abs(mtpT) < 10**(-ipopt_tolerance)), (
-                "Error mtp torques balance")
-        # Extract GRFs, GRMs, and compute free moments and COPs. 
-        GRF_all_opt, GRM_all_opt, COP_all_opt, freeT_all_opt = {}, {}, {}, {}
-        GRF_s_opt, COP_s_opt = {}, {}
-        GRF_all_opt['all'] = np.zeros((len(contactSides)*3, N))
-        GRM_all_opt['all'] = np.zeros((len(contactSides)*3, N))
-        for c_s, side in enumerate(contactSides):
-            GRF_all_opt[side] = F_out_pp[idxGR['GRF']['all'][side], :]
-            GRM_all_opt[side] = F_out_pp[idxGR['GRM']['all'][side], :]
-            COP_all_opt[side], freeT_all_opt[side] = getCOP(
-                GRF_all_opt[side], GRM_all_opt[side])
-            GRF_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRF_all_opt[side]
-            GRM_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRM_all_opt[side]
-            GRF_s_opt[side], COP_s_opt[side] = {}, {}
-            for c_sphere, sphere in enumerate(contactSpheres[side]):                
-                GRF_s_opt[side][sphere] = (
-                    F_out_pp[idxGR['GRF'][sphere][side], :])
-                COP_s_opt[side][sphere] = (
-                    F_out_pp[idxGR['COP'][sphere][side], :])                
-        # Extract joint torques.            
-        torques_opt = F_out_pp[
-            [F_map['residuals'][joint] for joint in joints], :]
+    #     from utilsOpenSimAD import getCOP
+    #     QsQds_opt_nsc = np.zeros((nJoints*2, N+1))
+    #     QsQds_opt_nsc[::2, :] = Qs_opt_nsc[idxJoints4F, :]
+    #     QsQds_opt_nsc[1::2, :] = Qds_opt_nsc[idxJoints4F, :]
+    #     Qdds_opt_nsc_4F = Qdds_opt_nsc[idxJoints4F, :]
+    #     if treadmill:
+    #         Tj_temp = F(ca.vertcat(
+    #             ca.vertcat(QsQds_opt_nsc[:, 0], Qdds_opt_nsc_4F[:, 0]), 
+    #             -settings['treadmill_speed']))
+    #     else:
+    #         Tj_temp = F(ca.vertcat(QsQds_opt_nsc[:, 0], Qdds_opt_nsc_4F[:, 0]))          
+    #     F_out_pp = np.zeros((Tj_temp.shape[0], N))
+    #     if withMTP:
+    #         mtpT = np.zeros((nMtpJoints, N))
+    #     if withArms:
+    #         armT = np.zeros((nArmJoints, N))
+    #     for k in range(N):
+    #         if treadmill:
+    #             Tk = F(ca.vertcat(
+    #                 ca.vertcat(QsQds_opt_nsc[:, k], Qdds_opt_nsc_4F[:, k]), 
+    #                 -settings['treadmill_speed']))
+    #         else:
+    #             Tk = F(ca.vertcat(QsQds_opt_nsc[:, k], Qdds_opt_nsc_4F[:, k]))
+    #         F_out_pp[:, k] = Tk.full().T
+    #         if withArms:
+    #             for cj, joint in enumerate(armJoints):
+    #                 armT[cj, k] = f_diffTorques(
+    #                     F_out_pp[F_map['residuals'][joint], k] / 
+    #                     scaling['ArmE'].iloc[0][joint], 
+    #                     aArm_opt[cj, k], 
+    #                     linearPassiveTorqueArms_opt[cj, k] / 
+    #                     scaling['ArmE'].iloc[0][joint])                
+    #     # Sanity checks.
+    #     if stats['success'] and withArms:
+    #         assert np.all(np.abs(armT) < 10**(-ipopt_tolerance)), (
+    #             "Error arm torques balance")                    
+    #     if stats['success'] and withMTP:
+    #         assert np.all(np.abs(mtpT) < 10**(-ipopt_tolerance)), (
+    #             "Error mtp torques balance")
+    #     # Extract GRFs, GRMs, and compute free moments and COPs. 
+    #     GRF_all_opt, GRM_all_opt, COP_all_opt, freeT_all_opt = {}, {}, {}, {}
+    #     GRF_s_opt, COP_s_opt = {}, {}
+    #     GRF_all_opt['all'] = np.zeros((len(contactSides)*3, N))
+    #     GRM_all_opt['all'] = np.zeros((len(contactSides)*3, N))
+    #     for c_s, side in enumerate(contactSides):
+    #         GRF_all_opt[side] = F_out_pp[idxGR['GRF']['all'][side], :]
+    #         GRM_all_opt[side] = F_out_pp[idxGR['GRM']['all'][side], :]
+    #         COP_all_opt[side], freeT_all_opt[side] = getCOP(
+    #             GRF_all_opt[side], GRM_all_opt[side])
+    #         GRF_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRF_all_opt[side]
+    #         GRM_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRM_all_opt[side]
+    #         GRF_s_opt[side], COP_s_opt[side] = {}, {}
+    #         for c_sphere, sphere in enumerate(contactSpheres[side]):                
+    #             GRF_s_opt[side][sphere] = (
+    #                 F_out_pp[idxGR['GRF'][sphere][side], :])
+    #             COP_s_opt[side][sphere] = (
+    #                 F_out_pp[idxGR['COP'][sphere][side], :])                
+    #     # Extract joint torques.            
+    #     torques_opt = F_out_pp[
+    #         [F_map['residuals'][joint] for joint in joints], :]
             
-        # %% Write files for visualization in OpenSim GUI.
-        # Convert to degrees.
-        Qs_opt_nsc_deg = copy.deepcopy(Qs_opt_nsc)
-        Qs_opt_nsc_deg[idxRotationalJoints, :] = (
-            Qs_opt_nsc_deg[idxRotationalJoints, :] * 180 / np.pi)
-        # Labels
-        GR_labels, GR_labels['GRF'] = {}, {}
-        GR_labels['COP'], GR_labels['GRM'] = {}, {}
-        dimensions = ['x', 'y', 'z']
-        GR_labels['GRF']['all'] = {}
-        GR_labels['COP']['all'] = {}
-        GR_labels['GRM']['all'] = {}
-        GR_labels_fig = []
-        for c_side, side in enumerate(contactSides):            
-            GR_labels['GRF']['all'][side] = []
-            GR_labels['COP']['all'][side] = []
-            GR_labels['GRM']['all'][side] = []
-            GR_labels['GRF'][side] = {}
-            GR_labels['COP'][side] = {}
-            GR_labels['GRM'][side] = {}            
-            for c_sphere, sphere in enumerate(contactSpheres[side]):                
-                GR_labels['GRF'][side][sphere] = []
-                GR_labels['COP'][side][sphere] = []
-                GR_labels['GRM'][side][sphere] = []                
-                for dimension in dimensions:                    
-                    GR_labels['GRF'][side][sphere].append("ground_force_{}_v{}".format(sphere, dimension))
-                    GR_labels['COP'][side][sphere].append("ground_force_{}_p{}".format(sphere, dimension))
-                    GR_labels['GRM'][side][sphere].append("ground_torque_{}_{}".format(sphere, dimension))
-            for dimension in dimensions:                    
-                GR_labels['GRF']['all'][side].append("ground_force_{}_v{}".format(side, dimension))
-                GR_labels['COP']['all'][side].append("ground_force_{}_p{}".format(side, dimension))
-                GR_labels['GRM']['all'][side].append("ground_torque_{}_{}".format(side, dimension))
-            GR_labels_fig.append(GR_labels['GRF']['all'][side])
-        GR_labels_fig = [item for sublist in GR_labels_fig for item in sublist]
+    #     # %% Write files for visualization in OpenSim GUI.
+    #     # Convert to degrees.
+    #     Qs_opt_nsc_deg = copy.deepcopy(Qs_opt_nsc)
+    #     Qs_opt_nsc_deg[idxRotationalJoints, :] = (
+    #         Qs_opt_nsc_deg[idxRotationalJoints, :] * 180 / np.pi)
+    #     # Labels
+    #     GR_labels, GR_labels['GRF'] = {}, {}
+    #     GR_labels['COP'], GR_labels['GRM'] = {}, {}
+    #     dimensions = ['x', 'y', 'z']
+    #     GR_labels['GRF']['all'] = {}
+    #     GR_labels['COP']['all'] = {}
+    #     GR_labels['GRM']['all'] = {}
+    #     GR_labels_fig = []
+    #     for c_side, side in enumerate(contactSides):            
+    #         GR_labels['GRF']['all'][side] = []
+    #         GR_labels['COP']['all'][side] = []
+    #         GR_labels['GRM']['all'][side] = []
+    #         GR_labels['GRF'][side] = {}
+    #         GR_labels['COP'][side] = {}
+    #         GR_labels['GRM'][side] = {}            
+    #         for c_sphere, sphere in enumerate(contactSpheres[side]):                
+    #             GR_labels['GRF'][side][sphere] = []
+    #             GR_labels['COP'][side][sphere] = []
+    #             GR_labels['GRM'][side][sphere] = []                
+    #             for dimension in dimensions:                    
+    #                 GR_labels['GRF'][side][sphere].append("ground_force_{}_v{}".format(sphere, dimension))
+    #                 GR_labels['COP'][side][sphere].append("ground_force_{}_p{}".format(sphere, dimension))
+    #                 GR_labels['GRM'][side][sphere].append("ground_torque_{}_{}".format(sphere, dimension))
+    #         for dimension in dimensions:                    
+    #             GR_labels['GRF']['all'][side].append("ground_force_{}_v{}".format(side, dimension))
+    #             GR_labels['COP']['all'][side].append("ground_force_{}_p{}".format(side, dimension))
+    #             GR_labels['GRM']['all'][side].append("ground_torque_{}_{}".format(side, dimension))
+    #         GR_labels_fig.append(GR_labels['GRF']['all'][side])
+    #     GR_labels_fig = [item for sublist in GR_labels_fig for item in sublist]
         
-        if writeGUI:
-            # Kinematics and activations.
-            from utils import numpy_to_storage
-            labels = ['time'] + joints 
-            if torque_driven_model:
-                coordLabels = ([joint + '/activation' 
-                                for joint in muscleDrivenJoints])
-                labels += coordLabels
+    #     if writeGUI:
+    #         # Kinematics and activations.
+    #         from utils import numpy_to_storage
+    #         labels = ['time'] + joints 
+    #         if torque_driven_model:
+    #             coordLabels = ([joint + '/activation' 
+    #                             for joint in muscleDrivenJoints])
+    #             labels += coordLabels
                 
-                data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T,
-                                    aCoord_opt_nsc.T), axis=1)
-            else:
-                muscleLabels = ([bothSidesMuscle + '/activation' 
-                                for bothSidesMuscle in bothSidesMuscles])
-                labels += muscleLabels
+    #             data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T,
+    #                                 aCoord_opt_nsc.T), axis=1)
+    #         else:
+    #             muscleLabels = ([bothSidesMuscle + '/activation' 
+    #                             for bothSidesMuscle in bothSidesMuscles])
+    #             labels += muscleLabels
                 
-                data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T,
-                                    a_opt.T), axis=1)           
-            numpy_to_storage(labels, data, os.path.join(
-                pathResults, 'kinematics_activations_{}_{}.mot'.format(
-                    trialName, case)), datatype='IK')
-            # Torques
-            labels = []
-            for joint in joints:
-                if (joint == 'pelvis_tx' or joint == 'pelvis_ty' or 
-                    joint == 'pelvis_tz'):
-                    temp_suffix = "_force"
-                else:
-                    temp_suffix = "_moment"
-                labels.append(joint + temp_suffix)
-            labels = ['time'] + labels
-            data = np.concatenate((tgridf.T[:-1], torques_opt.T), axis=1) 
-            numpy_to_storage(labels, data, os.path.join(
-                pathResults, 'kinetics_{}_{}.mot'.format(trialName, case)),
-                datatype='ID')
-            # Grounds reaction forces (per sphere).
-            labels = ['time']                    
-            data = np.zeros((tgridf.T[:-1].shape[0], 1+nContactSpheres*9))
-            data[:,0] = tgridf.T[:-1].flatten()
-            idx_acc = 1
-            for c_side, side in enumerate(contactSides):
-                for c_sphere, sphere in enumerate(contactSpheres[side]):
-                    data[:,idx_acc:idx_acc+3] = GRF_s_opt[side][sphere].T
-                    idx_acc += 3
-                    data[:,idx_acc:idx_acc+3] = COP_s_opt[side][sphere].T
-                    idx_acc += 6
-                    labels += GR_labels['GRF'][side][sphere]
-                    labels += GR_labels['COP'][side][sphere]
-                    labels += GR_labels['GRM'][side][sphere]
-            numpy_to_storage(labels, data, os.path.join(
-                pathResults, 'GRF_{}_{}.mot'.format(trialName, case)),
-                datatype='GRF')
-            # Grounds reaction forces (resultant).
-            labels = ['time']
-            for c_side, side in enumerate(contactSides):
-                labels += GR_labels['GRF']['all'][side]
-                labels += GR_labels['COP']['all'][side]
-                labels += GR_labels['GRM']['all'][side]                
-            data = np.zeros((tgridf.T[:-1].shape[0], 1+len(contactSides)*9))
-            data[:,0] = tgridf.T[:-1].flatten()
-            idx_acc = 1
-            for c_side, side in enumerate(contactSides):
-                data[:,idx_acc:idx_acc+3] = GRF_all_opt[side].T
-                idx_acc += 3
-                data[:,idx_acc:idx_acc+3] = COP_all_opt[side].T
-                idx_acc += 3
-                data[:,idx_acc:idx_acc+3] = freeT_all_opt[side].T
-                idx_acc += 3     
-            numpy_to_storage(labels, data, os.path.join(
-                pathResults, 'GRF_resultant_{}_{}.mot'.format(
-                    trialName, case)), datatype='GRF')
+    #             data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T,
+    #                                 a_opt.T), axis=1)           
+    #         numpy_to_storage(labels, data, os.path.join(
+    #             pathResults, 'kinematics_activations_{}_{}.mot'.format(
+    #                 trialName, case)), datatype='IK')
+    #         # Torques
+    #         labels = []
+    #         for joint in joints:
+    #             if (joint == 'pelvis_tx' or joint == 'pelvis_ty' or 
+    #                 joint == 'pelvis_tz'):
+    #                 temp_suffix = "_force"
+    #             else:
+    #                 temp_suffix = "_moment"
+    #             labels.append(joint + temp_suffix)
+    #         labels = ['time'] + labels
+    #         data = np.concatenate((tgridf.T[:-1], torques_opt.T), axis=1) 
+    #         numpy_to_storage(labels, data, os.path.join(
+    #             pathResults, 'kinetics_{}_{}.mot'.format(trialName, case)),
+    #             datatype='ID')
+    #         # Grounds reaction forces (per sphere).
+    #         labels = ['time']                    
+    #         data = np.zeros((tgridf.T[:-1].shape[0], 1+nContactSpheres*9))
+    #         data[:,0] = tgridf.T[:-1].flatten()
+    #         idx_acc = 1
+    #         for c_side, side in enumerate(contactSides):
+    #             for c_sphere, sphere in enumerate(contactSpheres[side]):
+    #                 data[:,idx_acc:idx_acc+3] = GRF_s_opt[side][sphere].T
+    #                 idx_acc += 3
+    #                 data[:,idx_acc:idx_acc+3] = COP_s_opt[side][sphere].T
+    #                 idx_acc += 6
+    #                 labels += GR_labels['GRF'][side][sphere]
+    #                 labels += GR_labels['COP'][side][sphere]
+    #                 labels += GR_labels['GRM'][side][sphere]
+    #         numpy_to_storage(labels, data, os.path.join(
+    #             pathResults, 'GRF_{}_{}.mot'.format(trialName, case)),
+    #             datatype='GRF')
+    #         # Grounds reaction forces (resultant).
+    #         labels = ['time']
+    #         for c_side, side in enumerate(contactSides):
+    #             labels += GR_labels['GRF']['all'][side]
+    #             labels += GR_labels['COP']['all'][side]
+    #             labels += GR_labels['GRM']['all'][side]                
+    #         data = np.zeros((tgridf.T[:-1].shape[0], 1+len(contactSides)*9))
+    #         data[:,0] = tgridf.T[:-1].flatten()
+    #         idx_acc = 1
+    #         for c_side, side in enumerate(contactSides):
+    #             data[:,idx_acc:idx_acc+3] = GRF_all_opt[side].T
+    #             idx_acc += 3
+    #             data[:,idx_acc:idx_acc+3] = COP_all_opt[side].T
+    #             idx_acc += 3
+    #             data[:,idx_acc:idx_acc+3] = freeT_all_opt[side].T
+    #             idx_acc += 3     
+    #         numpy_to_storage(labels, data, os.path.join(
+    #             pathResults, 'GRF_resultant_{}_{}.mot'.format(
+    #                 trialName, case)), datatype='GRF')
 
-        # %% Data processing.
-        # Reference Qs adjusted with optimized offset.
-        refData_nsc = Qs_toTrack.to_numpy()[:,1::].T
-        refData_offset_nsc = copy.deepcopy(refData_nsc)
-        if offset_ty:                    
-            refData_offset_nsc[joints.index("pelvis_ty")] = (
-                refData_nsc[joints.index("pelvis_ty")] + offset_opt_nsc)         
-        # Qs to track adjusted with optimized offset.
-        dataToTrack_Qs_sc_offset_opt = np.zeros(
-            (dataToTrack_Qs_nsc.shape[0],
-             dataToTrack_Qs_nsc.shape[1]))                    
-        for j, joint in enumerate(coordinates_toTrack):                        
-            if joint == "pelvis_ty":                        
-                dataToTrack_Qs_sc_offset_opt[j, :] = (
-                    dataToTrack_Qs_nsc[j, :] + offset_opt[0][0])
-            else:
-                dataToTrack_Qs_sc_offset_opt[j, :] = dataToTrack_Qs_nsc[j, :]       
-        dataToTrack_Qs_sc_offset_opt = (
-            dataToTrack_Qs_sc_offset_opt / 
-            ((scaling['Qs'].to_numpy().T)[idx_coordinates_toTrack] * 
-              np.ones((1, N))))
+    #     # %% Data processing.
+    #     # Reference Qs adjusted with optimized offset.
+    #     refData_nsc = Qs_toTrack.to_numpy()[:,1::].T
+    #     refData_offset_nsc = copy.deepcopy(refData_nsc)
+    #     if offset_ty:                    
+    #         refData_offset_nsc[joints.index("pelvis_ty")] = (
+    #             refData_nsc[joints.index("pelvis_ty")] + offset_opt_nsc)         
+    #     # Qs to track adjusted with optimized offset.
+    #     dataToTrack_Qs_sc_offset_opt = np.zeros(
+    #         (dataToTrack_Qs_nsc.shape[0],
+    #          dataToTrack_Qs_nsc.shape[1]))                    
+    #     for j, joint in enumerate(coordinates_toTrack):                        
+    #         if joint == "pelvis_ty":                        
+    #             dataToTrack_Qs_sc_offset_opt[j, :] = (
+    #                 dataToTrack_Qs_nsc[j, :] + offset_opt[0][0])
+    #         else:
+    #             dataToTrack_Qs_sc_offset_opt[j, :] = dataToTrack_Qs_nsc[j, :]       
+    #     dataToTrack_Qs_sc_offset_opt = (
+    #         dataToTrack_Qs_sc_offset_opt / 
+    #         ((scaling['Qs'].to_numpy().T)[idx_coordinates_toTrack] * 
+    #           np.ones((1, N))))
                           
-        # %% Contribution different terms to the cost function.
-        # This also serves as a sanity check.
-        if torque_driven_model:
-            coordExcitationTerm_opt_all = 0
-        else:
-            activationTerm_opt_all = 0
-            activationDtTerm_opt_all = 0
-            forceDtTerm_opt_all = 0
-        if withArms:
-            armExcitationTerm_opt_all = 0
-        if withLumbarCoordinateActuators:    
-            lumbarExcitationTerm_opt_all = 0
-        if trackQdds:
-            accelerationTrackingTerm_opt_all = 0                
-        jointAccelerationTerm_opt_all = 0        
-        positionTrackingTerm_opt_all = 0
-        velocityTrackingTerm_opt_all = 0
-        if withReserveActuators:    
-            reserveActuatorTerm_opt_all = 0
-        if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:
-            vGRFRatioTerm_opt_all = 0
-        if not torque_driven_model:
-            pMT_opt = np.zeros((len(muscleDrivenJoints), N))
-            aMT_opt = np.zeros((len(muscleDrivenJoints), N))
-            Ft_opt = np.zeros((nMuscles, N))
-        pT_opt = np.zeros((nPassiveTorqueJoints, N))                    
-        h = timeElapsed / N           
-        for k in range(N):
-            # States.
-            if not torque_driven_model:
-                akj_opt = ca.horzcat(a_opt[:, k], a_col_opt[:, k*d:(k+1)*d])
-                nFkj_opt = ca.horzcat(nF_opt[:, k], nF_col_opt[:, k*d:(k+1)*d])
-                nFkj_opt_nsc = nFkj_opt * (
-                    scaling['F'].to_numpy().T * np.ones((1, d+1)))   
-            Qskj_opt = (ca.horzcat(Qs_opt[:, k], Qs_col_opt[:, k*d:(k+1)*d]))
-            Qskj_opt_nsc = Qskj_opt * (
-                scaling['Qs'].to_numpy().T * np.ones((1, d+1)))
-            Qdskj_opt = ca.horzcat(Qds_opt[:, k], Qds_col_opt[:, k*d:(k+1)*d])
-            Qdskj_opt_nsc = Qdskj_opt * (
-                scaling['Qds'].to_numpy().T * np.ones((1, d+1)))
-            # Controls.
-            if torque_driven_model:
-                eCoordk_opt = eCoord_opt[:, k]
-            else:
-                aDtk_opt = aDt_opt[:, k]
-                nFDtk_opt = nFDt_opt[:, k] 
-                nFDtk_opt_nsc = nFDt_opt_nsc[:, k]
-            if withArms:
-                eArmk_opt = eArm_opt[:, k]
-            if withLumbarCoordinateActuators:
-                eLumbark_opt = eLumbar_opt[:, k]
-            if withReserveActuators:
-                rActk_opt = {}
-                for c_j in reserveActuatorCoordinates:
-                    rActk_opt[c_j] = rAct_opt[c_j][:, k] 
-            Qddsk_opt = Qdds_opt[:, k]            
-            # Joint positions and velocities are intertwined.
-            QsQdskj_opt_nsc = ca.DM(nJoints*2, d+1)
-            QsQdskj_opt_nsc[::2, :] = Qskj_opt_nsc
-            QsQdskj_opt_nsc[1::2, :] = Qdskj_opt_nsc
+    #     # %% Contribution different terms to the cost function.
+    #     # This also serves as a sanity check.
+    #     if torque_driven_model:
+    #         coordExcitationTerm_opt_all = 0
+    #     else:
+    #         activationTerm_opt_all = 0
+    #         activationDtTerm_opt_all = 0
+    #         forceDtTerm_opt_all = 0
+    #     if withArms:
+    #         armExcitationTerm_opt_all = 0
+    #     if withLumbarCoordinateActuators:    
+    #         lumbarExcitationTerm_opt_all = 0
+    #     if trackQdds:
+    #         accelerationTrackingTerm_opt_all = 0                
+    #     jointAccelerationTerm_opt_all = 0        
+    #     positionTrackingTerm_opt_all = 0
+    #     velocityTrackingTerm_opt_all = 0
+    #     if withReserveActuators:    
+    #         reserveActuatorTerm_opt_all = 0
+    #     if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:
+    #         vGRFRatioTerm_opt_all = 0
+    #     if not torque_driven_model:
+    #         pMT_opt = np.zeros((len(muscleDrivenJoints), N))
+    #         aMT_opt = np.zeros((len(muscleDrivenJoints), N))
+    #         Ft_opt = np.zeros((nMuscles, N))
+    #     pT_opt = np.zeros((nPassiveTorqueJoints, N))                    
+    #     h = timeElapsed / N           
+    #     for k in range(N):
+    #         # States.
+    #         if not torque_driven_model:
+    #             akj_opt = ca.horzcat(a_opt[:, k], a_col_opt[:, k*d:(k+1)*d])
+    #             nFkj_opt = ca.horzcat(nF_opt[:, k], nF_col_opt[:, k*d:(k+1)*d])
+    #             nFkj_opt_nsc = nFkj_opt * (
+    #                 scaling['F'].to_numpy().T * np.ones((1, d+1)))   
+    #         Qskj_opt = (ca.horzcat(Qs_opt[:, k], Qs_col_opt[:, k*d:(k+1)*d]))
+    #         Qskj_opt_nsc = Qskj_opt * (
+    #             scaling['Qs'].to_numpy().T * np.ones((1, d+1)))
+    #         Qdskj_opt = ca.horzcat(Qds_opt[:, k], Qds_col_opt[:, k*d:(k+1)*d])
+    #         Qdskj_opt_nsc = Qdskj_opt * (
+    #             scaling['Qds'].to_numpy().T * np.ones((1, d+1)))
+    #         # Controls.
+    #         if torque_driven_model:
+    #             eCoordk_opt = eCoord_opt[:, k]
+    #         else:
+    #             aDtk_opt = aDt_opt[:, k]
+    #             nFDtk_opt = nFDt_opt[:, k] 
+    #             nFDtk_opt_nsc = nFDt_opt_nsc[:, k]
+    #         if withArms:
+    #             eArmk_opt = eArm_opt[:, k]
+    #         if withLumbarCoordinateActuators:
+    #             eLumbark_opt = eLumbar_opt[:, k]
+    #         if withReserveActuators:
+    #             rActk_opt = {}
+    #             for c_j in reserveActuatorCoordinates:
+    #                 rActk_opt[c_j] = rAct_opt[c_j][:, k] 
+    #         Qddsk_opt = Qdds_opt[:, k]            
+    #         # Joint positions and velocities are intertwined.
+    #         QsQdskj_opt_nsc = ca.DM(nJoints*2, d+1)
+    #         QsQdskj_opt_nsc[::2, :] = Qskj_opt_nsc
+    #         QsQdskj_opt_nsc[1::2, :] = Qdskj_opt_nsc
             
-            if not torque_driven_model:
-                # Polynomial approximations.             
-                # Left side.
-                Qsink_opt_l = Qskj_opt_nsc[leftPolynomialJointIndices, 0]
-                Qdsink_opt_l = Qdskj_opt_nsc[leftPolynomialJointIndices, 0]
-                [lMTk_opt_l, vMTk_opt_l, dMk_opt_l] = f_polynomial['l'](
-                    Qsink_opt_l, Qdsink_opt_l) 
-                # Right side.
-                Qsink_opt_r = Qskj_opt_nsc[rightPolynomialJointIndices, 0]
-                Qdsink_opt_r = Qdskj_opt_nsc[rightPolynomialJointIndices, 0]
-                [lMTk_opt_r, vMTk_opt_r, dMk_opt_r] = f_polynomial['r'](
-                    Qsink_opt_r, Qdsink_opt_r)
-                # Muscle-tendon lengths and velocities.      
-                lMTk_opt_lr = ca.vertcat(
-                    lMTk_opt_l[leftPolynomialMuscleIndices], 
-                    lMTk_opt_r[rightPolynomialMuscleIndices])
-                vMTk_opt_lr = ca.vertcat(
-                    vMTk_opt_l[leftPolynomialMuscleIndices], 
-                    vMTk_opt_r[rightPolynomialMuscleIndices])                
-                # Moment arms.
-                dMk_opt = {}
-                # Left side.
-                for joint in leftPolynomialJoints:
-                    if ((joint != 'mtp_angle_l') and 
-                        (joint != 'lumbar_extension') and
-                        (joint != 'lumbar_bending') and 
-                        (joint != 'lumbar_rotation')):
-                            dMk_opt[joint] = dMk_opt_l[
-                                momentArmIndices[joint], 
-                                leftPolynomialJoints.index(joint)]
-                # Right side.
-                for joint in rightPolynomialJoints:
-                    if ((joint != 'mtp_angle_r') and 
-                        (joint != 'lumbar_extension') and
-                        (joint != 'lumbar_bending') and 
-                        (joint != 'lumbar_rotation')):
-                            # We need to adjust momentArmIndices for the right 
-                            # side since polynomial indices are 'one-sided'. 
-                            # We subtract by the number of side muscles.
-                            c_ma = [i - nSideMuscles for 
-                                    i in momentArmIndices[joint]]
-                            dMk_opt[joint] = dMk_opt_r[
-                                c_ma, rightPolynomialJoints.index(joint)]
-                # Hill-equilibrium.
-                [hillEqk_opt, Fk_opt, _, _,_, _, _, aFPk_opt, pFPk_opt] = (
-                    f_hillEquilibrium(akj_opt[:, 0], lMTk_opt_lr, vMTk_opt_lr,
-                                    nFkj_opt_nsc[:, 0], nFDtk_opt_nsc))
-                Ft_opt[:,k] = Fk_opt.full().flatten()   
-                # Passive muscle moments.
-                for c_j, joint in enumerate(muscleDrivenJoints):
-                    pFk_opt_joint = pFPk_opt[momentArmIndices[joint]]
-                    pMT_opt[c_j, k] = ca.sum1(dMk_opt[joint]*pFk_opt_joint)
-                # Active muscle moments.
-                for c_j, joint in enumerate(muscleDrivenJoints):
-                    aFk_opt_joint = aFPk_opt[momentArmIndices[joint]]
-                    aMT_opt[c_j, k] = ca.sum1(dMk_opt[joint]*aFk_opt_joint)    
-            # Passive limit moments.
-            if enableLimitTorques:
-                for c_j, joint in enumerate(passiveTorqueJoints):
-                    pT_opt[c_j, k] = f_passiveTorque[joint](
-                        Qskj_opt_nsc[joints.index(joint), 0], 
-                        Qdskj_opt_nsc[joints.index(joint), 0])
-            for j in range(d):
-                if torque_driven_model:
-                    coordExcitationTerm_opt = f_nCoordinatesSum2(eCoordk_opt) 
-                    coordExcitationTerm_opt_all += weights['coordinateExcitationTerm'] * coordExcitationTerm_opt * h * B[j + 1]
-                else:
-                    activationTerm_opt = f_NMusclesSumWeightedPow(akj_opt[:, j+1], s_muscleVolume * w_muscles)
-                    activationDtTerm_opt = f_NMusclesSum2(aDtk_opt)
-                    forceDtTerm_opt = f_NMusclesSum2(nFDtk_opt)
-                    activationTerm_opt_all += weights['activationTerm'] * activationTerm_opt * h * B[j + 1]
-                    activationDtTerm_opt_all += weights['activationDtTerm'] * activationDtTerm_opt * h * B[j + 1]
-                    forceDtTerm_opt_all += weights['forceDtTerm'] * forceDtTerm_opt * h * B[j + 1]
-                jointAccelerationTerm_opt = f_nJointsSum2(Qddsk_opt)                
-                positionTrackingTerm_opt = f_NQsToTrackWSum2(Qskj_opt[idx_coordinates_toTrack, 0], dataToTrack_Qs_sc_offset_opt[:, k], w_dataToTrack)                
-                velocityTrackingTerm_opt = f_NQsToTrackWSum2(Qdskj_opt[idx_coordinates_toTrack, 0], dataToTrack_Qds_sc[:, k], w_dataToTrack)                    
-                positionTrackingTerm_opt_all += weights['positionTrackingTerm'] * positionTrackingTerm_opt * h * B[j + 1]
-                velocityTrackingTerm_opt_all += weights['velocityTrackingTerm'] * velocityTrackingTerm_opt * h * B[j + 1]
-                jointAccelerationTerm_opt_all += weights['jointAccelerationTerm'] * jointAccelerationTerm_opt * h * B[j + 1]                
-                if withArms:
-                    armExcitationTerm_opt = f_nArmJointsSum2(eArmk_opt) 
-                    armExcitationTerm_opt_all += weights['armExcitationTerm'] * armExcitationTerm_opt * h * B[j + 1]
-                if withLumbarCoordinateActuators:
-                    lumbarExcitationTerm_opt = f_nLumbarJointsSum2(eLumbark_opt) 
-                    lumbarExcitationTerm_opt_all += weights['lumbarExcitationTerm'] * lumbarExcitationTerm_opt * h * B[j + 1]
-                if trackQdds:
-                    accelerationTrackingTerm_opt = f_NQsToTrackWSum2(Qddsk_opt[idx_coordinates_toTrack], dataToTrack_Qdds_sc[:, k], w_dataToTrack)
-                    accelerationTrackingTerm_opt_all += (weights['accelerationTrackingTerm'] * accelerationTrackingTerm_opt * h * B[j + 1])
-                if withReserveActuators:
-                    reserveActuatorTerm_opt = 0
-                    for c_j in reserveActuatorCoordinates:                        
-                        reserveActuatorTerm_opt += ca.sumsqr(rActk_opt[c_j])                            
-                    reserveActuatorTerm_opt /= len(reserveActuatorCoordinates)
-                    reserveActuatorTerm_opt_all += (weights['reserveActuatorTerm'] * reserveActuatorTerm_opt * h * B[j + 1])
-                if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:
-                    for side in contactSides:                    
-                        vGRF_front_opt = 0                        
-                        for idx_front_sphere in idx_front_spheres:
-                            vGRF_front_opt += GRF_s_opt[side][contactSpheres[side][idx_front_sphere]][1,k]
-                        vGRF_rear_opt = 0
-                        for idx_rear_sphere in idx_rear_spheres:
-                            vGRF_rear_opt += GRF_s_opt[side][contactSpheres[side][idx_rear_sphere]][1,k]
-                        vGRF_ratio_opt = np.sqrt(vGRF_front_opt/vGRF_rear_opt) 
-                        vGRFRatioTerm_opt_all += (weights['vGRFRatioTerm'] * vGRF_ratio_opt * h * B[j + 1])                    
+    #         if not torque_driven_model:
+    #             # Polynomial approximations.             
+    #             # Left side.
+    #             Qsink_opt_l = Qskj_opt_nsc[leftPolynomialJointIndices, 0]
+    #             Qdsink_opt_l = Qdskj_opt_nsc[leftPolynomialJointIndices, 0]
+    #             [lMTk_opt_l, vMTk_opt_l, dMk_opt_l] = f_polynomial['l'](
+    #                 Qsink_opt_l, Qdsink_opt_l) 
+    #             # Right side.
+    #             Qsink_opt_r = Qskj_opt_nsc[rightPolynomialJointIndices, 0]
+    #             Qdsink_opt_r = Qdskj_opt_nsc[rightPolynomialJointIndices, 0]
+    #             [lMTk_opt_r, vMTk_opt_r, dMk_opt_r] = f_polynomial['r'](
+    #                 Qsink_opt_r, Qdsink_opt_r)
+    #             # Muscle-tendon lengths and velocities.      
+    #             lMTk_opt_lr = ca.vertcat(
+    #                 lMTk_opt_l[leftPolynomialMuscleIndices], 
+    #                 lMTk_opt_r[rightPolynomialMuscleIndices])
+    #             vMTk_opt_lr = ca.vertcat(
+    #                 vMTk_opt_l[leftPolynomialMuscleIndices], 
+    #                 vMTk_opt_r[rightPolynomialMuscleIndices])                
+    #             # Moment arms.
+    #             dMk_opt = {}
+    #             # Left side.
+    #             for joint in leftPolynomialJoints:
+    #                 if ((joint != 'mtp_angle_l') and 
+    #                     (joint != 'lumbar_extension') and
+    #                     (joint != 'lumbar_bending') and 
+    #                     (joint != 'lumbar_rotation')):
+    #                         dMk_opt[joint] = dMk_opt_l[
+    #                             momentArmIndices[joint], 
+    #                             leftPolynomialJoints.index(joint)]
+    #             # Right side.
+    #             for joint in rightPolynomialJoints:
+    #                 if ((joint != 'mtp_angle_r') and 
+    #                     (joint != 'lumbar_extension') and
+    #                     (joint != 'lumbar_bending') and 
+    #                     (joint != 'lumbar_rotation')):
+    #                         # We need to adjust momentArmIndices for the right 
+    #                         # side since polynomial indices are 'one-sided'. 
+    #                         # We subtract by the number of side muscles.
+    #                         c_ma = [i - nSideMuscles for 
+    #                                 i in momentArmIndices[joint]]
+    #                         dMk_opt[joint] = dMk_opt_r[
+    #                             c_ma, rightPolynomialJoints.index(joint)]
+    #             # Hill-equilibrium.
+    #             [hillEqk_opt, Fk_opt, _, _,_, _, _, aFPk_opt, pFPk_opt] = (
+    #                 f_hillEquilibrium(akj_opt[:, 0], lMTk_opt_lr, vMTk_opt_lr,
+    #                                 nFkj_opt_nsc[:, 0], nFDtk_opt_nsc))
+    #             Ft_opt[:,k] = Fk_opt.full().flatten()   
+    #             # Passive muscle moments.
+    #             for c_j, joint in enumerate(muscleDrivenJoints):
+    #                 pFk_opt_joint = pFPk_opt[momentArmIndices[joint]]
+    #                 pMT_opt[c_j, k] = ca.sum1(dMk_opt[joint]*pFk_opt_joint)
+    #             # Active muscle moments.
+    #             for c_j, joint in enumerate(muscleDrivenJoints):
+    #                 aFk_opt_joint = aFPk_opt[momentArmIndices[joint]]
+    #                 aMT_opt[c_j, k] = ca.sum1(dMk_opt[joint]*aFk_opt_joint)    
+    #         # Passive limit moments.
+    #         if enableLimitTorques:
+    #             for c_j, joint in enumerate(passiveTorqueJoints):
+    #                 pT_opt[c_j, k] = f_passiveTorque[joint](
+    #                     Qskj_opt_nsc[joints.index(joint), 0], 
+    #                     Qdskj_opt_nsc[joints.index(joint), 0])
+    #         for j in range(d):
+    #             if torque_driven_model:
+    #                 coordExcitationTerm_opt = f_nCoordinatesSum2(eCoordk_opt) 
+    #                 coordExcitationTerm_opt_all += weights['coordinateExcitationTerm'] * coordExcitationTerm_opt * h * B[j + 1]
+    #             else:
+    #                 activationTerm_opt = f_NMusclesSumWeightedPow(akj_opt[:, j+1], s_muscleVolume * w_muscles)
+    #                 activationDtTerm_opt = f_NMusclesSum2(aDtk_opt)
+    #                 forceDtTerm_opt = f_NMusclesSum2(nFDtk_opt)
+    #                 activationTerm_opt_all += weights['activationTerm'] * activationTerm_opt * h * B[j + 1]
+    #                 activationDtTerm_opt_all += weights['activationDtTerm'] * activationDtTerm_opt * h * B[j + 1]
+    #                 forceDtTerm_opt_all += weights['forceDtTerm'] * forceDtTerm_opt * h * B[j + 1]
+    #             jointAccelerationTerm_opt = f_nJointsSum2(Qddsk_opt)                
+    #             positionTrackingTerm_opt = f_NQsToTrackWSum2(Qskj_opt[idx_coordinates_toTrack, 0], dataToTrack_Qs_sc_offset_opt[:, k], w_dataToTrack)                
+    #             velocityTrackingTerm_opt = f_NQsToTrackWSum2(Qdskj_opt[idx_coordinates_toTrack, 0], dataToTrack_Qds_sc[:, k], w_dataToTrack)                    
+    #             positionTrackingTerm_opt_all += weights['positionTrackingTerm'] * positionTrackingTerm_opt * h * B[j + 1]
+    #             velocityTrackingTerm_opt_all += weights['velocityTrackingTerm'] * velocityTrackingTerm_opt * h * B[j + 1]
+    #             jointAccelerationTerm_opt_all += weights['jointAccelerationTerm'] * jointAccelerationTerm_opt * h * B[j + 1]                
+    #             if withArms:
+    #                 armExcitationTerm_opt = f_nArmJointsSum2(eArmk_opt) 
+    #                 armExcitationTerm_opt_all += weights['armExcitationTerm'] * armExcitationTerm_opt * h * B[j + 1]
+    #             if withLumbarCoordinateActuators:
+    #                 lumbarExcitationTerm_opt = f_nLumbarJointsSum2(eLumbark_opt) 
+    #                 lumbarExcitationTerm_opt_all += weights['lumbarExcitationTerm'] * lumbarExcitationTerm_opt * h * B[j + 1]
+    #             if trackQdds:
+    #                 accelerationTrackingTerm_opt = f_NQsToTrackWSum2(Qddsk_opt[idx_coordinates_toTrack], dataToTrack_Qdds_sc[:, k], w_dataToTrack)
+    #                 accelerationTrackingTerm_opt_all += (weights['accelerationTrackingTerm'] * accelerationTrackingTerm_opt * h * B[j + 1])
+    #             if withReserveActuators:
+    #                 reserveActuatorTerm_opt = 0
+    #                 for c_j in reserveActuatorCoordinates:                        
+    #                     reserveActuatorTerm_opt += ca.sumsqr(rActk_opt[c_j])                            
+    #                 reserveActuatorTerm_opt /= len(reserveActuatorCoordinates)
+    #                 reserveActuatorTerm_opt_all += (weights['reserveActuatorTerm'] * reserveActuatorTerm_opt * h * B[j + 1])
+    #             if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:
+    #                 for side in contactSides:                    
+    #                     vGRF_front_opt = 0                        
+    #                     for idx_front_sphere in idx_front_spheres:
+    #                         vGRF_front_opt += GRF_s_opt[side][contactSpheres[side][idx_front_sphere]][1,k]
+    #                     vGRF_rear_opt = 0
+    #                     for idx_rear_sphere in idx_rear_spheres:
+    #                         vGRF_rear_opt += GRF_s_opt[side][contactSpheres[side][idx_rear_sphere]][1,k]
+    #                     vGRF_ratio_opt = np.sqrt(vGRF_front_opt/vGRF_rear_opt) 
+    #                     vGRFRatioTerm_opt_all += (weights['vGRFRatioTerm'] * vGRF_ratio_opt * h * B[j + 1])                    
                 
-        # "Motor control" terms.
-        if torque_driven_model:
-            JMotor_opt = coordExcitationTerm_opt_all.full()
-        else:
-            JMotor_opt = (activationTerm_opt_all.full() + 
-                        activationDtTerm_opt_all.full() + 
-                        forceDtTerm_opt_all.full())
-        JMotor_opt += jointAccelerationTerm_opt_all.full()
-        if withArms:                
-            JMotor_opt += armExcitationTerm_opt_all.full()
-        if withLumbarCoordinateActuators:
-            JMotor_opt += lumbarExcitationTerm_opt_all.full()
-        if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:
-            JMotor_opt += vGRFRatioTerm_opt_all
-        if withReserveActuators:    
-            JMotor_opt += reserveActuatorTerm_opt_all
-        # Tracking terms.
-        JTrack_opt = (positionTrackingTerm_opt_all.full() +  
-                      velocityTrackingTerm_opt_all.full())
-        if trackQdds:
-            JTrack_opt += accelerationTrackingTerm_opt_all.full()
-        # Combined terms.
-        JAll_opt = JTrack_opt + JMotor_opt
-        if stats['success']:
-            assert np.all(
-                np.abs(JAll_opt[0][0] - stats['iterations']['obj'][-1]) 
-                <= 1e-5), "Error reconstructing optimal cost value"        
-        JTerms = {}
-        if torque_driven_model:
-            JTerms["coordinateExcitationTerm"] = coordExcitationTerm_opt_all.full()[0][0]
-        else:
-            JTerms["activationTerm"] = activationTerm_opt_all.full()[0][0]
-            JTerms["activationDtTerm"] = activationDtTerm_opt_all.full()[0][0]
-            JTerms["forceDtTerm"] = forceDtTerm_opt_all.full()[0][0]
-        if withArms:
-            JTerms["armExcitationTerm"] = armExcitationTerm_opt_all.full()[0][0]
-        if withLumbarCoordinateActuators:
-            JTerms["lumbarExcitationTerm"] = lumbarExcitationTerm_opt_all.full()[0][0]
-        JTerms["jointAccelerationTerm"] = jointAccelerationTerm_opt_all.full()[0][0]        
-        JTerms["positionTerm"] = positionTrackingTerm_opt_all.full()[0][0]
-        JTerms["velocityTerm"] = velocityTrackingTerm_opt_all.full()[0][0]
-        if trackQdds:
-            JTerms["accelerationTerm"] = accelerationTrackingTerm_opt_all.full()[0][0]        
-        if torque_driven_model:
-            JTerms["coordinateExcitationTerm_sc"] = JTerms["coordinateExcitationTerm"] / JAll_opt[0][0]
-        else:
-            JTerms["activationTerm_sc"] = JTerms["activationTerm"] / JAll_opt[0][0]
-            JTerms["activationDtTerm_sc"] = JTerms["activationDtTerm"] / JAll_opt[0][0]
-            JTerms["forceDtTerm_sc"] = JTerms["forceDtTerm"] / JAll_opt[0][0]
-        if withArms:
-            JTerms["armExcitationTerm_sc"] = JTerms["armExcitationTerm"] / JAll_opt[0][0]
-        if withLumbarCoordinateActuators:
-            JTerms["lumbarExcitationTerm_sc"] = JTerms["lumbarExcitationTerm"] / JAll_opt[0][0]
-        JTerms["jointAccelerationTerm_sc"] = JTerms["jointAccelerationTerm"] / JAll_opt[0][0]
+    #     # "Motor control" terms.
+    #     if torque_driven_model:
+    #         JMotor_opt = coordExcitationTerm_opt_all.full()
+    #     else:
+    #         JMotor_opt = (activationTerm_opt_all.full() + 
+    #                     activationDtTerm_opt_all.full() + 
+    #                     forceDtTerm_opt_all.full())
+    #     JMotor_opt += jointAccelerationTerm_opt_all.full()
+    #     if withArms:                
+    #         JMotor_opt += armExcitationTerm_opt_all.full()
+    #     if withLumbarCoordinateActuators:
+    #         JMotor_opt += lumbarExcitationTerm_opt_all.full()
+    #     if min_ratio_vGRF and weights['vGRFRatioTerm'] > 0:
+    #         JMotor_opt += vGRFRatioTerm_opt_all
+    #     if withReserveActuators:    
+    #         JMotor_opt += reserveActuatorTerm_opt_all
+    #     # Tracking terms.
+    #     JTrack_opt = (positionTrackingTerm_opt_all.full() +  
+    #                   velocityTrackingTerm_opt_all.full())
+    #     if trackQdds:
+    #         JTrack_opt += accelerationTrackingTerm_opt_all.full()
+    #     # Combined terms.
+    #     JAll_opt = JTrack_opt + JMotor_opt
+    #     if stats['success']:
+    #         assert np.all(
+    #             np.abs(JAll_opt[0][0] - stats['iterations']['obj'][-1]) 
+    #             <= 1e-5), "Error reconstructing optimal cost value"        
+    #     JTerms = {}
+    #     if torque_driven_model:
+    #         JTerms["coordinateExcitationTerm"] = coordExcitationTerm_opt_all.full()[0][0]
+    #     else:
+    #         JTerms["activationTerm"] = activationTerm_opt_all.full()[0][0]
+    #         JTerms["activationDtTerm"] = activationDtTerm_opt_all.full()[0][0]
+    #         JTerms["forceDtTerm"] = forceDtTerm_opt_all.full()[0][0]
+    #     if withArms:
+    #         JTerms["armExcitationTerm"] = armExcitationTerm_opt_all.full()[0][0]
+    #     if withLumbarCoordinateActuators:
+    #         JTerms["lumbarExcitationTerm"] = lumbarExcitationTerm_opt_all.full()[0][0]
+    #     JTerms["jointAccelerationTerm"] = jointAccelerationTerm_opt_all.full()[0][0]        
+    #     JTerms["positionTerm"] = positionTrackingTerm_opt_all.full()[0][0]
+    #     JTerms["velocityTerm"] = velocityTrackingTerm_opt_all.full()[0][0]
+    #     if trackQdds:
+    #         JTerms["accelerationTerm"] = accelerationTrackingTerm_opt_all.full()[0][0]        
+    #     if torque_driven_model:
+    #         JTerms["coordinateExcitationTerm_sc"] = JTerms["coordinateExcitationTerm"] / JAll_opt[0][0]
+    #     else:
+    #         JTerms["activationTerm_sc"] = JTerms["activationTerm"] / JAll_opt[0][0]
+    #         JTerms["activationDtTerm_sc"] = JTerms["activationDtTerm"] / JAll_opt[0][0]
+    #         JTerms["forceDtTerm_sc"] = JTerms["forceDtTerm"] / JAll_opt[0][0]
+    #     if withArms:
+    #         JTerms["armExcitationTerm_sc"] = JTerms["armExcitationTerm"] / JAll_opt[0][0]
+    #     if withLumbarCoordinateActuators:
+    #         JTerms["lumbarExcitationTerm_sc"] = JTerms["lumbarExcitationTerm"] / JAll_opt[0][0]
+    #     JTerms["jointAccelerationTerm_sc"] = JTerms["jointAccelerationTerm"] / JAll_opt[0][0]
         
-        JTerms["positionTerm_sc"] = JTerms["positionTerm"] / JAll_opt[0][0]
-        JTerms["velocityTerm_sc"] = JTerms["velocityTerm"] / JAll_opt[0][0]
-        if trackQdds:
-            JTerms["accelerationTerm_sc"] = JTerms["accelerationTerm"] / JAll_opt[0][0]                
-        # Print out contributions to the cost function.
-        print("\nContributions to the objective function:")
-        if torque_driven_model:
-            print("\tCoordinate excitations: {}%".format(np.round(JTerms["coordinateExcitationTerm_sc"] * 100, 2)))
-        else:
-            print("\tMuscle activations: {}%".format(np.round(JTerms["activationTerm_sc"] * 100, 2)))
-            print("\tMuscle activation derivatives: {}%".format(np.round(JTerms["activationDtTerm_sc"] * 100, 2)))
-            print("\tMuscle-tendon force derivatives: {}%".format(np.round(JTerms["forceDtTerm_sc"] * 100, 2)))
-        if withArms:
-            print("\tArm excitations: {}%".format(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)))
-        if withLumbarCoordinateActuators:
-            print("\tLumbar excitations: {}%".format(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)))
-        print("\tJoint accelerations: {}%".format(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)))        
-        print("\tPosition tracking: {}%".format(np.round(JTerms["positionTerm_sc"] * 100, 2)))
-        print("\tVelocity tracking: {}%".format(np.round(JTerms["velocityTerm_sc"] * 100, 2)))
-        if trackQdds:
-            print("\tAcceleration tracking: {}%".format(np.round(JTerms["accelerationTerm_sc"] * 100, 2)))           
-        print("\nNumber of iterations: {}\n".format(stats["iter_count"]))
+    #     JTerms["positionTerm_sc"] = JTerms["positionTerm"] / JAll_opt[0][0]
+    #     JTerms["velocityTerm_sc"] = JTerms["velocityTerm"] / JAll_opt[0][0]
+    #     if trackQdds:
+    #         JTerms["accelerationTerm_sc"] = JTerms["accelerationTerm"] / JAll_opt[0][0]                
+    #     # Print out contributions to the cost function.
+    #     print("\nContributions to the objective function:")
+    #     if torque_driven_model:
+    #         print("\tCoordinate excitations: {}%".format(np.round(JTerms["coordinateExcitationTerm_sc"] * 100, 2)))
+    #     else:
+    #         print("\tMuscle activations: {}%".format(np.round(JTerms["activationTerm_sc"] * 100, 2)))
+    #         print("\tMuscle activation derivatives: {}%".format(np.round(JTerms["activationDtTerm_sc"] * 100, 2)))
+    #         print("\tMuscle-tendon force derivatives: {}%".format(np.round(JTerms["forceDtTerm_sc"] * 100, 2)))
+    #     if withArms:
+    #         print("\tArm excitations: {}%".format(np.round(JTerms["armExcitationTerm_sc"] * 100, 2)))
+    #     if withLumbarCoordinateActuators:
+    #         print("\tLumbar excitations: {}%".format(np.round(JTerms["lumbarExcitationTerm_sc"] * 100, 2)))
+    #     print("\tJoint accelerations: {}%".format(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)))        
+    #     print("\tPosition tracking: {}%".format(np.round(JTerms["positionTerm_sc"] * 100, 2)))
+    #     print("\tVelocity tracking: {}%".format(np.round(JTerms["velocityTerm_sc"] * 100, 2)))
+    #     if trackQdds:
+    #         print("\tAcceleration tracking: {}%".format(np.round(JTerms["accelerationTerm_sc"] * 100, 2)))           
+    #     print("\nNumber of iterations: {}\n".format(stats["iter_count"]))
             
-        # %% Compute knee adduction moments.
-        if computeKAM:            
-            sys.path.append(os.path.join(baseDir, 'OpenSimPipeline',
-                                         'JointReaction'))
-            from computeJointLoading import computeKAM
-            KAM_labels = ['KAM_r', 'KAM_l']
-            IDPath = os.path.join(
-                pathResults, 'kinetics_{}_{}.mot'.format(trialName, case))
-            IKPath = os.path.join(
-                pathResults, 
-                'kinematics_activations_{}_{}.mot'.format(trialName, case))
-            GRFPath = os.path.join(
-                pathResults, 'GRF_{}_{}.mot'.format(trialName, case))
-            c_KAM = computeKAM(pathGenericTemplates,
-                               pathResults, pathModelFile, IDPath, 
-                               IKPath, GRFPath, grfType='sphere',
-                               contactSides=contactSides,
-                               contactSpheres=contactSpheres,
-                               Qds=Qds_opt_nsc.T)
-            KAM = np.concatenate(
-                (np.expand_dims(c_KAM['KAM_r'], axis=1),
-                 np.expand_dims(c_KAM['KAM_l'], axis=1)), axis=1).T              
+    #     # %% Compute knee adduction moments.
+    #     if computeKAM:            
+    #         sys.path.append(os.path.join(baseDir, 'OpenSimPipeline',
+    #                                      'JointReaction'))
+    #         from computeJointLoading import computeKAM
+    #         KAM_labels = ['KAM_r', 'KAM_l']
+    #         IDPath = os.path.join(
+    #             pathResults, 'kinetics_{}_{}.mot'.format(trialName, case))
+    #         IKPath = os.path.join(
+    #             pathResults, 
+    #             'kinematics_activations_{}_{}.mot'.format(trialName, case))
+    #         GRFPath = os.path.join(
+    #             pathResults, 'GRF_{}_{}.mot'.format(trialName, case))
+    #         c_KAM = computeKAM(pathGenericTemplates,
+    #                            pathResults, pathModelFile, IDPath, 
+    #                            IKPath, GRFPath, grfType='sphere',
+    #                            contactSides=contactSides,
+    #                            contactSpheres=contactSpheres,
+    #                            Qds=Qds_opt_nsc.T)
+    #         KAM = np.concatenate(
+    #             (np.expand_dims(c_KAM['KAM_r'], axis=1),
+    #              np.expand_dims(c_KAM['KAM_l'], axis=1)), axis=1).T              
                 
-        # %% Compute medial knee contact forces.
-        if torque_driven_model:
-            computeMCF = False
-            print("To compute medial knee contact forces, use a muscle-driven model.\n")
-        if computeMCF:
-            # Export muscle forces and non muscle-driven torques (if existing).
-            import pandas as pd
-            labels = ['time'] 
-            labels += bothSidesMuscles
-            # Muscle forces.
-            data = np.concatenate((tgridf.T[:-1], Ft_opt.T),axis=1)
-            # Extract non muscle-driven torques (reserve actuators, limit 
-            # torques, torques for coordinate actuators, passive torques).
-            labels_torques = []
-            data_torques = pd.DataFrame()
-            if withReserveActuators:
-                for count_j, c_j in enumerate(reserveActuatorCoordinates):                    
-                    if c_j in data_torques:
-                        data_torques[c_j] += rAct_opt_nsc[c_j]
-                    else:
-                        labels_torques.append(c_j)
-                        data_torques.insert(data_torques.shape[1], 
-                                            c_j, rAct_opt_nsc[c_j].flatten())
-            if enableLimitTorques:
-                for count_j, c_j in enumerate(passiveTorqueJoints):
-                    if c_j in data_torques:
-                        data_torques[c_j] += pT_opt[count_j,:]
-                    else:
-                        labels_torques.append(c_j)
-                        data_torques.insert(data_torques.shape[1], 
-                                            c_j, pT_opt[count_j,:])
-            if withLumbarCoordinateActuators:
-                for count_j, c_j in enumerate(lumbarJoints):
-                    aLumbar_opt_nsc = (
-                        scaling['LumbarE'].iloc[0][c_j] * 
-                        aLumbar_opt[count_j,:-1])
-                    if c_j in data_torques:
-                        data_torques[c_j] += aLumbar_opt_nsc
-                    else:
-                        labels_torques.append(c_j)
-                        data_torques.insert(data_torques.shape[1],
-                                            c_j, aLumbar_opt_nsc)
-                    assert np.all(
-                            np.abs(torques_opt[joints.index(c_j),:]
-                                   - data_torques[c_j]) 
-                            < 10**(-2)), "error torques coordinate actuators"
-            if withArms:
-                for count_j, c_j in enumerate(armJoints):
-                    aArm_opt_nsc = (scaling['ArmE'].iloc[0][c_j] * 
-                                    aArm_opt[count_j,:-1])
-                    c_torque = linearPassiveTorqueArms_opt[count_j,:-1]
-                    if c_j in data_torques:
-                        data_torques[c_j] += (aArm_opt_nsc + c_torque)
-                    else:
-                        labels_torques.append(c_j)
-                        data_torques.insert(data_torques.shape[1], c_j, 
-                                            aArm_opt_nsc + c_torque)
-                    assert np.all(
-                            np.abs(torques_opt[joints.index(c_j),:] 
-                                   - data_torques[c_j]) 
-                            < 10**(-2)), "error torques arms"
-            # Sanity check for muscle-driven joints
-            for count_j, c_j in enumerate(muscleDrivenJoints):
-                if c_j in data_torques:
-                    c_data_torques = data_torques[c_j].to_numpy()
-                else:
-                    c_data_torques = np.zeros((data_torques.shape[0],))
-                assert np.all(
-                        np.abs(torques_opt[joints.index(c_j),:] - (
-                            c_data_torques + pMT_opt[count_j, :] + 
-                            aMT_opt[count_j, :])) 
-                        < 10**(-2)), "error torques muscle-driven joints"
-            data_torques_np = data_torques.to_numpy()
-            if len(data_torques) > 0:
-                data = np.concatenate((data, data_torques_np),axis=1)
-                labels += labels_torques
-            numpy_to_storage(labels, data, os.path.join(
-                pathResults, 'forces_{}_{}.mot'.format(trialName, case)),
-                datatype='muscle_forces')
-            # Compute medial knee contact forces.
-            if not computeKAM:            
-                sys.path.append(os.path.join(baseDir, 'OpenSimPipeline',
-                                             'JointReaction'))
-            from computeJointLoading import computeMCF
-            MCF_labels = ['MCF_r', 'MCF_l']
-            forcePath = os.path.join(pathResults, 
-                'forces_{}_{}.mot'.format(trialName, case))
-            IK_act_Path = os.path.join(pathResults, 
-                'kinematics_activations_{}_{}.mot'.format(trialName, case))
-            GRFPath = os.path.join(
-                pathResults, 'GRF_{}_{}.mot'.format(trialName, case))                
-            c_MCF = computeMCF(pathGenericTemplates, pathResults, 
-                               pathModelFile, IK_act_Path, 
-                               IK_act_Path, GRFPath, grfType='sphere',
-                               contactSides=contactSides,
-                               contactSpheres=contactSpheres,
-                               muscleForceFilePath=forcePath,
-                               pathReserveGeneralizedForces=forcePath,
-                               Qds=Qds_opt_nsc.T,
-                               replaceMuscles=True)
-            MCF = np.concatenate(
-                (np.expand_dims(c_MCF['MCF_r'], axis=1),
-                 np.expand_dims(c_MCF['MCF_l'], axis=1)), axis=1).T
+    #     # %% Compute medial knee contact forces.
+    #     if torque_driven_model:
+    #         computeMCF = False
+    #         print("To compute medial knee contact forces, use a muscle-driven model.\n")
+    #     if computeMCF:
+    #         # Export muscle forces and non muscle-driven torques (if existing).
+    #         import pandas as pd
+    #         labels = ['time'] 
+    #         labels += bothSidesMuscles
+    #         # Muscle forces.
+    #         data = np.concatenate((tgridf.T[:-1], Ft_opt.T),axis=1)
+    #         # Extract non muscle-driven torques (reserve actuators, limit 
+    #         # torques, torques for coordinate actuators, passive torques).
+    #         labels_torques = []
+    #         data_torques = pd.DataFrame()
+    #         if withReserveActuators:
+    #             for count_j, c_j in enumerate(reserveActuatorCoordinates):                    
+    #                 if c_j in data_torques:
+    #                     data_torques[c_j] += rAct_opt_nsc[c_j]
+    #                 else:
+    #                     labels_torques.append(c_j)
+    #                     data_torques.insert(data_torques.shape[1], 
+    #                                         c_j, rAct_opt_nsc[c_j].flatten())
+    #         if enableLimitTorques:
+    #             for count_j, c_j in enumerate(passiveTorqueJoints):
+    #                 if c_j in data_torques:
+    #                     data_torques[c_j] += pT_opt[count_j,:]
+    #                 else:
+    #                     labels_torques.append(c_j)
+    #                     data_torques.insert(data_torques.shape[1], 
+    #                                         c_j, pT_opt[count_j,:])
+    #         if withLumbarCoordinateActuators:
+    #             for count_j, c_j in enumerate(lumbarJoints):
+    #                 aLumbar_opt_nsc = (
+    #                     scaling['LumbarE'].iloc[0][c_j] * 
+    #                     aLumbar_opt[count_j,:-1])
+    #                 if c_j in data_torques:
+    #                     data_torques[c_j] += aLumbar_opt_nsc
+    #                 else:
+    #                     labels_torques.append(c_j)
+    #                     data_torques.insert(data_torques.shape[1],
+    #                                         c_j, aLumbar_opt_nsc)
+    #                 assert np.all(
+    #                         np.abs(torques_opt[joints.index(c_j),:]
+    #                                - data_torques[c_j]) 
+    #                         < 10**(-2)), "error torques coordinate actuators"
+    #         if withArms:
+    #             for count_j, c_j in enumerate(armJoints):
+    #                 aArm_opt_nsc = (scaling['ArmE'].iloc[0][c_j] * 
+    #                                 aArm_opt[count_j,:-1])
+    #                 c_torque = linearPassiveTorqueArms_opt[count_j,:-1]
+    #                 if c_j in data_torques:
+    #                     data_torques[c_j] += (aArm_opt_nsc + c_torque)
+    #                 else:
+    #                     labels_torques.append(c_j)
+    #                     data_torques.insert(data_torques.shape[1], c_j, 
+    #                                         aArm_opt_nsc + c_torque)
+    #                 assert np.all(
+    #                         np.abs(torques_opt[joints.index(c_j),:] 
+    #                                - data_torques[c_j]) 
+    #                         < 10**(-2)), "error torques arms"
+    #         # Sanity check for muscle-driven joints
+    #         for count_j, c_j in enumerate(muscleDrivenJoints):
+    #             if c_j in data_torques:
+    #                 c_data_torques = data_torques[c_j].to_numpy()
+    #             else:
+    #                 c_data_torques = np.zeros((data_torques.shape[0],))
+    #             assert np.all(
+    #                     np.abs(torques_opt[joints.index(c_j),:] - (
+    #                         c_data_torques + pMT_opt[count_j, :] + 
+    #                         aMT_opt[count_j, :])) 
+    #                     < 10**(-2)), "error torques muscle-driven joints"
+    #         data_torques_np = data_torques.to_numpy()
+    #         if len(data_torques) > 0:
+    #             data = np.concatenate((data, data_torques_np),axis=1)
+    #             labels += labels_torques
+    #         numpy_to_storage(labels, data, os.path.join(
+    #             pathResults, 'forces_{}_{}.mot'.format(trialName, case)),
+    #             datatype='muscle_forces')
+    #         # Compute medial knee contact forces.
+    #         if not computeKAM:            
+    #             sys.path.append(os.path.join(baseDir, 'OpenSimPipeline',
+    #                                          'JointReaction'))
+    #         from computeJointLoading import computeMCF
+    #         MCF_labels = ['MCF_r', 'MCF_l']
+    #         forcePath = os.path.join(pathResults, 
+    #             'forces_{}_{}.mot'.format(trialName, case))
+    #         IK_act_Path = os.path.join(pathResults, 
+    #             'kinematics_activations_{}_{}.mot'.format(trialName, case))
+    #         GRFPath = os.path.join(
+    #             pathResults, 'GRF_{}_{}.mot'.format(trialName, case))                
+    #         c_MCF = computeMCF(pathGenericTemplates, pathResults, 
+    #                            pathModelFile, IK_act_Path, 
+    #                            IK_act_Path, GRFPath, grfType='sphere',
+    #                            contactSides=contactSides,
+    #                            contactSpheres=contactSpheres,
+    #                            muscleForceFilePath=forcePath,
+    #                            pathReserveGeneralizedForces=forcePath,
+    #                            Qds=Qds_opt_nsc.T,
+    #                            replaceMuscles=True)
+    #         MCF = np.concatenate(
+    #             (np.expand_dims(c_MCF['MCF_r'], axis=1),
+    #              np.expand_dims(c_MCF['MCF_l'], axis=1)), axis=1).T
                 
-        # %% Express forces in %BW and torques in %BW*height.
-        gravity = 9.80665
-        BW = settings['mass_kg'] * gravity
-        BW_ht = BW * settings['height_m']
-        GRF_BW_all_opt = GRF_all_opt['all'] / BW * 100
-        GRM_BWht_all_opt = GRM_all_opt['all'] / BW_ht * 100
-        torques_BWht_opt = torques_opt / BW_ht * 100
-        if computeKAM:
-            KAM_BWht = KAM / BW_ht * 100
-        if computeMCF:
-            MCF_BW = MCF / BW * 100
+    #     # %% Express forces in %BW and torques in %BW*height.
+    #     gravity = 9.80665
+    #     BW = settings['mass_kg'] * gravity
+    #     BW_ht = BW * settings['height_m']
+    #     GRF_BW_all_opt = GRF_all_opt['all'] / BW * 100
+    #     GRM_BWht_all_opt = GRM_all_opt['all'] / BW_ht * 100
+    #     torques_BWht_opt = torques_opt / BW_ht * 100
+    #     if computeKAM:
+    #         KAM_BWht = KAM / BW_ht * 100
+    #     if computeMCF:
+    #         MCF_BW = MCF / BW * 100
             
-        # %% Save optimal trajectories.
-        if not os.path.exists(os.path.join(pathResults,
-                                           'optimaltrajectories.npy')): 
-                optimaltrajectories = {}
-        else:  
-            optimaltrajectories = np.load(
-                    os.path.join(pathResults, 'optimaltrajectories.npy'),
-                    allow_pickle=True)   
-            optimaltrajectories = optimaltrajectories.item()
-        optimaltrajectories[case] = {
-            'coordinate_values_toTrack': refData_offset_nsc,
-            'coordinate_values': Qs_opt_nsc,
-            'coordinate_speeds_toTrack': refData_Qds_nsc,
-            'coordinate_speeds': Qds_opt_nsc, 
-            'coordinate_accelerations_toTrack': refData_Qdds_nsc,
-            'coordinate_accelerations': Qdds_opt_nsc,
-            'torques': torques_opt,
-            'torques_BWht': torques_BWht_opt,
-            'GRF': GRF_all_opt['all'],
-            'GRF_BW': GRF_BW_all_opt,
-            'GRM': GRM_all_opt['all'],
-            'GRM_BWht': GRM_BWht_all_opt,
-            'coordinates': joints,
-            'rotationalCoordinates': rotationalJoints,
-            'GRF_labels': GR_labels_fig,
-            'time': tgridf,
-            'muscles': bothSidesMuscles,
-            'passive_limit_torques': pT_opt,
-            'muscle_driven_joints': muscleDrivenJoints,
-            'limit_torques_joints': passiveTorqueJoints}             
-        if computeKAM:
-            optimaltrajectories[case]['KAM'] = KAM
-            optimaltrajectories[case]['KAM_BWht'] = KAM_BWht
-            optimaltrajectories[case]['KAM_labels'] = KAM_labels
-        if computeMCF:
-            optimaltrajectories[case]['MCF'] = MCF
-            optimaltrajectories[case]['MCF_BW'] = MCF_BW
-            optimaltrajectories[case]['MCF_labels'] = MCF_labels              
-        optimaltrajectories[case]['iter'] = stats['iter_count']
+    #     # %% Save optimal trajectories.
+    #     if not os.path.exists(os.path.join(pathResults,
+    #                                        'optimaltrajectories.npy')): 
+    #             optimaltrajectories = {}
+    #     else:  
+    #         optimaltrajectories = np.load(
+    #                 os.path.join(pathResults, 'optimaltrajectories.npy'),
+    #                 allow_pickle=True)   
+    #         optimaltrajectories = optimaltrajectories.item()
+    #     optimaltrajectories[case] = {
+    #         'coordinate_values_toTrack': refData_offset_nsc,
+    #         'coordinate_values': Qs_opt_nsc,
+    #         'coordinate_speeds_toTrack': refData_Qds_nsc,
+    #         'coordinate_speeds': Qds_opt_nsc, 
+    #         'coordinate_accelerations_toTrack': refData_Qdds_nsc,
+    #         'coordinate_accelerations': Qdds_opt_nsc,
+    #         'torques': torques_opt,
+    #         'torques_BWht': torques_BWht_opt,
+    #         'GRF': GRF_all_opt['all'],
+    #         'GRF_BW': GRF_BW_all_opt,
+    #         'GRM': GRM_all_opt['all'],
+    #         'GRM_BWht': GRM_BWht_all_opt,
+    #         'coordinates': joints,
+    #         'rotationalCoordinates': rotationalJoints,
+    #         'GRF_labels': GR_labels_fig,
+    #         'time': tgridf,
+    #         'muscles': bothSidesMuscles,
+    #         'passive_limit_torques': pT_opt,
+    #         'muscle_driven_joints': muscleDrivenJoints,
+    #         'limit_torques_joints': passiveTorqueJoints}             
+    #     if computeKAM:
+    #         optimaltrajectories[case]['KAM'] = KAM
+    #         optimaltrajectories[case]['KAM_BWht'] = KAM_BWht
+    #         optimaltrajectories[case]['KAM_labels'] = KAM_labels
+    #     if computeMCF:
+    #         optimaltrajectories[case]['MCF'] = MCF
+    #         optimaltrajectories[case]['MCF_BW'] = MCF_BW
+    #         optimaltrajectories[case]['MCF_labels'] = MCF_labels              
+    #     optimaltrajectories[case]['iter'] = stats['iter_count']
 
-        if torque_driven_model:
-            optimaltrajectories[case]['coordinate_activations'] = aCoord_opt_nsc
-        else:
-            optimaltrajectories[case]['muscle_activations'] = a_opt        
-            optimaltrajectories[case]['passive_muscle_torques'] = pMT_opt
-            optimaltrajectories[case]['passive_muscle_torques'] = aMT_opt
+    #     if torque_driven_model:
+    #         optimaltrajectories[case]['coordinate_activations'] = aCoord_opt_nsc
+    #     else:
+    #         optimaltrajectories[case]['muscle_activations'] = a_opt        
+    #         optimaltrajectories[case]['passive_muscle_torques'] = pMT_opt
+    #         optimaltrajectories[case]['passive_muscle_torques'] = aMT_opt
                 
-        np.save(os.path.join(pathResults, 'optimaltrajectories.npy'),
-                optimaltrajectories)
+    #     np.save(os.path.join(pathResults, 'optimaltrajectories.npy'),
+    #             optimaltrajectories)
