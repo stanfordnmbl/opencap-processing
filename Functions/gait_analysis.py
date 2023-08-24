@@ -12,7 +12,7 @@ import sys
 sys.path.append("..")
 
 import utilsKinematics
-# import utils
+import utils
 
 def gait_analysis(trial_id,nGaitCycles=1):
     
@@ -31,12 +31,12 @@ def gait_analysis(trial_id,nGaitCycles=1):
     # init gait analysis
     gait = utilsKinematics.gait_analysis(dataDir, trialName, 
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
-                 n_gait_cycles=1)
+                 n_gait_cycles=2)
     
     
     scalar_names = {'gait_speed','stride_length'}
             
-    gaitScalars = gait.get_scalars(scalar_names)
+    gaitScalars = gait.calc_scalars(scalar_names)
     
     # post results
     

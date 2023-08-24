@@ -435,71 +435,188 @@ class gait_analysis:
         self.coordinates = [self.coordinateSet.get(i).getName() 
                             for i in range(self.nCoordinates)]
         
-        # Segment by gait cycle
-        self.segment_walking(n_gait_cycles=n_gait_cycles)
-
+        # Segment gait cycles
+        self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles)
         
-    def get_scalars(self,scalarNames):
+        # determine treadmill speed (0 if overground)
+        self.treadmillSpeed = self.calc_treadmill_speed()
+                
+    def calc_scalars(self,scalarNames):
         
         # verify that scalarNames are methods in gait_analysis        
         method_names = [func for func in dir(self) if callable(getattr(self, func))]
-        nonexistant_methods = [entry for entry in scalarNames if 'get_' + entry not in method_names]
+        nonexistant_methods = [entry for entry in scalarNames if 'calc_' + entry not in method_names]
         
         if len(nonexistant_methods) > 0:
-            raise Exception(str(['get_' + a for a in nonexistant_methods]) + ' not in gait_analysis class.')
+            raise Exception(str(['calc_' + a for a in nonexistant_methods]) + ' not in gait_analysis class.')
         
         scalarDict = {}
         for scalarName in scalarNames:
-            thisFunction = getattr(self, 'get_' + scalarName)
+            thisFunction = getattr(self, 'calc_' + scalarName)
             scalarDict[scalarName] = thisFunction()
         
         return scalarDict
     
-    def get_stride_length(self):
-        # TODO dummy
-        stride_length = 3
+    def calc_stride_length(self):
+
+        # get calc positions based on self.gaitEvents['leg'] from self.markerDict
+        if self.gaitEvents['ipsilateralLeg'] == 'r':
+            leg = 'r'
+        else:
+            leg = 'L'
+        calc_position = self.markerDict['markers'][leg + '_calc_study']
+
+        # find stride length on treadmill
+        # difference in ipsilateral calcaneus position at heel strike + treadmill speed * time
+        strideLength = np.linalg.norm(calc_position[self.gaitEvents['ipsilateralIdx'][:,:1]] - \
+                           calc_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) + \
+                           self.treadmillSpeed * np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
         
-        return stride_length
+        # average across multiple strides
+        strideLength = np.mean(strideLength)
+        
+        return strideLength
     
-    def get_gait_speed(self):
+    def calc_gait_speed(self):
         # TODO dummy
         gait_speed = 2
         
         return gait_speed
 
-    def segment_walking(self, n_gait_cycles=1, filterFreq=6):
+    def segment_walking(self, n_gait_cycles=1, filterFreq=6,leg='auto',
+                        visualize=False):
         # subtract sacrum from foot
         # visually, it looks like the position-based approach will be more robust
         r_calc_rel_x = (self.markerDict['markers']['r_calc_study'] - self.markerDict[
                                      'markers']['r.PSIS_study'])[:,0]
         r_calc_rel_x = lowPassFilter(self.time, r_calc_rel_x, filterFreq)
-        r_calc_rel_dx = np.diff(r_calc_rel_x,append=r_calc_rel_x[-1])
 
-        r_toe_rel_x = (self.markerDict['markers']['r_calc_study'] - self.markerDict[
+        r_toe_rel_x = (self.markerDict['markers']['r_toe_study'] - self.markerDict[
                                     'markers']['r.PSIS_study'])[:,0]
-        r_toe_rel_x = lowPassFilter(self.time, r_toe_rel_x, filterFreq)                                
+        r_toe_rel_x = lowPassFilter(self.time, r_toe_rel_x, filterFreq)  
+
+        # repeat for left
+        l_calc_rel_x = (self.markerDict['markers']['L_calc_study'] - self.markerDict[
+                                     'markers']['L.PSIS_study'])[:,0]
+        l_calc_rel_x = lowPassFilter(self.time, l_calc_rel_x, filterFreq)
+
+        l_toe_rel_x = (self.markerDict['markers']['L_toe_study'] - self.markerDict[
+                                    'markers']['L.PSIS_study'])[:,0]
+        l_toe_rel_x = lowPassFilter(self.time, l_toe_rel_x, filterFreq)                               
         
-              
+        # Find HS
+        rHS, _ = find_peaks(r_calc_rel_x)
+        lHS, _ = find_peaks(l_calc_rel_x)
+        
+        # Find TO
+        rTO, _ = find_peaks(-r_toe_rel_x)
+        lTO, _ = find_peaks(-l_toe_rel_x)
+        
+        if visualize==True:
+            import matplotlib.pyplot as plt
+            plt.close('all')
+            plt.figure(1)
+            plt.plot(self.markerDict['time'],r_toe_rel_x,label='toe')
+            plt.plot(self.markerDict['time'],r_calc_rel_x,label='calc')
+            plt.scatter(self.markerDict['time'][rHS], r_calc_rel_x[rHS], color='red', label='rHS')
+            plt.scatter(self.markerDict['time'][rTO], r_toe_rel_x[rTO], color='blue', label='rTO')
+            plt.legend()
+
+            plt.figure(2)
+            plt.plot(self.markerDict['time'],l_toe_rel_x,label='toe')
+            plt.plot(self.markerDict['time'],l_calc_rel_x,label='calc')
+            plt.scatter(self.markerDict['time'][lHS], l_calc_rel_x[lHS], color='red', label='lHS')
+            plt.scatter(self.markerDict['time'][lTO], l_toe_rel_x[lTO], color='blue', label='lTO')
+            plt.legend()
 
         
-        # position peak detection
-        # Find the peaks using find_peaks
-        peaks, _ = find_peaks(r_toe_rel_x)
+        # find the number of gait cycles for the foot of interest
+        if leg=='auto':
+            # find the last HS of either foot
+            if rHS[-1] > lHS[-1]:
+                leg = 'r'
+            else:
+                leg = 'l'
         
-        # Find the troughs using find_peaks with inverted data
-        troughs, _ = find_peaks(-r_toe_rel_x)
-        
-        import matplotlib.pyplot as plt
-        plt.plot(self.markerDict['time'],r_toe_rel_x)
-        plt.scatter(self.markerDict['time'][peaks], r_toe_rel_x[peaks], color='red', label='Peaks')
-        plt.scatter(self.markerDict['time'][troughs], r_toe_rel_x[troughs], color='blue', label='Troughs')
-        
-        print(self.markerDict['time'][peaks])
-        print(self.markerDict['time'][troughs])
-        
-        
-        return True
+        # find the number of gait cycles for the foot of interest
+        if leg == 'r':
+            hsIps = rHS
+            toIps = rTO
+            hsCont = lHS
+            toCont = lTO
+        elif leg == 'l':
+            hsIps = lHS
+            toIps = lTO
+            hsCont = rHS
+            toCont = rTO
+
+        n_gait_cycles = np.min([n_gait_cycles, len(hsIps)-1])
+        gaitEvents_ips = np.zeros((n_gait_cycles, 3),dtype=np.int)
+        gaitEvents_cont = np.zeros((n_gait_cycles, 2),dtype=np.int)
+        if n_gait_cycles <1:
+            raise Exception('Not enough gait cycles found.')
+
+        for i in range(n_gait_cycles):
+            # ipsilateral HS, TO, HS
+            gaitEvents_ips[i,0] = hsIps[-i-2]
+            gaitEvents_ips[i,1] = toIps[-i-1]
+            gaitEvents_ips[i,2] = hsIps[-i-1]
+
+            # contralateral TO, HS
+            # iterate in reverse through contralateral HS and TO, finding the one that is within the range of gaitEvents_ips
+            hsContFound = False
+            toContFound = False
+            for j in range(len(toCont)):
+                if toCont[-j-1] > gaitEvents_ips[i,0] and toCont[-j-1] < gaitEvents_ips[i,2] and not toContFound:
+                    gaitEvents_cont[i,0] = toCont[-j-1]
+                    toContFound = True
+                    
+            for j in range(len(hsCont)):
+                if hsCont[-j-1] > gaitEvents_ips[i,0] and hsCont[-j-1] < gaitEvents_ips[i,2] and not hsContFound:
+                    gaitEvents_cont[i,1] = hsCont[-j-1]
+                    hsContFound = True
             
+            # making contralateral gait events optional
+            if not toContFound or not hsContFound:                   
+                raise Warning('Could not find contralateral gait event within ipsilateral gait event range.')
+                gaitEvents_cont[i,0] = np.nan
+                gaitEvents_cont[i,1] = np.nan
+            
+            # convert gaitEvents to times using self.markerDict['time']
+            gaitEventTimes_ips = self.markerDict['time'][gaitEvents_ips]
+            gaitEventTimes_cont = self.markerDict['time'][gaitEvents_cont]
+                            
+        gaitEvents = {'ipsilateralIdx':gaitEvents_ips,
+                      'contralateralIdx':gaitEvents_cont,
+                      'ipsilateralTime':gaitEventTimes_ips,
+                      'contralateralTime':gaitEventTimes_cont,
+                      'eventNamesIpsilateral':['HS','TO','HS'],
+                      'eventNamesContralateral':['TO','HS'],
+                      'ipsilateralLeg':leg}
+        
+        return gaitEvents       
+    
+    def calc_treadmill_speed(self):
+        if self.gaitEvents['ipsilateralLeg'] == 'r':
+            leg = 'r'
+        else:
+            leg = 'L'
+        toe_position = self.markerDict['markers'][leg + '_toe_study']
+        
+        stanceLength = np.round(np.diff(self.gaitEvents['ipsilateralIdx'][:,:2]))
+        stanceTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
+        startIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,:1]+.3*stanceLength).astype(int)
+        endIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,1:2]-.3*stanceLength).astype(int)
+        
+        toeDistanceStance = np.linalg.norm(toe_position[startIdx] - \
+                           toe_position[endIdx], axis=2)
+        
+        treadmillSpeed = np.mean(toeDistanceStance/stanceTime)
+        # overground
+        if treadmillSpeed < .2:
+            treadmillSpeed = 0
+                           
+        return treadmillSpeed
     
     def get_coordinate_values(self, in_degrees=True, 
                               lowpass_cutoff_frequency=-1):
