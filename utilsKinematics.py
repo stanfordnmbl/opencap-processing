@@ -19,12 +19,16 @@
 '''
 
 import os
+import glob
 import opensim
 import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
+from scipy.signal import find_peaks
+
 
 from utilsProcessing import lowPassFilter
+from utilsTRC import trc_2_dict
 
 class kinematics:
     
@@ -371,3 +375,154 @@ class kinematics:
         com_accelerations = pd.DataFrame(data=data, columns=columns)
         
         return com_accelerations        
+
+# %%
+class gait_analysis:
+    
+    def __init__(self, dataDir, trialName, 
+                 lowpass_cutoff_frequency_for_coordinate_values=-1,
+                 n_gait_cycles=1):
+                
+        self.lowpass_cutoff_frequency_for_coordinate_values = (
+            lowpass_cutoff_frequency_for_coordinate_values)
+        
+        # Model.
+        opensim.Logger.setLevelString('error')
+        modelPath = glob.glob(os.path.join(dataDir, 'OpenSimData', 'Model',
+                                 '*.osim'))[0]
+        self.model = opensim.Model(modelPath)
+        self.model.initSystem()
+        
+        # Marker data
+        trcFilePath = os.path.join(dataDir,'MarkerData',
+                                   '{}.trc'.format(trialName))
+        self.markerDict = trc_2_dict(trcFilePath)
+        
+        # Motion file with coordinate values.
+        motionPath = os.path.join(dataDir, 'OpenSimData', 'Kinematics',
+                                  '{}.mot'.format(trialName))
+        
+        # Create time-series table with coordinate values.             
+        self.table = opensim.TimeSeriesTable(motionPath)        
+        tableProcessor = opensim.TableProcessor(self.table)
+        self.columnLabels = list(self.table.getColumnLabels())
+        tableProcessor.append(opensim.TabOpUseAbsoluteStateNames())
+        self.time = np.asarray(self.table.getIndependentColumn())   
+        
+        # Filter coordinate values.
+        if lowpass_cutoff_frequency_for_coordinate_values > 0:
+            tableProcessor.append(
+                opensim.TabOpLowPassFilter(
+                    lowpass_cutoff_frequency_for_coordinate_values))
+
+        # Convert in radians.
+        self.table = tableProcessor.processAndConvertToRadians(self.model)
+        
+        # Trim if filtered.
+        if lowpass_cutoff_frequency_for_coordinate_values > 0:
+            time_temp = self.table.getIndependentColumn()            
+            self.table.trim(
+                time_temp[self.table.getNearestRowIndexForTime(self.time[0])],
+                time_temp[self.table.getNearestRowIndexForTime(self.time[-1])])         
+                
+        # Set state trajectory
+        # self.stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(
+        #     self.model, self.table)  
+                
+        # Coordinates.
+        self.coordinateSet = self.model.getCoordinateSet()
+        self.nCoordinates = self.coordinateSet.getSize()
+        self.coordinates = [self.coordinateSet.get(i).getName() 
+                            for i in range(self.nCoordinates)]
+        
+        # Segment by gait cycle
+        self.segment_walking(n_gait_cycles=n_gait_cycles)
+
+        
+    def get_scalars(self,scalarNames):
+        
+        # verify that scalarNames are methods in gait_analysis        
+        method_names = [func for func in dir(self) if callable(getattr(self, func))]
+        nonexistant_methods = [entry for entry in scalarNames if 'get_' + entry not in method_names]
+        
+        if len(nonexistant_methods) > 0:
+            raise Exception(str(['get_' + a for a in nonexistant_methods]) + ' not in gait_analysis class.')
+        
+        scalarDict = {}
+        for scalarName in scalarNames:
+            thisFunction = getattr(self, 'get_' + scalarName)
+            scalarDict[scalarName] = thisFunction()
+        
+        return scalarDict
+    
+    def get_stride_length(self):
+        # TODO dummy
+        stride_length = 3
+        
+        return stride_length
+    
+    def get_gait_speed(self):
+        # TODO dummy
+        gait_speed = 2
+        
+        return gait_speed
+
+    def segment_walking(self, n_gait_cycles=1, filterFreq=6):
+        # subtract sacrum from foot
+        # visually, it looks like the position-based approach will be more robust
+        r_calc_rel_x = (self.markerDict['markers']['r_calc_study'] - self.markerDict[
+                                     'markers']['r.PSIS_study'])[:,0]
+        r_calc_rel_x = lowPassFilter(self.time, r_calc_rel_x, filterFreq)
+        r_calc_rel_dx = np.diff(r_calc_rel_x,append=r_calc_rel_x[-1])
+
+        r_toe_rel_x = (self.markerDict['markers']['r_calc_study'] - self.markerDict[
+                                    'markers']['r.PSIS_study'])[:,0]
+        r_toe_rel_x = lowPassFilter(self.time, r_toe_rel_x, filterFreq)                                
+        
+              
+
+        
+        # position peak detection
+        # Find the peaks using find_peaks
+        peaks, _ = find_peaks(r_toe_rel_x)
+        
+        # Find the troughs using find_peaks with inverted data
+        troughs, _ = find_peaks(-r_toe_rel_x)
+        
+        import matplotlib.pyplot as plt
+        plt.plot(self.markerDict['time'],r_toe_rel_x)
+        plt.scatter(self.markerDict['time'][peaks], r_toe_rel_x[peaks], color='red', label='Peaks')
+        plt.scatter(self.markerDict['time'][troughs], r_toe_rel_x[troughs], color='blue', label='Troughs')
+        
+        print(self.markerDict['time'][peaks])
+        print(self.markerDict['time'][troughs])
+        
+        
+        return True
+            
+    
+    def get_coordinate_values(self, in_degrees=True, 
+                              lowpass_cutoff_frequency=-1):
+        
+        # Convert to degrees.
+        if in_degrees:
+            Qs = np.zeros((self.Qs.shape))
+            Qs[:, self.idxColumnTrLabels] = self.Qs[:, self.idxColumnTrLabels]
+            Qs[:, self.idxColumnRotLabels] = (
+                self.Qs[:, self.idxColumnRotLabels] * 180 / np.pi)
+        else:
+            Qs = self.Qs
+            
+        # Filter.
+        if lowpass_cutoff_frequency > 0:
+            Qs = lowPassFilter(self.time, Qs, lowpass_cutoff_frequency)
+            if self.lowpass_cutoff_frequency_for_coordinate_values > 0:
+                print("Warning: You are filtering the coordinate values a second time; coordinate values were filtered when creating your class object.")
+        
+        # Return as DataFrame.
+        data = np.concatenate(
+            (np.expand_dims(self.time, axis=1), Qs), axis=1)
+        columns = ['time'] + self.columnLabels            
+        coordinate_values = pd.DataFrame(data=data, columns=columns)
+        
+        return coordinate_values

@@ -58,7 +58,7 @@ def get_session_json(session_id):
     sessionJson['trials'].sort(key=get_created_at)
     
     return sessionJson
-
+    
 # Returns a list of all sessions of the user.
 def get_user_sessions():
     sessions = requests.get(
@@ -245,6 +245,21 @@ def download_kinematics(session_id, folder=None, trialNames=None):
         
     return loadedTrialNames, modelName
 
+# %% download pertinent trial data
+def download_trial(trial_id, folder, session_id=None):
+    
+    trial = get_trial_json(trial_id)
+    if session_id is None:
+        session_id = trial['session_id']
+    
+    # download model
+    get_model_and_metadata(session_id, folder)
+    
+    # download trc and mot
+    get_motion_data(trial_id,folder)
+    
+    return trial['name']
+
 # %%  Storage file to numpy array.
 def storage_to_numpy(storage_file, excess_header_entries=0):
     """Returns the data from a storage file in a numpy format. Skips all lines
@@ -358,7 +373,6 @@ def numpy_to_storage(labels, data, storage_file, datatype=None):
         f.write('\n')
         
     f.close()
-
 
 def download_videos_from_server(session_id,trial_id,
                              isCalibration=False, isStaticPose=False,
@@ -596,3 +610,4 @@ def download_session(session_id, sessionBasePath= None,
     if writeToDB:
         post_file_to_trial(session_zip,dynamic_ids[-1],tag='session_zip',
                            device_id='all')    
+        
