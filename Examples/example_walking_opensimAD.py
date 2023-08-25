@@ -91,18 +91,24 @@ motion_type = 'walking'
 # trials shorter than 2s (more details above). Set to [] to simulate full trial.
 # We here selected a time window that corresponds to a full gait stride in order
 # to use poriodic constraints
-time_window, gaitObject = segment_gait(session_id, trial_name, dataFolder, gait_cycles_from_end=3)
 
-# You can specify this time range as well
-# time_window = [5.7333333, 6.9333333]
+# automatically
+# time_window, gaitObject = segment_gait(session_id, trial_name, dataFolder, gait_cycles_from_end=3)
+
+# manually
+time_window = [5.7333333, 6.9333333]
+
+
 
 # Insert the speed of the treadmill in m/s. A positive value indicates that the
 # subject is moving forward. You should ignore this parameter or set it to 0 if
 # the trial was not measured on a treadmill.
-treadmill_speed = gaitObject.treadmillSpeed
 
-# can also specify manually
-# treadmill_speed = 1.25
+# automatically
+# treadmill_speed = gaitObject.treadmillSpeed
+
+#manually
+treadmill_speed = 1.25
     
 
 
