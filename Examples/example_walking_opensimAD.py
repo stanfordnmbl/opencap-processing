@@ -101,7 +101,7 @@ time_window, gaitObject = segment_gait(session_id, trial_name, dataFolder, gait_
 # the trial was not measured on a treadmill.
 treadmill_speed = gaitObject.treadmillSpeed
 
-# can also specify
+# can also specify manually
 # treadmill_speed = 1.25
     
 
