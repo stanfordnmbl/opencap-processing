@@ -248,7 +248,6 @@ def download_kinematics(session_id, folder=None, trialNames=None):
 # %% download pertinent trial data
 def download_trial(trial_id, folder, session_id=None):
     
-   
     trial = get_trial_json(trial_id)
     if session_id is None:
         session_id = trial['session_id']

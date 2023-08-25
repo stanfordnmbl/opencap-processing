@@ -22,20 +22,20 @@ def gait_analysis(trial_id,nGaitCycles=1):
     session_id = '03284efb-2244-4a48-aec9-abc34afdffc8'
     
     # Local data dir -> will be deleted with lambda instance
-    dataDir = os.path.abspath('../Data')
+    sessionDir = os.path.join(os.path.abspath('../Data'),session_id)
     
     # download data
-    # trialName = utils.download_trial(trial_id,dataDir,session_id=session_id)
+    # trialName = utils.download_trial(trial_id,sessionDir,session_id=session_id)
     
     # init gait analysis
-    gait = utilsKinematics.gait_analysis(dataDir, trialName, 
+    gait = utilsKinematics.gait_analysis(sessionDir, trialName, 
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
                  n_gait_cycles=2)
     
     
-    scalar_names = {'gait_speed','stride_length'}
+    scalar_names = {'gait_speed','stride_length','step_width'}
             
-    gaitScalars = gait.calc_scalars(scalar_names)
+    gaitScalars = gait.compute_scalars(scalar_names)
     
     # post results
     

@@ -32,7 +32,7 @@ from utilsTRC import trc_2_dict
 
 class kinematics:
     
-    def __init__(self, dataDir, trialName, 
+    def __init__(self, sessionDir, trialName, 
                  modelName='LaiUhlrich2022_scaled',
                  lowpass_cutoff_frequency_for_coordinate_values=-1):
         
@@ -41,13 +41,17 @@ class kinematics:
         
         # Model.
         opensim.Logger.setLevelString('error')
-        modelPath = os.path.join(dataDir, 'OpenSimData', 'Model',
+        # check if specified model name exists
+        modelPath = os.path.join(sessionDir, 'OpenSimData', 'Model',
                                  '{}.osim'.format(modelName))
+        if not os.path.exists(modelPath):
+            modelPath = glob.glob(os.path.join(os.path.dirname(modelPath),'*.osim'))[0]
+
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
         
         # Motion file with coordinate values.
-        motionPath = os.path.join(dataDir, 'OpenSimData', 'Kinematics',
+        motionPath = os.path.join(sessionDir, 'OpenSimData', 'Kinematics',
                                   '{}.mot'.format(trialName))
         
         # Create time-series table with coordinate values.             
@@ -375,95 +379,52 @@ class kinematics:
         return com_accelerations        
 
 # %%
-class gait_analysis:
+class gait_analysis(kinematics):
     
-    def __init__(self, dataDir, trialName, 
+    def __init__(self, sessionDir, trialName, 
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
                  n_gait_cycles=1):
-                
-        self.lowpass_cutoff_frequency_for_coordinate_values = (
-            lowpass_cutoff_frequency_for_coordinate_values)
         
-        # Model.
-        opensim.Logger.setLevelString('error')
-        modelPath = glob.glob(os.path.join(dataDir, 'OpenSimData', 'Model',
-                                 '*.osim'))[0]
-        self.model = opensim.Model(modelPath)
-        self.model.initSystem()
-        
+        # inherit init from kinematics class
+        super().__init__(sessionDir, trialName, 
+                     lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
+                        
         # Marker data
-        trcFilePath = os.path.join(dataDir,'MarkerData',
-                                   '{}.trc'.format(trialName))
+        trcFilePath = os.path.join(sessionDir,'MarkerData',
+                                    '{}.trc'.format(trialName))
         self.markerDict = trc_2_dict(trcFilePath)
         
-        # Motion file with coordinate values.
-        motionPath = os.path.join(dataDir, 'OpenSimData', 'Kinematics',
-                                  '{}.mot'.format(trialName))
-        
-        # Create time-series table with coordinate values.             
-        self.table = opensim.TimeSeriesTable(motionPath)        
-        tableProcessor = opensim.TableProcessor(self.table)
-        self.columnLabels = list(self.table.getColumnLabels())
-        tableProcessor.append(opensim.TabOpUseAbsoluteStateNames())
-        self.time = np.asarray(self.table.getIndependentColumn())   
-        
-        # Filter coordinate values.
-        if lowpass_cutoff_frequency_for_coordinate_values > 0:
-            tableProcessor.append(
-                opensim.TabOpLowPassFilter(
-                    lowpass_cutoff_frequency_for_coordinate_values))
-
-        # Process
-        self.table = tableProcessor.process(self.model)
-        
-        # Trim if filtered.
-        if lowpass_cutoff_frequency_for_coordinate_values > 0:
-            time_temp = self.table.getIndependentColumn()            
-            self.table.trim(
-                time_temp[self.table.getNearestRowIndexForTime(self.time[0])],
-                time_temp[self.table.getNearestRowIndexForTime(self.time[-1])])         
-                
-        self.Qs = self.table.getMatrix().to_numpy()
-                
-        # Coordinates.
-        self.coordinateSet = self.model.getCoordinateSet()
-        self.nCoordinates = self.coordinateSet.getSize()
-        self.coordinates = [self.coordinateSet.get(i).getName() 
-                            for i in range(self.nCoordinates)]
-        
-        # Find rotational and translational coords
-        self.idxColumnTrLabels = [
-            self.columnLabels.index(i) for i in self.coordinates if \
-            self.coordinateSet.get(i).getMotionType() == 2]
-        self.idxColumnRotLabels = [
-            self.columnLabels.index(i) for i in self.coordinates if \
-            self.coordinateSet.get(i).getMotionType() == 1]
-            
+        # Coordinate values            
         self.coordinateValues = self.get_coordinate_values()
         
         # Segment gait cycles
         self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles)
+        self.nGaitCycles = np.shape(self.gaitEvents['ipsilateralIdx'])[0]
         
         # determine treadmill speed (0 if overground)
-        self.treadmillSpeed = self.calc_treadmill_speed()
+        self.treadmillSpeed = self.compute_treadmill_speed()
+        
+        # Compute COM trajectory and gait frame...used in multiple scalar computations
+        self.comValues = self.get_center_of_mass_values()
+        self.R_world_to_gait = self.compute_gait_frame()
                 
-    def calc_scalars(self,scalarNames):
+    def compute_scalars(self,scalarNames):
         
         # verify that scalarNames are methods in gait_analysis        
         method_names = [func for func in dir(self) if callable(getattr(self, func))]
-        nonexistant_methods = [entry for entry in scalarNames if 'calc_' + entry not in method_names]
+        nonexistant_methods = [entry for entry in scalarNames if 'compute_' + entry not in method_names]
         
         if len(nonexistant_methods) > 0:
-            raise Exception(str(['calc_' + a for a in nonexistant_methods]) + ' not in gait_analysis class.')
+            raise Exception(str(['compute_' + a for a in nonexistant_methods]) + ' not in gait_analysis class.')
         
         scalarDict = {}
         for scalarName in scalarNames:
-            thisFunction = getattr(self, 'calc_' + scalarName)
+            thisFunction = getattr(self, 'compute_' + scalarName)
             scalarDict[scalarName] = thisFunction()
         
         return scalarDict
     
-    def calc_stride_length(self):
+    def compute_stride_length(self):
 
         # get calc positions based on self.gaitEvents['leg'] from self.markerDict
         if self.gaitEvents['ipsilateralLeg'] == 'r':
@@ -483,13 +444,11 @@ class gait_analysis:
         
         return strideLength
     
-    def calc_gait_speed(self):
-        pelvis_position = np.vstack((self.coordinateValues['pelvis_tx'],
-                                     self.coordinateValues['pelvis_ty'], 
-                                     self.coordinateValues['pelvis_tz'])).T
-
-        gait_speed = (np.linalg.norm(pelvis_position[self.gaitEvents['ipsilateralIdx'][:,:1]] - \
-                           pelvis_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2)) / \
+    def compute_gait_speed(self):
+                           
+        comValuesArray = np.vstack((self.comValues['x'],self.comValues['y'],self.comValues['z'])).T
+        gait_speed = (np.linalg.norm(comValuesArray[self.gaitEvents['ipsilateralIdx'][:,:1]] - \
+                           comValuesArray[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2)) / \
                            np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]) + self.treadmillSpeed 
         
         # average across all strides
@@ -497,7 +456,7 @@ class gait_analysis:
         
         return gait_speed
     
-    def calc_treadmill_speed(self):
+    def compute_treadmill_speed(self):
         if self.gaitEvents['ipsilateralLeg'] == 'r':
             leg = 'r'
         else:
@@ -513,11 +472,72 @@ class gait_analysis:
                            toe_position[endIdx], axis=2)
         
         treadmillSpeed = np.mean(toeDistanceStance/stanceTime)
+        
         # overground
         if treadmillSpeed < .2:
             treadmillSpeed = 0
                            
         return treadmillSpeed
+    
+    def compute_step_width(self):
+        # get ankle joint center positions
+        if self.gaitEvents['ipsilateralLeg'] == 'r':
+            leg = 'r'
+            contLeg = 'L'
+        else:
+            leg = 'L'
+            contLeg = 'r'
+        ankle_position_ips = (self.markerDict['markers'][leg + '_ankle_study'] + 
+                          self.markerDict['markers'][leg + '_mankle_study'])/2
+        ankle_position_cont = (self.markerDict['markers'][contLeg + '_ankle_study'] + 
+                          self.markerDict['markers'][contLeg + '_mankle_study'])/2
+        
+        ankleVector = ankle_position_cont[self.gaitEvents['contralateralIdx'][:,1]] - \
+                      ankle_position_ips[self.gaitEvents['ipsilateralIdx'][:,0]]
+                      
+        ankleVector_inGaitFrame = np.array([np.dot(ankleVector[i,:], self.R_world_to_gait[i,:,:]) \
+                                            for i in range(self.nGaitCycles)])
+        
+        # step width is z distance
+        stepWidth = np.abs(ankleVector_inGaitFrame[:,2])
+        
+        # average across gait cycles
+        stepWidth = np.mean(stepWidth)
+        
+        return stepWidth
+        
+    def compute_gait_frame(self):
+        # Create frame for each gait cycle  with x: pelvis heading, 
+        # z: average vector between ASIS during gait cycle, y: cross. 
+        
+        # Pelvis center trajectory
+        pelvisMarkerNames = ['r.ASIS_study','L.ASIS_study','r.PSIS_study','L.PSIS_study']
+        pelvisMarkers = [self.markerDict['markers'][mkr]  for mkr in pelvisMarkerNames]
+        pelvisCenter = np.mean(np.array(pelvisMarkers),axis=0)
+        
+        # vector from left ASIS to right ASIS
+        asisMarkerNames = ['L.ASIS_study','r.ASIS_study']
+        asisMarkers = [self.markerDict['markers'][mkr]  for mkr in asisMarkerNames]
+        asisVector = np.squeeze(np.diff(np.array(asisMarkers),axis=0))
+        
+        # heading vector per gait cycle
+        x = np.diff(pelvisCenter[self.gaitEvents['ipsilateralIdx'][:,(0,2)],:],axis=1)[:,0,:]
+        x = x / np.linalg.norm(x,axis=1,keepdims=True)
+            
+        # mean asis vector over gait cycle
+        z = np.zeros((self.nGaitCycles,3))
+        for i in range(self.nGaitCycles):
+            z[i,:] = np.mean(asisVector[self.gaitEvents['ipsilateralIdx'][i,0]: \
+                             self.gaitEvents['ipsilateralIdx'][i,2]],axis=0)
+        z = z / np.linalg.norm(z,axis=1,keepdims=True)
+        
+        # cross to get y
+        y = np.cross(z,x)
+        
+        # 3x3xnSteps
+        R_lab_to_gait = np.stack((x.T,y.T,z.T),axis=1).transpose((2, 0, 1))
+        
+        return R_lab_to_gait
     
     def get_coordinates_normalized(self):
         # TODO get normalized kinematic curves
@@ -635,29 +655,3 @@ class gait_analysis:
                       'ipsilateralLeg':leg}
         
         return gaitEvents       
-       
-    def get_coordinate_values(self, in_degrees=True, 
-                              lowpass_cutoff_frequency=-1):
-        
-        # Convert to degrees.
-        if in_degrees:
-            Qs = np.zeros((self.Qs.shape))
-            Qs[:, self.idxColumnTrLabels] = self.Qs[:, self.idxColumnTrLabels]
-            Qs[:, self.idxColumnRotLabels] = (
-                self.Qs[:, self.idxColumnRotLabels] * 180 / np.pi)
-        else:
-            Qs = self.Qs
-            
-        # Filter.
-        if lowpass_cutoff_frequency > 0:
-            Qs = lowPassFilter(self.time, Qs, lowpass_cutoff_frequency)
-            if self.lowpass_cutoff_frequency_for_coordinate_values > 0:
-                print("Warning: You are filtering the coordinate values a second time; coordinate values were filtered when creating your class object.")
-        
-        # Return as DataFrame.
-        data = np.concatenate(
-            (np.expand_dims(self.time, axis=1), Qs), axis=1)
-        columns = ['time'] + self.columnLabels            
-        coordinate_values = pd.DataFrame(data=data, columns=columns)
-        
-        return coordinate_values
