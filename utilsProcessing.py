@@ -24,7 +24,7 @@ import opensim
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
-from utils import storage_to_dataframe
+from utils import storage_to_dataframe, download_trial, getTrialId
 
 def lowPassFilter(time, data, lowpass_cutoff_frequency, order=4):
     
@@ -34,6 +34,18 @@ def lowPassFilter(time, data, lowpass_cutoff_frequency, order=4):
     dataFilt = signal.sosfiltfilt(sos, data, axis=0)
 
     return dataFilt
+
+# %% Segment gait
+def segment_gait(session_id, trial_name, dataFolder, gait_cycles_from_end=0):
+    
+    from utilsKinematics import gait_analysis
+
+    trial_id = getTrialId(session_id,trial_name)
+    download_trial(trial_id,os.path.join(dataFolder,session_id),session_id=session_id)
+    gait = gait_analysis(os.path.join(dataFolder,session_id), trial_name,n_gait_cycles=4)
+    heelstrikeTimes = gait.gaitEvents['ipsilateralTime'][gait_cycles_from_end,(0,2)].tolist()
+    
+    return heelstrikeTimes, gait
 
 # %% Segment squats.
 def segmentSquats(ikFilePath, pelvis_ty=None, timeVec=None, visualize=False,
