@@ -518,6 +518,10 @@ class gait_analysis:
             treadmillSpeed = 0
                            
         return treadmillSpeed
+    
+    def get_coordinates_normalized(self):
+        # TODO get normalized kinematic curves
+        test =1
 
     def segment_walking(self, n_gait_cycles=1, filterFreq=6,leg='auto',
                         visualize=False):

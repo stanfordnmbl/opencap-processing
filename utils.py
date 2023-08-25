@@ -248,9 +248,12 @@ def download_kinematics(session_id, folder=None, trialNames=None):
 # %% download pertinent trial data
 def download_trial(trial_id, folder, session_id=None):
     
+   
     trial = get_trial_json(trial_id)
     if session_id is None:
         session_id = trial['session_id']
+        
+    os.makedirs(folder,exist_ok=True)
     
     # download model
     get_model_and_metadata(session_id, folder)
@@ -259,6 +262,13 @@ def download_trial(trial_id, folder, session_id=None):
     get_motion_data(trial_id,folder)
     
     return trial['name']
+# %% get trialID from name
+def getTrialId(session_id,trial_name):
+    session = get_session_json(session_id)
+    
+    trial_id = [t['id'] for t in session['trials'] if t['name'] == trial_name]
+    
+    return trial_id[0]
 
 # %%  Storage file to numpy array.
 def storage_to_numpy(storage_file, excess_header_entries=0):

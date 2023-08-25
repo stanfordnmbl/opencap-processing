@@ -60,6 +60,8 @@ sys.path.append(opensimADDir)
 from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
 from utilsAuthentication import get_token
+import utilsKinematics
+import utils
 
 # %% OpenCap authentication. Visit https://app.opencap.ai/login to create an
 # account if you don't have one yet.
@@ -76,6 +78,9 @@ session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 # Insert the name of the trial you want to simulate.
 trial_name = 'walk_1_25ms'
 
+# Insert the path to where you want the data to be downloaded.
+dataFolder = os.path.join(baseDir, 'Data')
+
 # Insert the type of activity you want to simulate. We have pre-defined settings
 # for different activities (more details above). Visit 
 # ./UtilsDynamicSimulations/OpenSimAD/settingsOpenSimAD.py to see all available
@@ -86,16 +91,24 @@ motion_type = 'walking'
 # Insert the time interval you want to simulate. It is recommended to simulate
 # trials shorter than 2s (more details above). Set to [] to simulate full trial.
 # We here selected a time window that corresponds to a full gait stride in order
-# to use poeriodic constraints.
-time_window = [5.7333333, 6.9333333]
+# to use poriodic constraints
+trial_id = utils.getTrialId(session_id,trial_name)
+utils.download_trial(trial_id,os.path.join(dataFolder,session_id),session_id=session_id)
+gait = utilsKinematics.gait_analysis(os.path.join(dataFolder,session_id), trial_name)
+time_window = gait.gaitEvents['ipsilateralTimes'][0,0,2]
+
+# You can specify this time range as well
+# time_window = [5.7333333, 6.9333333]
 
 # Insert the speed of the treadmill in m/s. A positive value indicates that the
 # subject is moving forward. You should ignore this parameter or set it to 0 if
 # the trial was not measured on a treadmill.
-treadmill_speed = 1.25
+treadmill_speed = gait.treadmillSpeed
+
+# can also specify
+# treadmill_speed = 1.25
     
-# Insert the path to where you want the data to be downloaded.
-dataFolder = os.path.join(baseDir, 'Data')
+
 
 # %% Sub-example 1: walking simulation with torque-driven model.
 # Insert a string to "name" you case.

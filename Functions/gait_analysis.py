@@ -22,8 +22,7 @@ def gait_analysis(trial_id,nGaitCycles=1):
     session_id = '03284efb-2244-4a48-aec9-abc34afdffc8'
     
     # Local data dir -> will be deleted with lambda instance
-    dataDir = os.path.abspath(os.path.join('../Data',session_id))
-    os.makedirs(dataDir,exist_ok=True)
+    dataDir = os.path.abspath('../Data')
     
     # download data
     # trialName = utils.download_trial(trial_id,dataDir,session_id=session_id)
