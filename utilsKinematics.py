@@ -124,15 +124,13 @@ class kinematics:
         self.coordinates = [self.coordinateSet.get(i).getName() 
                             for i in range(self.nCoordinates)]
             
-        # TODO: hard coded
-        # Translational coordinates.
-        columnTrLabels = [
-            'pelvis_tx', 'pelvis_ty', 'pelvis_tz']        
+        # Find rotational and translational coords
         self.idxColumnTrLabels = [
-            self.columnLabels.index(i) for i in columnTrLabels]
+            self.columnLabels.index(i) for i in self.coordinates if \
+            self.coordinateSet.get(i).getMotionType() == 2]
         self.idxColumnRotLabels = [
-            self.columnLabels.index(i) for i in self.columnLabels 
-            if not i in columnTrLabels]
+            self.columnLabels.index(i) for i in self.coordinates if \
+            self.coordinateSet.get(i).getMotionType() == 1]
         
         # TODO: hard coded
         self.rootCoordinates = [
@@ -415,8 +413,8 @@ class gait_analysis:
                 opensim.TabOpLowPassFilter(
                     lowpass_cutoff_frequency_for_coordinate_values))
 
-        # Convert in radians.
-        self.table = tableProcessor.processAndConvertToRadians(self.model)
+        # Process
+        self.table = tableProcessor.process(self.model)
         
         # Trim if filtered.
         if lowpass_cutoff_frequency_for_coordinate_values > 0:
@@ -425,15 +423,23 @@ class gait_analysis:
                 time_temp[self.table.getNearestRowIndexForTime(self.time[0])],
                 time_temp[self.table.getNearestRowIndexForTime(self.time[-1])])         
                 
-        # Set state trajectory
-        # self.stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(
-        #     self.model, self.table)  
+        self.Qs = self.table.getMatrix().to_numpy()
                 
         # Coordinates.
         self.coordinateSet = self.model.getCoordinateSet()
         self.nCoordinates = self.coordinateSet.getSize()
         self.coordinates = [self.coordinateSet.get(i).getName() 
                             for i in range(self.nCoordinates)]
+        
+        # Find rotational and translational coords
+        self.idxColumnTrLabels = [
+            self.columnLabels.index(i) for i in self.coordinates if \
+            self.coordinateSet.get(i).getMotionType() == 2]
+        self.idxColumnRotLabels = [
+            self.columnLabels.index(i) for i in self.coordinates if \
+            self.coordinateSet.get(i).getMotionType() == 1]
+            
+        self.coordinateValues = self.get_coordinate_values()
         
         # Segment gait cycles
         self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles)
@@ -472,16 +478,46 @@ class gait_analysis:
                            calc_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) + \
                            self.treadmillSpeed * np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
         
-        # average across multiple strides
+        # average across all strides
         strideLength = np.mean(strideLength)
         
         return strideLength
     
     def calc_gait_speed(self):
-        # TODO dummy
-        gait_speed = 2
+        pelvis_position = np.vstack((self.coordinateValues['pelvis_tx'],
+                                     self.coordinateValues['pelvis_ty'], 
+                                     self.coordinateValues['pelvis_tz'])).T
+
+        gait_speed = (np.linalg.norm(pelvis_position[self.gaitEvents['ipsilateralIdx'][:,:1]] - \
+                           pelvis_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2)) / \
+                           np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]) + self.treadmillSpeed 
+        
+        # average across all strides
+        gait_speed = np.mean(gait_speed)
         
         return gait_speed
+    
+    def calc_treadmill_speed(self):
+        if self.gaitEvents['ipsilateralLeg'] == 'r':
+            leg = 'r'
+        else:
+            leg = 'L'
+        toe_position = self.markerDict['markers'][leg + '_toe_study']
+        
+        stanceLength = np.round(np.diff(self.gaitEvents['ipsilateralIdx'][:,:2]))
+        stanceTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
+        startIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,:1]+.3*stanceLength).astype(int)
+        endIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,1:2]-.3*stanceLength).astype(int)
+        
+        toeDistanceStance = np.linalg.norm(toe_position[startIdx] - \
+                           toe_position[endIdx], axis=2)
+        
+        treadmillSpeed = np.mean(toeDistanceStance/stanceTime)
+        # overground
+        if treadmillSpeed < .2:
+            treadmillSpeed = 0
+                           
+        return treadmillSpeed
 
     def segment_walking(self, n_gait_cycles=1, filterFreq=6,leg='auto',
                         visualize=False):
@@ -595,29 +631,7 @@ class gait_analysis:
                       'ipsilateralLeg':leg}
         
         return gaitEvents       
-    
-    def calc_treadmill_speed(self):
-        if self.gaitEvents['ipsilateralLeg'] == 'r':
-            leg = 'r'
-        else:
-            leg = 'L'
-        toe_position = self.markerDict['markers'][leg + '_toe_study']
-        
-        stanceLength = np.round(np.diff(self.gaitEvents['ipsilateralIdx'][:,:2]))
-        stanceTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
-        startIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,:1]+.3*stanceLength).astype(int)
-        endIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,1:2]-.3*stanceLength).astype(int)
-        
-        toeDistanceStance = np.linalg.norm(toe_position[startIdx] - \
-                           toe_position[endIdx], axis=2)
-        
-        treadmillSpeed = np.mean(toeDistanceStance/stanceTime)
-        # overground
-        if treadmillSpeed < .2:
-            treadmillSpeed = 0
-                           
-        return treadmillSpeed
-    
+       
     def get_coordinate_values(self, in_degrees=True, 
                               lowpass_cutoff_frequency=-1):
         
