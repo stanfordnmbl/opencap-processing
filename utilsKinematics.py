@@ -577,14 +577,12 @@ class gait_analysis(kinematics):
                                    for i in range(coordValues.shape[1])],axis=1))
              
         coordinateValuesTimeNormalized = {}
-        # average and sd
+        # average
         coordVals_mean = np.mean(np.array(coordValuesNorm),axis=0)
         coordinateValuesTimeNormalized['mean'] = pd.DataFrame(data=coordVals_mean, columns=colNames)
         
         #return to dataframe
         coordinateValuesTimeNormalized['indiv'] = [pd.DataFrame(data=d, columns=colNames) for d in coordValuesNorm]
-        
-        
         
         return coordinateValuesTimeNormalized
 
