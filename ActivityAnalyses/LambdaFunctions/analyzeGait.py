@@ -9,12 +9,13 @@ this function performs kinematic gait analysis
 
 import os
 import sys
-sys.path.append("..")
+sys.path.append("../../")
+sys.path.append("../ActivityClasses")
 
-import utilsKinematics
+from gaitAnalysis import gait_analysis
 import utils
 
-def gait_analysis(trial_id,scalar_names=None,n_gait_cycles=1,filterFreq=6):
+def analyzeGait(trial_id,scalar_names=None,n_gait_cycles=1,filterFreq=6):
     
     session_id = utils.get_trial_json(trial_id)['session']
     
@@ -25,10 +26,10 @@ def gait_analysis(trial_id,scalar_names=None,n_gait_cycles=1,filterFreq=6):
     trialName = utils.download_trial(trial_id,sessionDir,session_id=session_id) 
     
     # init gait analysis
-    gait_r = utilsKinematics.gait_analysis(sessionDir, trialName, leg='r',
+    gait_r = gait_analysis(sessionDir, trialName, leg='r',
                  lowpass_cutoff_frequency_for_coordinate_values=filterFreq,
                  n_gait_cycles=n_gait_cycles)
-    gait_l = utilsKinematics.gait_analysis(sessionDir, trialName, leg='l',
+    gait_l = gait_analysis(sessionDir, trialName, leg='l',
                  lowpass_cutoff_frequency_for_coordinate_values=filterFreq,
                  n_gait_cycles=n_gait_cycles)
         
@@ -57,7 +58,7 @@ trial_id = 'bf181007-d0f3-4395-8dc3-a0f0e5553761'
 
 scalar_names = {'gait_speed','stride_length','step_width'}
 
-gaitResults = gait_analysis(trial_id,scalar_names=scalar_names,
+gaitResults = analyzeGait(trial_id,scalar_names=scalar_names,
                                        n_gait_cycles=4)
 
 

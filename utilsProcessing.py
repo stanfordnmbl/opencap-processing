@@ -18,6 +18,9 @@
     limitations under the License.
 '''
 
+import sys
+sys.path.append('AnalysisFunctions/ActivityClasses/')
+
 import os
 import logging
 import opensim
@@ -38,7 +41,7 @@ def lowPassFilter(time, data, lowpass_cutoff_frequency, order=4):
 # %% Segment gait
 def segment_gait(session_id, trial_name, dataFolder, gait_cycles_from_end=0):
     
-    from utilsKinematics import gait_analysis
+    from gaitAnalysis import gait_analysis
 
     trial_id = getTrialId(session_id,trial_name)
     download_trial(trial_id,os.path.join(dataFolder,session_id),session_id=session_id)
