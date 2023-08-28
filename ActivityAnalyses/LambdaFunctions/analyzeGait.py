@@ -56,7 +56,8 @@ trial_id = 'bf181007-d0f3-4395-8dc3-a0f0e5553761'
 # trial_name = 'walk_1_25ms'
 # trial_id = utils.getTrialId(session_id,trial_name)
 
-scalar_names = {'gait_speed','stride_length','step_width'}
+scalar_names = {'gait_speed','stride_length','step_width','cadence',
+                'single_support_time','double_support_time'}
 
 gaitResults = analyzeGait(trial_id,scalar_names=scalar_names,
                                        n_gait_cycles=4)

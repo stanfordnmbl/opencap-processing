@@ -120,6 +120,16 @@ class gait_analysis(kinematics):
         
         return gait_speed
     
+    def compute_cadence(self):
+        
+        # in steps per second
+        cadence = 1/np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
+        
+        # average across strides
+        cadence = np.mean(cadence)
+        
+        return cadence
+    
     def compute_treadmill_speed(self):
         if self.gaitEvents['ipsilateralLeg'] == 'r':
             leg = 'r'
@@ -171,6 +181,26 @@ class gait_analysis(kinematics):
         stepWidth = np.mean(stepWidth)
         
         return stepWidth
+    
+    def compute_single_support_time(self):
+        
+        singleSupportTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
+        
+        # average across strides
+        singleSupportTime = np.mean(singleSupportTime)
+        
+        return singleSupportTime
+        
+    def compute_double_support_time(self):
+        
+        # ipsilateral single support time - contralateral swing time
+        doubleSupportTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - \
+                            np.diff(self.gaitEvents['contralateralTime'][:,:2])
+                            
+        # average across strides
+        doubleSupportTime = np.mean(doubleSupportTime)
+        
+        return doubleSupportTime
         
     def compute_gait_frame(self):
         # Create frame for each gait cycle  with x: pelvis heading, 
