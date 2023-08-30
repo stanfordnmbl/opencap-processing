@@ -45,9 +45,9 @@
 '''
 
 # %% Select the example you want to run.
-runTorqueDrivenProblem = True
+runTorqueDrivenProblem = False
 runMuscleDrivenProblem = False
-runComparison = False
+runComparison = True
 
 # %% Directories, paths, and imports. You should not need to change anything.
 import os
@@ -179,7 +179,7 @@ if runTorqueDrivenProblem:
 
 # %% Sub-example 2: walking simulation with muscle-driven model.
 # Insert a string to "name" you case.
-case = 'muscle_driven'
+case = 'muscle_driven_not_expand'
 
 # Prepare inputs for dynamic simulation (this will be skipped if already done):
 #   - Download data from OpenCap database
@@ -232,7 +232,7 @@ if runMuscleDrivenProblem:
     #   - Windows (Windows 10):    converged in 586 iterations
     #   - macOS   (Monterey 12.2): converged in 499 iterations
     #   - Linux   (Ubuntu 20.04):  converged in 645 iterations
-    run_tracking(baseDir, dataFolder, session_id, settings, case=case)
+    # run_tracking(baseDir, dataFolder, session_id, settings, case=case)
 
     # Plot some results.
     plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
@@ -240,4 +240,4 @@ if runMuscleDrivenProblem:
 # %% Comparison torque-driven vs. muscle-driven model.
 if runComparison:
     plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings,
-                        ['torque_driven', 'muscle_driven'])
+                        ['muscle_driven_not_expand', 'muscle_driven_expand'])

@@ -129,7 +129,7 @@ def solve_with_bounds(opti, tolerance):
     
     prob = {'x': opti.x, 'f': opti.f, 'g': new_g}
     s_opts = {}
-    s_opts["expand"] = False
+    s_opts["expand"] = True
     s_opts["ipopt.hessian_approximation"] = "limited-memory"
     s_opts["ipopt.mu_strategy"] = "adaptive"
     s_opts["ipopt.max_iter"] = 5000

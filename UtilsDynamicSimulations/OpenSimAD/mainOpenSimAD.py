@@ -766,9 +766,19 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     suff_tread = ''
     if treadmill:
         suff_tread = '_treadmill'
+        
+    # test
+    import importlib
+    import foo
+    importlib.reload(foo)
+    dim = 100
+    arg = ca.SX.sym('arg', dim)
+    y,_,_ = foo.foo(arg)
+    F = ca.Function('F',[arg],[y])    
+        
     
-    F = ca.external('F', 
-        os.path.join(pathExternalFunctionFolder, 'F' + suff_tread + ext_F))
+    # F = ca.external('F', 
+    #     os.path.join(pathExternalFunctionFolder, 'F' + suff_tread + ext_F))
     F_map = np.load(
         os.path.join(pathExternalFunctionFolder, 
                      'F' + suff_tread + '_map.npy'), allow_pickle=True).item()
