@@ -51,7 +51,7 @@ def segment_gait(session_id, trial_name, dataFolder, gait_cycles_from_end=0):
     return heelstrikeTimes, gait
 
 # %% Segment squats.
-def segmentSquats(ikFilePath, pelvis_ty=None, timeVec=None, visualize=False,
+def segment_squats(ikFilePath, pelvis_ty=None, timeVec=None, visualize=False,
                   filter_pelvis_ty=True, cutoff_frequency=4, height=.2):
     
     # Extract pelvis_ty if not given.
@@ -112,7 +112,7 @@ def segmentSquats(ikFilePath, pelvis_ty=None, timeVec=None, visualize=False,
          from delayed start to corresponding periodic end in terms of
          vertical pelvis position.     
 '''
-def segmentSTS(ikFilePath, pelvis_ty=None, timeVec=None, velSeated=0.3,
+def segment_STS(ikFilePath, pelvis_ty=None, timeVec=None, velSeated=0.3,
                velStanding=0.15, visualize=False, filter_pelvis_ty=True, 
                cutoff_frequency=4, delay=0.1):
     
@@ -219,7 +219,7 @@ def segmentSTS(ikFilePath, pelvis_ty=None, timeVec=None, velSeated=0.3,
 # wrapping giving rise to bad muscle-tendon lengths and moment arms. Changes
 # are made for the gmax1, iliacus, and psoas. Changes are documented in
 # modelAdjustment.log.
-def adjustMuscleWrapping(
+def adjust_muscle_wrapping(
         baseDir, dataDir, subject, poseDetector='DefaultPD', 
         cameraSetup='DefaultModel', OpenSimModel="LaiUhlrich2022",
         overwrite=False):
@@ -495,7 +495,7 @@ def getMomentArms(model, poses, muscleName, coordinateForMomentArm):
     return momentArms
 
 # %% Generate model with contacts.
-def generateModelWithContacts(
+def generate_model_with_contacts(
         dataDir, subject, poseDetector='DefaultPD', cameraSetup='DefaultModel',
         OpenSimModel="LaiUhlrich2022", setPatellaMasstoZero=True, 
         overwrite=False):

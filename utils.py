@@ -273,7 +273,7 @@ def download_trial(trial_id, folder, session_id=None):
     
     return trial['name']
 # %% get trialID from name
-def getTrialId(session_id,trial_name):
+def get_trial_id(session_id,trial_name):
     session = get_session_json(session_id)
     
     trial_id = [t['id'] for t in session['trials'] if t['name'] == trial_name]
