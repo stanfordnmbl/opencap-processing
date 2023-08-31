@@ -136,6 +136,17 @@ def get_model_and_metadata(session_id, session_path):
         
     return modelName
         
+def get_model_from_metadata(sessionFolder,appendText='_scaled'):
+    metadataPath = os.path.join(sessionFolder,'sessionMetadata.yaml')
+    
+    if os.path.exists(metadataPath):
+        metadata = import_metadata(os.path.join(sessionFolder,'sessionMetadata.yaml'))
+        modelFile = metadata['openSimModel'] + appendText + '.osim'
+    else:
+        raise Exception('Session metadata not found, could not identify OpenSim model.')
+        
+    return modelFile
+
         
 def get_motion_data(trial_id, session_path):
     trial = get_trial_json(trial_id)

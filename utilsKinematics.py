@@ -19,16 +19,14 @@
 '''
 
 import os
-import glob
 import opensim
+import utils
 import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
-from scipy.signal import find_peaks
 
 
 from utilsProcessing import lowPassFilter
-from utilsTRC import trc_2_dict
 
 class kinematics:
     
@@ -45,7 +43,8 @@ class kinematics:
         modelPath = os.path.join(sessionDir, 'OpenSimData', 'Model',
                                  '{}.osim'.format(modelName))
         if not os.path.exists(modelPath):
-            modelPath = glob.glob(os.path.join(os.path.dirname(modelPath),'*.osim'))[0]
+            modelFromMetadata = utils.get_model_from_metadata(sessionDir)
+            modelPath = modelPath.replace(modelName + '.osim',modelFromMetadata)
 
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
