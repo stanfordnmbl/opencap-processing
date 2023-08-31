@@ -35,12 +35,12 @@ import utils
 # %% User-defined variables
 
 # overground trial
-session_id = 'b39b10d1-17c7-4976-b06c-a6aaf33fead2'
-trial_name = 'gait_3'
+# session_id = 'b39b10d1-17c7-4976-b06c-a6aaf33fead2'
+# trial_name = 'gait_3'
 
 # treadmill trial 1.25m/s
-# session_id = '4d5c3eb1-1a59-4ea1-9178-d3634610561c'
-# trial_name = 'walk_1_25ms'
+session_id = '4d5c3eb1-1a59-4ea1-9178-d3634610561c'
+trial_name = 'walk_1_25ms'
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
                 'single_support_time','double_support_time'}
@@ -54,12 +54,9 @@ filter_frequency = 6
 
 # %% Gait analysis
 
+# Get trial id from name
 trial_id = utils.get_trial_id(session_id,trial_name)
-
-
     
-session_id = utils.get_trial_json(trial_id)['session']
-
 # Local data dir -> will be deleted with lambda instance
 sessionDir = os.path.join(os.path.abspath('../Data'),session_id)
 
@@ -104,5 +101,3 @@ for leg in ['r','l']:
     utils.plot_subplots_with_shading(gaitResults['curves_' + leg]['mean'], 
                            gaitResults['curves_' + leg]['sd'], columns=None,
                            leg=leg)
-    
-test = 1
