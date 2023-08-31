@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     ---------------------------------------------------------------------------
     OpenCap processing: gaitAnalysis.py
@@ -36,51 +35,53 @@ class gait_analysis(kinematics):
     
     def __init__(self, sessionDir, trialName, leg='auto',
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
-                 n_gait_cycles=1):
+                 n_gait_cycles=-1):
         
-        # inherit init from kinematics class
-        super().__init__(sessionDir, trialName, 
-                     lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
+        # Inherit init from kinematics class.
+        super().__init__(
+            sessionDir, 
+            trialName, 
+            lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
                         
-        # Marker data load and filter
-        trcFilePath = os.path.join(sessionDir,'MarkerData',
-                                    '{}.trc'.format(trialName))
+        # Marker data load and filter.
+        trcFilePath = os.path.join(sessionDir,
+                                   'MarkerData',
+                                   '{}.trc'.format(trialName))
         self.markerDict = trc_2_dict(trcFilePath)
         if lowpass_cutoff_frequency_for_coordinate_values > 0:
             self.markerDict['markers'] = {
-                 marker_name: lowPassFilter(self.time, data, lowpass_cutoff_frequency_for_coordinate_values) \
-                 for marker_name, data in self.markerDict['markers'].items()}
+                marker_name: lowPassFilter(self.time, data, lowpass_cutoff_frequency_for_coordinate_values) 
+                for marker_name, data in self.markerDict['markers'].items()}
 
-        # Coordinate values            
+        # Coordinate values.
         self.coordinateValues = self.get_coordinate_values()
         
-        # Segment gait cycles
+        # Segment gait cycles.
         self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg)
         self.nGaitCycles = np.shape(self.gaitEvents['ipsilateralIdx'])[0]
         
-        # determine treadmill speed (0 if overground)
+        # Determine treadmill speed (0 if overground).
         self.treadmillSpeed = self.compute_treadmill_speed()
         
-        # initialize variables to be lazy loaded
+        # Initialize variables to be lazy loaded.
         self._comValues = None
         self._R_world_to_gait = None
     
-    # # Lazy loaded variables (setting state trajectory in utilsKinematics is slow)
-    # Compute COM trajectory and gait frame...used in multiple scalar computations
+    # Compute COM trajectory.
     def comValues(self):
         if self._comValues is None:
             self._comValues = self.get_center_of_mass_values()
         return self._comValues
     
+    # Compute gait frame.
     def R_world_to_gait(self):
         if self._R_world_to_gait is None:
             self._R_world_to_gait = self.compute_gait_frame()
         return self._R_world_to_gait
-    # # End Lazy loading
     
     def compute_scalars(self,scalarNames):
                
-        # verify that scalarNames are methods in gait_analysis        
+        # Verify that scalarNames are methods in gait_analysis.
         method_names = [func for func in dir(self) if callable(getattr(self, func))]
         possibleMethods = [entry for entry in method_names if 'compute_' in entry]
         
@@ -92,7 +93,7 @@ class gait_analysis(kinematics):
         nonexistant_methods = [entry for entry in scalarNames if 'compute_' + entry not in method_names]
         
         if len(nonexistant_methods) > 0:
-            raise Exception(str(['compute_' + a for a in nonexistant_methods]) + ' not in gait_analysis class.')
+            raise Exception(str(['compute_' + a for a in nonexistant_methods]) + ' does not exist in gait_analysis class.')
         
         scalarDict = {}
         for scalarName in scalarNames:
@@ -107,13 +108,15 @@ class gait_analysis(kinematics):
         
         calc_position = self.markerDict['markers'][leg + '_calc_study']
 
-        # find stride length on treadmill
-        # difference in ipsilateral calcaneus position at heel strike + treadmill speed * time
-        strideLength = np.linalg.norm(calc_position[self.gaitEvents['ipsilateralIdx'][:,:1]] - \
-                           calc_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) + \
-                           self.treadmillSpeed * np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
+        # On treadmill, the stride length is the difference in ipsilateral
+        # calcaneus position at heel strike + treadmill speed * time.
+        strideLength = (
+            np.linalg.norm(
+                calc_position[self.gaitEvents['ipsilateralIdx'][:,:1]] - 
+                calc_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) + 
+                self.treadmillSpeed * np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]))
         
-        # average across all strides
+        # Average across all strides.
         strideLength = np.mean(strideLength)
         
         return strideLength
@@ -121,26 +124,28 @@ class gait_analysis(kinematics):
     def compute_gait_speed(self):
                            
         comValuesArray = np.vstack((self.comValues()['x'],self.comValues()['y'],self.comValues()['z'])).T
-        gait_speed = (np.linalg.norm(comValuesArray[self.gaitEvents['ipsilateralIdx'][:,:1]] - \
-                           comValuesArray[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2)) / \
-                           np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]) + self.treadmillSpeed 
+        gait_speed = (
+            np.linalg.norm(
+                comValuesArray[self.gaitEvents['ipsilateralIdx'][:,:1]] -
+                comValuesArray[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) /
+                np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]) + self.treadmillSpeed) 
         
-        # average across all strides
+        # Average across all strides.
         gait_speed = np.mean(gait_speed)
         
         return gait_speed
     
     def compute_cadence(self):
         
-        # in steps per second
+        # In steps per second.
         cadence = 1/np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
         
-        # average across strides
+        # Average across all strides.
         cadence = np.mean(cadence)
         
         return cadence
     
-    def compute_treadmill_speed(self):
+    def compute_treadmill_speed(self, overground_speed_threshold=0.3):
         
         leg,_ = self.get_leg()
         
@@ -150,7 +155,7 @@ class gait_analysis(kinematics):
         startIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,:1]+.1*stanceTimeLength).astype(int)
         endIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,1:2]-.3*stanceTimeLength).astype(int)
             
-        # average instantaneous velocities
+        # Average instantaneous velocities.
         dt = np.diff(self.markerDict['time'][:2])[0]
         for i in range(self.nGaitCycles):
             footVel = np.linalg.norm(np.mean(np.diff(
@@ -158,31 +163,35 @@ class gait_analysis(kinematics):
         
         treadmillSpeed = np.mean(footVel)
         
-        # overground
-        if treadmillSpeed < .3:
+        # Overground.
+        if treadmillSpeed < overground_speed_threshold:
             treadmillSpeed = 0
                            
         return treadmillSpeed
     
     def compute_step_width(self):
-        # get ankle joint center positions
+        
         leg,contLeg = self.get_leg()
         
-        ankle_position_ips = (self.markerDict['markers'][leg + '_ankle_study'] + 
-                          self.markerDict['markers'][leg + '_mankle_study'])/2
-        ankle_position_cont = (self.markerDict['markers'][contLeg + '_ankle_study'] + 
-                          self.markerDict['markers'][contLeg + '_mankle_study'])/2
-        
-        ankleVector = ankle_position_cont[self.gaitEvents['contralateralIdx'][:,1]] - \
-                      ankle_position_ips[self.gaitEvents['ipsilateralIdx'][:,0]]
+        # Get ankle joint center positions.
+        ankle_position_ips = (
+            self.markerDict['markers'][leg + '_ankle_study'] + 
+            self.markerDict['markers'][leg + '_mankle_study'])/2
+        ankle_position_cont = (
+            self.markerDict['markers'][contLeg + '_ankle_study'] + 
+            self.markerDict['markers'][contLeg + '_mankle_study'])/2        
+        ankleVector = (
+            ankle_position_cont[self.gaitEvents['contralateralIdx'][:,1]] - 
+            ankle_position_ips[self.gaitEvents['ipsilateralIdx'][:,0]])
                       
-        ankleVector_inGaitFrame = np.array([np.dot(ankleVector[i,:], self.R_world_to_gait()[i,:,:]) \
-                                            for i in range(self.nGaitCycles)])
+        ankleVector_inGaitFrame = np.array(
+            [np.dot(ankleVector[i,:], self.R_world_to_gait()[i,:,:]) 
+             for i in range(self.nGaitCycles)])
         
-        # step width is z distance
+        # Step width is z distance.
         stepWidth = np.abs(ankleVector_inGaitFrame[:,2])
         
-        # average across gait cycles
+        # Average across all strides.
         stepWidth = np.mean(stepWidth)
         
         return stepWidth
@@ -191,43 +200,45 @@ class gait_analysis(kinematics):
         
         singleSupportTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
         
-        # average across strides
+        # Average across all strides.
         singleSupportTime = np.mean(singleSupportTime)
         
         return singleSupportTime
         
     def compute_double_support_time(self):
         
-        # ipsilateral single support time - contralateral swing time
-        doubleSupportTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - \
-                            np.diff(self.gaitEvents['contralateralTime'][:,:2])
+        # Ipsilateral single support time - contralateral swing time.
+        doubleSupportTime = (
+            np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
+            np.diff(self.gaitEvents['contralateralTime'][:,:2]))
                             
-        # average across strides
+        # Average across all strides.
         doubleSupportTime = np.mean(doubleSupportTime)
         
         return doubleSupportTime
             
     def compute_gait_frame(self):
-        # Create frame for each gait cycle  with x: pelvis heading, 
-        # z: average vector between ASIS during gait cycle, y: cross. 
+
+        # Create frame for each gait cycle with x: pelvis heading, 
+        # z: average vector between ASIS during gait cycle, y: cross.
         
-        # Pelvis center trajectory (for overground heading vector)
+        # Pelvis center trajectory (for overground heading vector).
         pelvisMarkerNames = ['r.ASIS_study','L.ASIS_study','r.PSIS_study','L.PSIS_study']
         pelvisMarkers = [self.markerDict['markers'][mkr]  for mkr in pelvisMarkerNames]
         pelvisCenter = np.mean(np.array(pelvisMarkers),axis=0)
         
-        # ankle trajectory (for treadmill heading vector)
+        # Ankle trajectory (for treadmill heading vector).
         leg = self.gaitEvents['ipsilateralLeg']
         if leg == 'l': leg='L'
         anklePos = self.markerDict['markers'][leg + '_ankle_study']
         
-        # vector from left ASIS to right ASIS (for mediolateral direction)
+        # Vector from left ASIS to right ASIS (for mediolateral direction).
         asisMarkerNames = ['L.ASIS_study','r.ASIS_study']
         asisMarkers = [self.markerDict['markers'][mkr]  for mkr in asisMarkerNames]
         asisVector = np.squeeze(np.diff(np.array(asisMarkers),axis=0))
         
-        # heading vector per gait cycle
-        # if overground, use pelvis center trajectory; treadmill: ankle trajectory
+        # Heading vector per gait cycle.
+        # If overground, use pelvis center trajectory; treadmill: ankle trajectory.
         if self.treadmillSpeed == 0:
             x = np.diff(pelvisCenter[self.gaitEvents['ipsilateralIdx'][:,(0,2)],:],axis=1)[:,0,:]
             x = x / np.linalg.norm(x,axis=1,keepdims=True)
@@ -238,22 +249,23 @@ class gait_analysis(kinematics):
                          anklePos[self.gaitEvents['ipsilateralIdx'][i,1]]
             x = x / np.linalg.norm(x,axis=1,keepdims=True)
             
-        # mean ASIS vector over gait cycle
+        # Mean ASIS vector over gait cycle.
         z = np.zeros((self.nGaitCycles,3))
         for i in range(self.nGaitCycles):
             z[i,:] = np.mean(asisVector[self.gaitEvents['ipsilateralIdx'][i,0]: \
                              self.gaitEvents['ipsilateralIdx'][i,2]],axis=0)
         z = z / np.linalg.norm(z,axis=1,keepdims=True)
         
-        # cross to get y
+        # Cross to get y.
         y = np.cross(z,x)
         
-        # 3x3xnSteps
+        # 3x3xnSteps.
         R_lab_to_gait = np.stack((x.T,y.T,z.T),axis=1).transpose((2, 0, 1))
         
         return R_lab_to_gait
     
     def get_leg(self):
+
         if self.gaitEvents['ipsilateralLeg'] == 'r':
             leg = 'r'
             contLeg = 'L'
@@ -275,44 +287,49 @@ class gait_analysis(kinematics):
                                    for i in range(coordValues.shape[1])],axis=1))
              
         coordinateValuesTimeNormalized = {}
-        # average
+        # Average.
         coordVals_mean = np.mean(np.array(coordValuesNorm),axis=0)
         coordinateValuesTimeNormalized['mean'] = pd.DataFrame(data=coordVals_mean, columns=colNames)
         
-        # standard deviation
+        # Standard deviation.
         if self.nGaitCycles >2:
             coordVals_sd = np.std(np.array(coordValuesNorm), axis=0)
             coordinateValuesTimeNormalized['sd'] = pd.DataFrame(data=coordVals_sd, columns=colNames)
         else:
             coordinateValuesTimeNormalized['sd'] = None
         
-        #return to dataframe
+        # Return to dataframe.
         coordinateValuesTimeNormalized['indiv'] = [pd.DataFrame(data=d, columns=colNames) for d in coordValuesNorm]
         
         return coordinateValuesTimeNormalized
 
     def segment_walking(self, n_gait_cycles=-1, leg='auto', visualize=False):
-        # n_gait_cycles = -1 finds all accessible gait cycles. Otherwise, it finds
-        # that many gait cycles, working backwards from end of trial.
-        
-        # subtract sacrum from foot
-        # visually, it looks like the position-based approach will be more robust
-        r_calc_rel_x = (self.markerDict['markers']['r_calc_study'] - self.markerDict[
-                                     'markers']['r.PSIS_study'])[:,0]
-        r_toe_rel_x = (self.markerDict['markers']['r_toe_study'] - self.markerDict[
-                                    'markers']['r.PSIS_study'])[:,0]
 
-        # repeat for left
-        l_calc_rel_x = (self.markerDict['markers']['L_calc_study'] - self.markerDict[
-                                     'markers']['L.PSIS_study'])[:,0]
-        l_toe_rel_x = (self.markerDict['markers']['L_toe_study'] - self.markerDict[
-                                    'markers']['L.PSIS_study'])[:,0]
+        # n_gait_cycles = -1 finds all accessible gait cycles. Otherwise, it 
+        # finds that many gait cycles, working backwards from end of trial.
         
-        # Find HS
+        # Subtract sacrum from foot.
+        # It looks like the position-based approach will be more robust.
+        r_calc_rel_x = (
+            self.markerDict['markers']['r_calc_study'] - 
+            self.markerDict['markers']['r.PSIS_study'])[:,0]
+        r_toe_rel_x = (
+            self.markerDict['markers']['r_toe_study'] - 
+            self.markerDict['markers']['r.PSIS_study'])[:,0]
+
+        # Repeat for left.
+        l_calc_rel_x = (
+            self.markerDict['markers']['L_calc_study'] - 
+            self.markerDict['markers']['L.PSIS_study'])[:,0]
+        l_toe_rel_x = (
+            self.markerDict['markers']['L_toe_study'] - 
+            self.markerDict['markers']['L.PSIS_study'])[:,0]
+        
+        # Find HS.
         rHS, _ = find_peaks(r_calc_rel_x, prominence=0.3)
         lHS, _ = find_peaks(l_calc_rel_x, prominence=0.3)
         
-        # Find TO
+        # Find TO.
         rTO, _ = find_peaks(-r_toe_rel_x, prominence=0.3)
         lTO, _ = find_peaks(-l_toe_rel_x, prominence=0.3)
         
@@ -333,15 +350,15 @@ class gait_analysis(kinematics):
             plt.scatter(self.markerDict['time'][lTO], l_toe_rel_x[lTO], color='blue', label='lTO')
             plt.legend()
 
-        # find the number of gait cycles for the foot of interest
+        # Find the number of gait cycles for the foot of interest.
         if leg=='auto':
-            # find the last HS of either foot
+            # Find the last HS of either foot.
             if rHS[-1] > lHS[-1]:
                 leg = 'r'
             else:
                 leg = 'l'
         
-        # find the number of gait cycles for the foot of interest
+        # Find the number of gait cycles for the foot of interest.
         if leg == 'r':
             hsIps = rHS
             toIps = rTO
@@ -354,34 +371,36 @@ class gait_analysis(kinematics):
             toCont = rTO
 
         if len(hsIps)-1 < n_gait_cycles:
-            print('You requested {} gait cycles, but only {} were found. Proceeding with this number.'.format(
-                   n_gait_cycles,len(hsIps)-1))
+            print('You requested {} gait cycles, but only {} were found. '
+                  'Proceeding with this number.'.format(n_gait_cycles,len(hsIps)-1))
             n_gait_cycles = len(hsIps)-1
         if n_gait_cycles == -1:
             n_gait_cycles = len(hsIps)-1
             print('Processing {} gait cycles.'.format(n_gait_cycles))
             
-        # Ipsilateral gait events: heel strike, toe-off, heel strike
+        # Ipsilateral gait events: heel strike, toe-off, heel strike.
         gaitEvents_ips = np.zeros((n_gait_cycles, 3),dtype=np.int)
-        # Contralateral gait events: toe-off, heel strike
+        # Contralateral gait events: toe-off, heel strike.
         gaitEvents_cont = np.zeros((n_gait_cycles, 2),dtype=np.int)
         if n_gait_cycles <1:
             raise Exception('Not enough gait cycles found.')
 
         for i in range(n_gait_cycles):
-            # ipsilateral HS, TO, HS
+            # Ipsilateral HS, TO, HS.
             gaitEvents_ips[i,0] = hsIps[-i-2]
             gaitEvents_ips[i,2] = hsIps[-i-1]
             
-            # iterate in reverse through ipsilateral TO, finding the one that is within the range of gaitEvents_ips
+            # Iterate in reverse through ipsilateral TO, finding the one that
+            # is within the range of gaitEvents_ips.
             toIpsFound = False
             for j in range(len(toIps)):
                 if toIps[-j-1] > gaitEvents_ips[i,0] and toIps[-j-1] < gaitEvents_ips[i,2] and not toIpsFound:
                     gaitEvents_ips[i,1] = toIps[-j-1]
                     toIpsFound = True
 
-            # contralateral TO, HS
-            # iterate in reverse through contralateral HS and TO, finding the one that is within the range of gaitEvents_ips
+            # Contralateral TO, HS.
+            # Iterate in reverse through contralateral HS and TO, finding the
+            # one that is within the range of gaitEvents_ips
             hsContFound = False
             toContFound = False
             for j in range(len(toCont)):
@@ -394,13 +413,13 @@ class gait_analysis(kinematics):
                     gaitEvents_cont[i,1] = hsCont[-j-1]
                     hsContFound = True
             
-            # making contralateral gait events optional
+            # Making contralateral gait events optional.
             if not toContFound or not hsContFound:                   
                 raise Warning('Could not find contralateral gait event within ipsilateral gait event range.')
                 gaitEvents_cont[i,0] = np.nan
                 gaitEvents_cont[i,1] = np.nan
             
-            # convert gaitEvents to times using self.markerDict['time']
+            # Convert gaitEvents to times using self.markerDict['time'].
             gaitEventTimes_ips = self.markerDict['time'][gaitEvents_ips]
             gaitEventTimes_cont = self.markerDict['time'][gaitEvents_cont]
                             
@@ -412,7 +431,5 @@ class gait_analysis(kinematics):
                       'eventNamesContralateral':['TO','HS'],
                       'ipsilateralLeg':leg}
         
-        return gaitEvents       
-    
-    # Lazy loading some things that are computationally expensive
+        return gaitEvents
     
