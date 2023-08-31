@@ -49,12 +49,12 @@ def analyzeGait(trial_id,scalar_names=None,n_gait_cycles=1,filterFreq=6):
 # TODO delete. Testing as script
 
 # overground trial
-trial_id = 'bf181007-d0f3-4395-8dc3-a0f0e5553761'
+# trial_id = 'bf181007-d0f3-4395-8dc3-a0f0e5553761'
 
 # treadmill trial 1.25m/s
-# session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-# trial_name = 'walk_1_25ms'
-# trial_id = utils.get_trial_id(session_id,trial_name)
+session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
+trial_name = 'walk_1_25ms'
+trial_id = utils.get_trial_id(session_id,trial_name)
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
                 'single_support_time','double_support_time'}

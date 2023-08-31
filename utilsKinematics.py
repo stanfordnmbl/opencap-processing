@@ -60,6 +60,9 @@ class kinematics:
         tableProcessor.append(opensim.TabOpUseAbsoluteStateNames())
         self.time = np.asarray(self.table.getIndependentColumn())
         
+        # initialize the state trajectory. We will set it in other functions
+        # if it is needed
+        self._stateTrajectory = None
         
         # Filter coordinate values.
         if lowpass_cutoff_frequency_for_coordinate_values > 0:
@@ -108,11 +111,7 @@ class kinematics:
             if not stateVariableNameStr in existingLabels:
                 vec_0 = opensim.Vector([0] * self.table.getNumRows())            
                 self.table.appendColumn(stateVariableNameStr, vec_0)
-                
-        # Set state trajectory
-        self.stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(
-            self.model, self.table)
-        
+                       
         # Number of muscles.
         self.nMuscles = 0
         self.forceSet = self.model.getForceSet()
@@ -147,7 +146,14 @@ class kinematics:
                                'elbow_flex_r', 'pro_sup_r', 
                                'arm_flex_l', 'arm_add_l', 'arm_rot_l', 
                                'elbow_flex_l', 'pro_sup_l']
-            
+    
+    # Only set the state trajectory when needed b/c it is slow
+    def stateTrajectory(self):
+        if self._stateTrajectory is None:
+            self._stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(
+                                    self.model, self.table)
+        return self._stateTrajectory
+        
     def get_coordinate_values(self, in_degrees=True, 
                               lowpass_cutoff_frequency=-1):
         
@@ -229,14 +235,14 @@ class kinematics:
         # Compute muscle-tendon lengths.
         lMT = np.zeros((self.table.getNumRows(), self.nMuscles))
         for i in range(self.table.getNumRows()):
-            self.model.realizePosition(self.stateTrajectory[i])
+            self.model.realizePosition(self.stateTrajectory()[i])
             if i == 0:
                 muscleNames = [] 
             for m in range(self.forceSet.getSize()):        
                 c_force_elt = self.forceSet.get(m)  
                 if 'Muscle' in c_force_elt.getConcreteClassName():
                     cObj = opensim.Muscle.safeDownCast(c_force_elt)            
-                    lMT[i,m] = cObj.getLength(self.stateTrajectory[i])
+                    lMT[i,m] = cObj.getLength(self.stateTrajectory()[i])
                     if i == 0:
                         muscleNames.append(c_force_elt.getName())
                         
@@ -258,7 +264,7 @@ class kinematics:
         dM =  np.zeros((self.table.getNumRows(), self.nMuscles, 
                         self.nCoordinates))
         for i in range(self.table.getNumRows()):            
-            self.model.realizePosition(self.stateTrajectory[i])
+            self.model.realizePosition(self.stateTrajectory()[i])
             if i == 0:
                 muscleNames = []
             for m in range(self.forceSet.getSize()):        
@@ -285,7 +291,7 @@ class kinematics:
                             coordinate = self.coordinateSet.get(
                                 self.coordinates.index(coord))
                             dM[i, m, c] = cObj.computeMomentArm(
-                                self.stateTrajectory[i], coordinate)
+                                self.stateTrajectory()[i], coordinate)
                             
         # Clean numerical artefacts (ie, moment arms smaller than 1e-5 m).
         dM[np.abs(dM) < 1e-5] = 0
@@ -312,11 +318,11 @@ class kinematics:
         self.com_values = np.zeros((self.table.getNumRows(),3))
         self.com_speeds = np.zeros((self.table.getNumRows(),3))        
         for i in range(self.table.getNumRows()):            
-            self.model.realizeVelocity(self.stateTrajectory[i])
+            self.model.realizeVelocity(self.stateTrajectory()[i])
             self.com_values[i,:] = self.model.calcMassCenterPosition(
-                self.stateTrajectory[i]).to_numpy()
+                self.stateTrajectory()[i]).to_numpy()
             self.com_speeds[i,:] = self.model.calcMassCenterVelocity(
-                self.stateTrajectory[i]).to_numpy()
+                self.stateTrajectory()[i]).to_numpy()
             
     def get_center_of_mass_values(self, lowpass_cutoff_frequency=-1):
         

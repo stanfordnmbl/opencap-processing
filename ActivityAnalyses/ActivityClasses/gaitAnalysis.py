@@ -61,10 +61,23 @@ class gait_analysis(kinematics):
         # determine treadmill speed (0 if overground)
         self.treadmillSpeed = self.compute_treadmill_speed()
         
-        # Compute COM trajectory and gait frame...used in multiple scalar computations
-        self.comValues = self.get_center_of_mass_values()
-        self.R_world_to_gait = self.compute_gait_frame()
-                
+        # initialize variables to be lazy loaded
+        self._comValues = None
+        self._R_world_to_gait = None
+    
+    # # Lazy loaded variables (setting state trajectory in utilsKinematics is slow)
+    # Compute COM trajectory and gait frame...used in multiple scalar computations
+    def comValues(self):
+        if self._comValues is None:
+            self._comValues = self.get_center_of_mass_values()
+        return self._comValues
+    
+    def R_world_to_gait(self):
+        if self._R_world_to_gait is None:
+            self._R_world_to_gait = self.compute_gait_frame()
+        return self._R_world_to_gait
+    # # End Lazy loading
+    
     def compute_scalars(self,scalarNames):
                
         # verify that scalarNames are methods in gait_analysis        
@@ -110,7 +123,7 @@ class gait_analysis(kinematics):
     
     def compute_gait_speed(self):
                            
-        comValuesArray = np.vstack((self.comValues['x'],self.comValues['y'],self.comValues['z'])).T
+        comValuesArray = np.vstack((self.comValues()['x'],self.comValues()['y'],self.comValues()['z'])).T
         gait_speed = (np.linalg.norm(comValuesArray[self.gaitEvents['ipsilateralIdx'][:,:1]] - \
                            comValuesArray[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2)) / \
                            np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]) + self.treadmillSpeed 
@@ -171,7 +184,7 @@ class gait_analysis(kinematics):
         ankleVector = ankle_position_cont[self.gaitEvents['contralateralIdx'][:,1]] - \
                       ankle_position_ips[self.gaitEvents['ipsilateralIdx'][:,0]]
                       
-        ankleVector_inGaitFrame = np.array([np.dot(ankleVector[i,:], self.R_world_to_gait[i,:,:]) \
+        ankleVector_inGaitFrame = np.array([np.dot(ankleVector[i,:], self.R_world_to_gait()[i,:,:]) \
                                             for i in range(self.nGaitCycles)])
         
         # step width is z distance
@@ -201,7 +214,7 @@ class gait_analysis(kinematics):
         doubleSupportTime = np.mean(doubleSupportTime)
         
         return doubleSupportTime
-        
+            
     def compute_gait_frame(self):
         # Create frame for each gait cycle  with x: pelvis heading, 
         # z: average vector between ASIS during gait cycle, y: cross. 
@@ -379,3 +392,6 @@ class gait_analysis(kinematics):
                       'ipsilateralLeg':leg}
         
         return gaitEvents       
+    
+    # Lazy loading some things that are computationally expensive
+    
