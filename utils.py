@@ -29,6 +29,7 @@ import pickle
 import glob
 import zipfile
 import platform
+import matplotlib.pyplot as plt
 
 from utilsAPI import get_api_url
 from utilsAuthentication import get_token
@@ -630,4 +631,61 @@ def download_session(session_id, sessionBasePath= None,
     if writeToDB:
         post_file_to_trial(session_zip,dynamic_ids[-1],tag='session_zip',
                            device_id='all')    
+    
         
+
+def plot_subplots_with_shading(mean_df, sd_df, columns=None, leg=None):
+    if columns is None:
+        columns = [col for col in mean_df.columns if col != 'time']
+
+    columns = [col for col in columns if not any(sub in col for sub in ['_beta', 'mtp', 'time'])]
+
+    if leg == 'r':
+        columns = [col for col in columns if not col.endswith('_l')]
+    elif leg == 'l':
+        columns = [col for col in columns if not col.endswith('_r')]
+
+    num_columns = len(columns)
+    num_rows = (num_columns + 3) // 4  # Always 4 columns per row
+    
+    fig, axes = plt.subplots(num_rows, 4, figsize=(12, 8))
+    axes = axes.flatten()
+
+    x_values = np.array([0, 50, 100])
+    x_labels = ['0%', '50%', '100%']
+
+    for i, column in enumerate(columns):
+        row = i // 4
+        ax = axes[i]
+
+        mean_values = mean_df[column]
+
+        ax.plot(mean_values, color='black', label='Mean')
+        
+        # Check if sd_df is not None before plotting
+        if sd_df is not None:
+            sd_values = sd_df[column]
+            ax.fill_between(
+                range(len(mean_values)),
+                mean_values - sd_values,
+                mean_values + sd_values,
+                color='gray',
+                alpha=0.5,
+                label='Mean ± SD'
+            )
+
+        ax.set_xticks(x_values)
+        ax.set_xticklabels(x_labels)
+        ax.set_xlabel('% gait cycle' if row == num_rows - 1 else None, fontsize=16)
+        ax.set_ylabel(column, fontsize=16)
+        
+        # Increase font size for axis labels
+        ax.tick_params(axis='both', which='major', labelsize=12)
+
+    # Remove any unused subplots
+    if num_columns < num_rows * 4:
+        for i in range(num_columns, num_rows * 4):
+            fig.delaxes(axes[i])
+
+    plt.tight_layout()
+    plt.show()

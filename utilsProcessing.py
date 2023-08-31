@@ -19,7 +19,7 @@
 '''
 
 import sys
-sys.path.append('AnalysisFunctions/ActivityClasses/')
+sys.path.append('AnalysisFunctions/')
 
 import os
 import logging
@@ -41,11 +41,12 @@ def lowPassFilter(time, data, lowpass_cutoff_frequency, order=4):
 # %% Segment gait
 def segment_gait(session_id, trial_name, data_folder, gait_cycles_from_end=0):
     
-    from gaitAnalysis import gait_analysis
+    from gait_analysis import gait_analysis
 
     trial_id = get_trial_id(session_id,trial_name)
     download_trial(trial_id,os.path.join(data_folder,session_id),session_id=session_id)
-    gait = gait_analysis(os.path.join(data_folder,session_id), trial_name,n_gait_cycles=4)
+    gait = gait_analysis(os.path.join(data_folder,session_id), trial_name,
+                         n_gait_cycles=-1)
     heelstrikeTimes = gait.gaitEvents['ipsilateralTime'][gait_cycles_from_end,(0,2)].tolist()
     
     return heelstrikeTimes, gait

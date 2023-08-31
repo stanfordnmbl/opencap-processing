@@ -102,12 +102,9 @@ class gait_analysis(kinematics):
         return scalarDict
     
     def compute_stride_length(self):
-
-        # get calc positions based on self.gaitEvents['leg'] from self.markerDict
-        if self.gaitEvents['ipsilateralLeg'] == 'r':
-            leg = 'r'
-        else:
-            leg = 'L'
+        
+        leg,_ = self.get_leg()
+        
         calc_position = self.markerDict['markers'][leg + '_calc_study']
 
         # find stride length on treadmill
@@ -144,10 +141,9 @@ class gait_analysis(kinematics):
         return cadence
     
     def compute_treadmill_speed(self):
-        if self.gaitEvents['ipsilateralLeg'] == 'r':
-            leg = 'r'
-        else:
-            leg = 'L'
+        
+        leg,_ = self.get_leg()
+        
         foot_position = self.markerDict['markers'][leg + '_ankle_study']
         
         stanceTimeLength = np.round(np.diff(self.gaitEvents['ipsilateralIdx'][:,:2]))
@@ -170,12 +166,8 @@ class gait_analysis(kinematics):
     
     def compute_step_width(self):
         # get ankle joint center positions
-        if self.gaitEvents['ipsilateralLeg'] == 'r':
-            leg = 'r'
-            contLeg = 'L'
-        else:
-            leg = 'L'
-            contLeg = 'r'
+        leg,contLeg = self.get_leg()
+        
         ankle_position_ips = (self.markerDict['markers'][leg + '_ankle_study'] + 
                           self.markerDict['markers'][leg + '_mankle_study'])/2
         ankle_position_cont = (self.markerDict['markers'][contLeg + '_ankle_study'] + 
@@ -261,6 +253,16 @@ class gait_analysis(kinematics):
         
         return R_lab_to_gait
     
+    def get_leg(self):
+        if self.gaitEvents['ipsilateralLeg'] == 'r':
+            leg = 'r'
+            contLeg = 'L'
+        else:
+            leg = 'L'
+            contLeg = 'r'
+            
+        return leg, contLeg
+    
     def get_coordinates_normalized_time(self):
         
         colNames = self.coordinateValues.columns
@@ -277,12 +279,22 @@ class gait_analysis(kinematics):
         coordVals_mean = np.mean(np.array(coordValuesNorm),axis=0)
         coordinateValuesTimeNormalized['mean'] = pd.DataFrame(data=coordVals_mean, columns=colNames)
         
+        # standard deviation
+        if self.nGaitCycles >2:
+            coordVals_sd = np.std(np.array(coordValuesNorm), axis=0)
+            coordinateValuesTimeNormalized['sd'] = pd.DataFrame(data=coordVals_sd, columns=colNames)
+        else:
+            coordinateValuesTimeNormalized['sd'] = None
+        
         #return to dataframe
         coordinateValuesTimeNormalized['indiv'] = [pd.DataFrame(data=d, columns=colNames) for d in coordValuesNorm]
         
         return coordinateValuesTimeNormalized
 
-    def segment_walking(self, n_gait_cycles=1, leg='auto', visualize=False):
+    def segment_walking(self, n_gait_cycles=-1, leg='auto', visualize=False):
+        # n_gait_cycles = -1 finds all accessible gait cycles. Otherwise, it finds
+        # that many gait cycles, working backwards from end of trial.
+        
         # subtract sacrum from foot
         # visually, it looks like the position-based approach will be more robust
         r_calc_rel_x = (self.markerDict['markers']['r_calc_study'] - self.markerDict[
@@ -297,14 +309,14 @@ class gait_analysis(kinematics):
                                     'markers']['L.PSIS_study'])[:,0]
         
         # Find HS
-        rHS, _ = find_peaks(r_calc_rel_x)
-        lHS, _ = find_peaks(l_calc_rel_x)
+        rHS, _ = find_peaks(r_calc_rel_x, prominence=0.3)
+        lHS, _ = find_peaks(l_calc_rel_x, prominence=0.3)
         
         # Find TO
-        rTO, _ = find_peaks(-r_toe_rel_x)
-        lTO, _ = find_peaks(-l_toe_rel_x)
+        rTO, _ = find_peaks(-r_toe_rel_x, prominence=0.3)
+        lTO, _ = find_peaks(-l_toe_rel_x, prominence=0.3)
         
-        if visualize==True:
+        if visualize:
             import matplotlib.pyplot as plt
             plt.close('all')
             plt.figure(1)
@@ -341,8 +353,17 @@ class gait_analysis(kinematics):
             hsCont = rHS
             toCont = rTO
 
-        n_gait_cycles = np.min([n_gait_cycles, len(hsIps)-1])
+        if len(hsIps)-1 < n_gait_cycles:
+            print('You requested {} gait cycles, but only {} were found. Proceeding with this number.'.format(
+                   n_gait_cycles,len(hsIps)-1))
+            n_gait_cycles = len(hsIps)-1
+        if n_gait_cycles == -1:
+            n_gait_cycles = len(hsIps)-1
+            print('Processing {} gait cycles.'.format(n_gait_cycles))
+            
+        # Ipsilateral gait events: heel strike, toe-off, heel strike
         gaitEvents_ips = np.zeros((n_gait_cycles, 3),dtype=np.int)
+        # Contralateral gait events: toe-off, heel strike
         gaitEvents_cont = np.zeros((n_gait_cycles, 2),dtype=np.int)
         if n_gait_cycles <1:
             raise Exception('Not enough gait cycles found.')
