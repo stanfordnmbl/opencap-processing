@@ -42,10 +42,9 @@ def lowPassFilter(time, data, lowpass_cutoff_frequency, order=4):
 # %% Segment gait
 def segment_gait(session_id, trial_name, data_folder, gait_cycles_from_end=0):
     
-    from gait_analysis import gait_analysis
-
-    trial_id = get_trial_id(session_id,trial_name)
-    download_trial(trial_id,os.path.join(data_folder,session_id),session_id=session_id)
+    # Segmentation is done in the gait_analysis class
+    from gait_analysis import gait_analysis  
+    
     gait = gait_analysis(os.path.join(data_folder,session_id), trial_name,
                          n_gait_cycles=-1)
     heelstrikeTimes = gait.gaitEvents['ipsilateralTime'][gait_cycles_from_end,(0,2)].tolist()
@@ -55,6 +54,9 @@ def segment_gait(session_id, trial_name, data_folder, gait_cycles_from_end=0):
 # %% Segment squats.
 def segment_squats(ikFilePath, pelvis_ty=None, timeVec=None, visualize=False,
                   filter_pelvis_ty=True, cutoff_frequency=4, height=.2):
+    
+    # TODO: eventually, this belongs in a squat_analysis class and should take
+    # the form of segment_gait
     
     # Extract pelvis_ty if not given.
     if pelvis_ty is None and timeVec is None:
@@ -117,6 +119,9 @@ def segment_squats(ikFilePath, pelvis_ty=None, timeVec=None, visualize=False,
 def segment_STS(ikFilePath, pelvis_ty=None, timeVec=None, velSeated=0.3,
                velStanding=0.15, visualize=False, filter_pelvis_ty=True, 
                cutoff_frequency=4, delay=0.1):
+    
+    # TODO: eventually, this belongs in a sts_analysis class and should take
+    # the form of segment_gait
     
     # Extract pelvis_ty if not given.
     if pelvis_ty is None and timeVec is None:

@@ -61,6 +61,7 @@ from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
 from utilsAuthentication import get_token
 from utilsProcessing import segment_gait
+from utils import get_trial_id, download_trial
 
 # %% OpenCap authentication. Visit https://app.opencap.ai/login to create an
 # account if you don't have one yet.
@@ -96,8 +97,13 @@ motion_type = 'walking'
 # You should ignore this parameter or set it to 0 if the trial was not measured
 # on a treadmill. You can also use the gait segmenter to automatically extract
 # the treadmill speed.
-segmentation_method = 'manual'
+segmentation_method = 'automatic'
 if segmentation_method == 'automatic':
+    # Download the trial
+    download_trial(get_trial_id(session_id,trial_name),
+                   os.path.join(dataFolder,session_id),
+                   session_id=session_id)
+    
     time_window, gaitObject = segment_gait(
         session_id, trial_name, dataFolder, gait_cycles_from_end=3)
     treadmill_speed = gaitObject.treadmillSpeed
