@@ -29,58 +29,62 @@ sys.path.append("../")
 sys.path.append("../ActivityAnalyses")
 
 from gait_analysis import gait_analysis
-import utils
+from utils import get_trial_id, download_trial, plot_subplots_with_shading
 
+# %% Paths.
+baseDir = os.path.join(os.getcwd(), '..')
+dataFolder = os.path.join(baseDir, 'Data')
 
-# %% User-defined variables
+# %% User-defined variables.
+# Select example: options are treadmill and overground.
+example = 'treadmill'
 
-# overground trial
-# session_id = 'b39b10d1-17c7-4976-b06c-a6aaf33fead2'
-# trial_name = 'gait_3'
+if example == 'treadmill':
+    session_id = '4d5c3eb1-1a59-4ea1-9178-d3634610561c' # 1.25m/s
+    trial_name = 'walk_1_25ms'
 
-# treadmill trial 1.25m/s
-session_id = '4d5c3eb1-1a59-4ea1-9178-d3634610561c'
-trial_name = 'walk_1_25ms'
+elif example == 'overground':
+    session_id = 'b39b10d1-17c7-4976-b06c-a6aaf33fead2'
+    trial_name = 'gait_3'
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
                 'single_support_time','double_support_time'}
 
-# how many gait cycles you'd like to analyze
-# -1 for all gait cycles detected in the trial
+# Select how many gait cycles you'd like to analyze. Select -1 for all gait
+# cycles detected in the trial.
 n_gait_cycles = -1 
 
-# Lowpass filter frequency for kinematics data
+# Select lowpass filter frequency for kinematics data.
 filter_frequency = 6
 
-# %% Gait analysis
+# %% Gait analysis.
+# Get trial id from name.
+trial_id = get_trial_id(session_id,trial_name)    
 
-# Get trial id from name
-trial_id = utils.get_trial_id(session_id,trial_name)
+# Set session path.
+sessionDir = os.path.join(dataFolder, session_id)
+
+# Download data.
+trialName = download_trial(trial_id,sessionDir,session_id=session_id) 
+
+# Init gait analysis.
+gait_r = gait_analysis(
+    sessionDir, trialName, leg='r',
+    lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
+    n_gait_cycles=n_gait_cycles)
+gait_l = gait_analysis(
+    sessionDir, trialName, leg='l',
+    lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
+    n_gait_cycles=n_gait_cycles)
     
-# Local data dir -> will be deleted with lambda instance
-sessionDir = os.path.join(os.path.abspath('../Data'),session_id)
-
-# download data
-trialName = utils.download_trial(trial_id,sessionDir,session_id=session_id) 
-
-# init gait analysis
-gait_r = gait_analysis(sessionDir, trialName, leg='r',
-             lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-             n_gait_cycles=n_gait_cycles)
-gait_l = gait_analysis(sessionDir, trialName, leg='l',
-             lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-             n_gait_cycles=n_gait_cycles)
-    
-# compute scalars and get time-normalized kinematic curves
+# Compute scalars and get time-normalized kinematic curves.
 gaitResults = {}
 gaitResults['scalars_r'] = gait_r.compute_scalars(scalar_names)
 gaitResults['curves_r'] = gait_r.get_coordinates_normalized_time()
 gaitResults['scalars_l'] = gait_l.compute_scalars(scalar_names)
-gaitResults['curves_l'] = gait_l.get_coordinates_normalized_time()
-    
+gaitResults['curves_l'] = gait_l.get_coordinates_normalized_time()    
 
-# %% Print scalar results
-
+# %% Print scalar results.
 print('\nRight foot gait metrics:')
 print('(units: m and s)')
 print('-----------------')
@@ -95,9 +99,8 @@ for key, value in gaitResults['scalars_l'].items():
     rounded_value = round(value, 2)
     print(f"{key}: {rounded_value}")
 
-# %% Plot kinematic curves
-
+# %% Plot kinematic curves.
 for leg in ['r','l']:
-    utils.plot_subplots_with_shading(gaitResults['curves_' + leg]['mean'], 
-                           gaitResults['curves_' + leg]['sd'], columns=None,
-                           leg=leg)
+    plot_subplots_with_shading(
+        gaitResults['curves_' + leg]['mean'], 
+        gaitResults['curves_' + leg]['sd'], columns=None, leg=leg)
