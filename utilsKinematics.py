@@ -43,8 +43,9 @@ class kinematics:
         modelPath = os.path.join(sessionDir, 'OpenSimData', 'Model',
                                  '{}.osim'.format(modelName))
         if not os.path.exists(modelPath):
-            modelFromMetadata = utils.get_model_from_metadata(sessionDir)
-            modelPath = modelPath.replace(modelName + '.osim',modelFromMetadata)
+            modelNameFromMetadata = utils.get_model_name_from_metadata(sessionDir)
+            modelPath = modelPath.replace(modelName + '.osim', 
+                                          modelNameFromMetadata)
 
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
@@ -60,8 +61,8 @@ class kinematics:
         tableProcessor.append(opensim.TabOpUseAbsoluteStateNames())
         self.time = np.asarray(self.table.getIndependentColumn())
         
-        # initialize the state trajectory. We will set it in other functions
-        # if it is needed
+        # Initialize the state trajectory. We will set it in other functions
+        # if it is needed.
         self._stateTrajectory = None
         
         # Filter coordinate values.
@@ -126,7 +127,7 @@ class kinematics:
         self.coordinates = [self.coordinateSet.get(i).getName() 
                             for i in range(self.nCoordinates)]
             
-        # Find rotational and translational coords
+        # Find rotational and translational coordinates.
         self.idxColumnTrLabels = [
             self.columnLabels.index(i) for i in self.coordinates if \
             self.coordinateSet.get(i).getMotionType() == 2]
@@ -147,11 +148,12 @@ class kinematics:
                                'arm_flex_l', 'arm_add_l', 'arm_rot_l', 
                                'elbow_flex_l', 'pro_sup_l']
     
-    # Only set the state trajectory when needed b/c it is slow
+    # Only set the state trajectory when needed because it is slow.
     def stateTrajectory(self):
         if self._stateTrajectory is None:
-            self._stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(
-                                    self.model, self.table)
+            self._stateTrajectory = (
+                opensim.StatesTrajectory.createFromStatesTable(
+                    self.model, self.table))
         return self._stateTrajectory
         
     def get_coordinate_values(self, in_degrees=True, 

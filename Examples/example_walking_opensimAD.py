@@ -90,23 +90,21 @@ motion_type = 'walking'
 # Insert the time interval you want to simulate. It is recommended to simulate
 # trials shorter than 2s (more details above). Set to [] to simulate full trial.
 # We here selected a time window that corresponds to a full gait stride in order
-# to use poriodic constraints
+# to use periodic constraints. You can use the gait segmentation function to
+# automatically segment the gait cycle. Also insert the speed of the treadmill
+# in m/s. A positive value indicates that the subject is moving forward. 
+# You should ignore this parameter or set it to 0 if the trial was not measured
+# on a treadmill. You can also use the gait segmenter to automatically extract
+# the treadmill speed.
+segmentation_method = 'manual'
+if segmentation_method == 'automatic':
+    time_window, gaitObject = segment_gait(
+        session_id, trial_name, dataFolder, gait_cycles_from_end=3)
+    treadmill_speed = gaitObject.treadmillSpeed
 
-# automatically
-# time_window, gaitObject = segment_gait(session_id, trial_name, dataFolder, gait_cycles_from_end=3)
-
-# manually
-time_window = [5.7333333, 6.9333333]
-
-# Insert the speed of the treadmill in m/s. A positive value indicates that the
-# subject is moving forward. You should ignore this parameter or set it to 0 if
-# the trial was not measured on a treadmill.
-
-# automatically
-# treadmill_speed = gaitObject.treadmillSpeed
-
-#manually
-treadmill_speed = 1.25
+else:
+    time_window = [5.7333333, 6.9333333]
+    treadmill_speed = 1.25
     
 # %% Sub-example 1: walking simulation with torque-driven model.
 # Insert a string to "name" you case.
