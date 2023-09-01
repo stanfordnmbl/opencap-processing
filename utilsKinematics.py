@@ -31,7 +31,7 @@ from utilsProcessing import lowPassFilter
 class kinematics:
     
     def __init__(self, sessionDir, trialName, 
-                 modelName='LaiUhlrich2022_scaled',
+                 modelName=None,
                  lowpass_cutoff_frequency_for_coordinate_values=-1):
         
         self.lowpass_cutoff_frequency_for_coordinate_values = (
@@ -39,13 +39,19 @@ class kinematics:
         
         # Model.
         opensim.Logger.setLevelString('error')
-        # check if specified model name exists
-        modelPath = os.path.join(sessionDir, 'OpenSimData', 'Model',
-                                 '{}.osim'.format(modelName))
-        if not os.path.exists(modelPath):
+        
+        modelBasePath = os.path.join(sessionDir, 'OpenSimData', 'Model')
+        # Load model if specified, otherwise load the one that was on server
+        if modelName is None:
             modelNameFromMetadata = utils.get_model_name_from_metadata(sessionDir)
-            modelPath = modelPath.replace(modelName + '.osim', 
-                                          modelNameFromMetadata)
+            modelPath = os.path.join(modelBasePath,modelNameFromMetadata)
+        else:
+            modelPath = os.path.join(modelBasePath,
+                                 '{}.osim'.format(modelName))
+            
+        # make sure model exists
+        if not os.path.exists(modelPath):
+            raise Exception('Model path: ' + modelPath + ' does not exist.')
 
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
