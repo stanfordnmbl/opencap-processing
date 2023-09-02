@@ -29,7 +29,6 @@ import pickle
 import glob
 import zipfile
 import platform
-import matplotlib.pyplot as plt
 
 from utilsAPI import get_api_url
 from utilsAuthentication import get_token
