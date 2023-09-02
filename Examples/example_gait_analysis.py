@@ -29,7 +29,8 @@ sys.path.append("../")
 sys.path.append("../ActivityAnalyses")
 
 from gait_analysis import gait_analysis
-from utils import get_trial_id, download_trial, plot_subplots_with_shading
+from utils import get_trial_id, download_trial
+from utilsPlotting import plot_dataframe_with_shading
 
 # %% Paths.
 baseDir = os.path.join(os.getcwd(), '..')
@@ -99,8 +100,13 @@ for key, value in gaitResults['scalars_l'].items():
     rounded_value = round(value, 2)
     print(f"{key}: {rounded_value}")
 
-# %% Plot kinematic curves.
-for leg in ['r','l']:
-    plot_subplots_with_shading(
-        gaitResults['curves_' + leg]['mean'], 
-        gaitResults['curves_' + leg]['sd'], columns=None, leg=leg)
+    
+# %% You can plot multiple curves, in this case we compare right and left legs
+
+plot_dataframe_with_shading(
+    [gaitResults['curves_r']['mean'], gaitResults['curves_l']['mean']],
+    [gaitResults['curves_r']['sd'], gaitResults['curves_l']['sd']],
+    leg = ['r','l'],
+    xlabel = '% gait cycle',
+    title = 'kinematics (m or deg)',
+    legend_entries = ['right','left'])
