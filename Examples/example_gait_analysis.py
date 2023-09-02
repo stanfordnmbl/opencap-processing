@@ -101,7 +101,7 @@ for key, value in gaitResults['scalars_l'].items():
     print(f"{key}: {rounded_value}")
 
     
-# %% You can plot multiple curves, in this case we compare right and left legs
+# %% You can plot multiple curves, in this case we compare right and left legs.
 
 plot_dataframe_with_shading(
     [gaitResults['curves_r']['mean'], gaitResults['curves_l']['mean']],
