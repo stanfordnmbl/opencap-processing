@@ -29,7 +29,7 @@ from scipy.signal import find_peaks
 from utilsKinematics import kinematics
 
 
-class gait_analysis(kinematics):
+class y_balance(kinematics):
     
     def __init__(self, session_dir, trial_name, leg='auto',
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
@@ -49,7 +49,7 @@ class gait_analysis(kinematics):
         self.coordinateValues = self.get_coordinate_values()
         
         # Find what leg is moving.
-        self.leg, self.contLeg = self.get_y_balance_leg()
+        self.leg = self.get_y_balance_leg()
                     
         # Define reference frame.
         self.R_world_to_yBalance = self.compute_y_balance_frame()
@@ -77,8 +77,8 @@ class gait_analysis(kinematics):
         # y up, x-> line between calc and 2metatarsal head projected onto xz plane,
         # z -> cross(x,y)
         
-        foot = self.markerDict['markers'][self.leg + '_toe_study'] - \
-               self.markerDict['markers'][self.leg + '_calc_study']
+        foot = self.markerDict['markers'][self.leg['stance'] + '_toe_study'] - \
+               self.markerDict['markers'][self.leg['stance'] + '_calc_study']
                
         x = np.mean(foot[:10,:] / np.linalg.norm(foot[:10,:],axis=1,keepdims=True))
         x[:,1] = 0
@@ -96,7 +96,14 @@ class gait_analysis(kinematics):
         
         todo=1
     
-    
+        # rotate marker data (make fxn in utils)
+        
+        # subtract stance toe from swing toe
+        
+        # Segment start (march back from forward max, forward max, 
+        # 1st diag start, max
+        # 2nd diag start, max
+        # return distance and ind
     
     
     
