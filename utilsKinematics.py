@@ -27,6 +27,8 @@ import scipy.interpolate as interpolate
 
 
 from utilsProcessing import lowPassFilter
+from utilsTRC import trc_2_dict
+
 
 class kinematics:
     
@@ -161,6 +163,21 @@ class kinematics:
                 opensim.StatesTrajectory.createFromStatesTable(
                     self.model, self.table))
         return self._stateTrajectory
+    
+    def get_marker_dict(self, session_dir, trial_name, 
+                        lowpass_cutoff_frequency=-1):
+        
+        trcFilePath = os.path.join(session_dir,
+                                   'MarkerData',
+                                   '{}.trc'.format(trial_name))
+        
+        markerDict = trc_2_dict(trcFilePath)
+        if lowpass_cutoff_frequency > 0:
+            markerDict['markers'] = {
+                marker_name: lowPassFilter(self.time, data, lowpass_cutoff_frequency) 
+                for marker_name, data in markerDict['markers'].items()}
+        
+        return markerDict
         
     def get_coordinate_values(self, in_degrees=True, 
                               lowpass_cutoff_frequency=-1):

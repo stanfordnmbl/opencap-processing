@@ -33,25 +33,19 @@ from utilsTRC import trc_2_dict
 
 class gait_analysis(kinematics):
     
-    def __init__(self, sessionDir, trialName, leg='auto',
+    def __init__(self, session_dir, trial_name, leg='auto',
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
                  n_gait_cycles=-1):
         
         # Inherit init from kinematics class.
         super().__init__(
-            sessionDir, 
-            trialName, 
+            session_dir, 
+            trial_name, 
             lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
                         
         # Marker data load and filter.
-        trcFilePath = os.path.join(sessionDir,
-                                   'MarkerData',
-                                   '{}.trc'.format(trialName))
-        self.markerDict = trc_2_dict(trcFilePath)
-        if lowpass_cutoff_frequency_for_coordinate_values > 0:
-            self.markerDict['markers'] = {
-                marker_name: lowPassFilter(self.time, data, lowpass_cutoff_frequency_for_coordinate_values) 
-                for marker_name, data in self.markerDict['markers'].items()}
+        self.markerDict= self.get_marker_dict(session_dir, trial_name, 
+                            lowpass_cutoff_frequency = lowpass_cutoff_frequency_for_coordinate_values)
 
         # Coordinate values.
         self.coordinateValues = self.get_coordinate_values()
