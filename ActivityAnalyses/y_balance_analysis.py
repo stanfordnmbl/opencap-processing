@@ -42,22 +42,67 @@ class gait_analysis(kinematics):
             lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
                         
         # Marker data load and filter.
-        self.marker_dict = self.get_marker_dict(self, session_dir, trial_name, 
-                            lowpass_cutoff_frequency = -1)
+        self.marker_dict = self.get_marker_dict(session_dir, trial_name, 
+                            lowpass_cutoff_frequency=lowpass_cutoff_frequency_for_coordinate_values)
 
         # Coordinate values.
         self.coordinateValues = self.get_coordinate_values()
         
-        # Segment gait cycles.
-        self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg)
-        self.nGaitCycles = np.shape(self.gaitEvents['ipsilateralIdx'])[0]
+        # Find what leg is moving.
+        self.leg, self.contLeg = self.get_y_balance_leg()
+                    
+        # Define reference frame.
+        self.R_world_to_yBalance = self.compute_y_balance_frame()
         
-        # Determine treadmill speed (0 if overground).
-        self.treadmillSpeed = self.compute_treadmill_speed()
+        # Segment y balance.
+        self.events, self.distances, self.leg = self.segment_y_balance()
         
-        # Initialize variables to be lazy loaded.
-        self._comValues = None
-        self._R_world_to_gait = None
+        
+    def get_y_balance_leg(self):
+        
+        calc_r = self.markerDict['markers']['r_calc_study']
+        calc_l = self.markerDict['markers']['L_calc_study']
+        
+        leg= {}
+        if np.std(calc_r) < np.std(calc_l): 
+            leg['stance'] = 'r' 
+            leg['swing'] = 'L'
+        else:
+            leg['stance'] = 'L' 
+            leg['swing'] = 'r'
+            
+        return leg
+        
+    def compute_y_balance_frame(self):
+        # y up, x-> line between calc and 2metatarsal head projected onto xz plane,
+        # z -> cross(x,y)
+        
+        foot = self.markerDict['markers'][self.leg + '_toe_study'] - \
+               self.markerDict['markers'][self.leg + '_calc_study']
+               
+        x = np.mean(foot[:10,:] / np.linalg.norm(foot[:10,:],axis=1,keepdims=True))
+        x[:,1] = 0
+        
+        y = np.array([0,1,0])
+        z = np.cross(x,y)
+        
+        R_lab_to_yBalance = np.array([x.T,y.T,z.T])
+        
+        # TODO TEST
+        
+        return R_lab_to_yBalance
+        
+    def segment_y_balance(self):
+        
+        todo=1
+    
+    
+    
+    
+    
+    
+    
+    
     
     # Compute COM trajectory.
     def comValues(self):
