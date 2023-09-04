@@ -38,7 +38,7 @@ dataFolder = os.path.join(baseDir, 'Data')
 
 # %% User-defined variables.
 # Select example: options are treadmill and overground.
-example = 'treadmill'
+example = 'overground'
 
 if example == 'treadmill':
     session_id = '4d5c3eb1-1a59-4ea1-9178-d3634610561c' # 1.25m/s
@@ -102,7 +102,6 @@ for key, value in gaitResults['scalars_l'].items():
 
     
 # %% You can plot multiple curves, in this case we compare right and left legs.
-
 plot_dataframe_with_shading(
     [gaitResults['curves_r']['mean'], gaitResults['curves_l']['mean']],
     [gaitResults['curves_r']['sd'], gaitResults['curves_l']['sd']],

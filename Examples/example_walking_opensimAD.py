@@ -97,17 +97,15 @@ motion_type = 'walking'
 # You should ignore this parameter or set it to 0 if the trial was not measured
 # on a treadmill. You can also use the gait segmenter to automatically extract
 # the treadmill speed.
-segmentation_method = 'automatic'
+segmentation_method = 'manual'
 if segmentation_method == 'automatic':
-    # Download the trial
+    # Download the trial.
     download_trial(get_trial_id(session_id,trial_name),
                    os.path.join(dataFolder,session_id),
-                   session_id=session_id)
-    
+                   session_id=session_id)    
     time_window, gaitObject = segment_gait(
         session_id, trial_name, dataFolder, gait_cycles_from_end=3)
     treadmill_speed = gaitObject.treadmillSpeed
-
 else:
     time_window = [5.7333333, 6.9333333]
     treadmill_speed = 1.25

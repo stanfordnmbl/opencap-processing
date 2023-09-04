@@ -45,8 +45,8 @@ class kinematics:
         modelBasePath = os.path.join(sessionDir, 'OpenSimData', 'Model')
         # Load model if specified, otherwise load the one that was on server
         if modelName is None:
-            modelNameFromMetadata = utils.get_model_name_from_metadata(sessionDir)
-            modelPath = os.path.join(modelBasePath,modelNameFromMetadata)
+            modelName = utils.get_model_name_from_metadata(sessionDir)
+            modelPath = os.path.join(modelBasePath,modelName)
         else:
             modelPath = os.path.join(modelBasePath,
                                  '{}.osim'.format(modelName))
