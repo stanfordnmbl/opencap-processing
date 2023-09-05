@@ -151,7 +151,7 @@ def plot_dataframe_with_shading(mean_dataframe, sd_dataframe=None, y=None,
 
         for j, (mean_df, sd_df) in enumerate(zip(mean_dataframe, sd_dataframe)):
             if len(mean_dataframe) > 1:
-                color = colormap(j)
+                color = np.multiply(colormap(j),.7) # avoid yellow at end of viridis
             else:
                 color = 'black'
             
