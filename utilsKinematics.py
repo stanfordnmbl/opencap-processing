@@ -20,16 +20,20 @@
 
 import os
 import opensim
+import utils
 import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
 
+
 from utilsProcessing import lowPassFilter
+from utilsTRC import trc_2_dict
+
 
 class kinematics:
     
-    def __init__(self, dataDir, trialName, 
-                 modelName='LaiUhlrich2022_scaled',
+    def __init__(self, sessionDir, trialName, 
+                 modelName=None,
                  lowpass_cutoff_frequency_for_coordinate_values=-1):
         
         self.lowpass_cutoff_frequency_for_coordinate_values = (
@@ -37,13 +41,25 @@ class kinematics:
         
         # Model.
         opensim.Logger.setLevelString('error')
-        modelPath = os.path.join(dataDir, 'OpenSimData', 'Model',
+        
+        modelBasePath = os.path.join(sessionDir, 'OpenSimData', 'Model')
+        # Load model if specified, otherwise load the one that was on server
+        if modelName is None:
+            modelName = utils.get_model_name_from_metadata(sessionDir)
+            modelPath = os.path.join(modelBasePath,modelName)
+        else:
+            modelPath = os.path.join(modelBasePath,
                                  '{}.osim'.format(modelName))
+            
+        # make sure model exists
+        if not os.path.exists(modelPath):
+            raise Exception('Model path: ' + modelPath + ' does not exist.')
+
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
         
         # Motion file with coordinate values.
-        motionPath = os.path.join(dataDir, 'OpenSimData', 'Kinematics',
+        motionPath = os.path.join(sessionDir, 'OpenSimData', 'Kinematics',
                                   '{}.mot'.format(trialName))
         
         # Create time-series table with coordinate values.             
@@ -53,6 +69,9 @@ class kinematics:
         tableProcessor.append(opensim.TabOpUseAbsoluteStateNames())
         self.time = np.asarray(self.table.getIndependentColumn())
         
+        # Initialize the state trajectory. We will set it in other functions
+        # if it is needed.
+        self._stateTrajectory = None
         
         # Filter coordinate values.
         if lowpass_cutoff_frequency_for_coordinate_values > 0:
@@ -101,11 +120,7 @@ class kinematics:
             if not stateVariableNameStr in existingLabels:
                 vec_0 = opensim.Vector([0] * self.table.getNumRows())            
                 self.table.appendColumn(stateVariableNameStr, vec_0)
-                
-        # Set state trajectory
-        self.stateTrajectory = opensim.StatesTrajectory.createFromStatesTable(
-            self.model, self.table)
-        
+                       
         # Number of muscles.
         self.nMuscles = 0
         self.forceSet = self.model.getForceSet()
@@ -120,15 +135,13 @@ class kinematics:
         self.coordinates = [self.coordinateSet.get(i).getName() 
                             for i in range(self.nCoordinates)]
             
-        # TODO: hard coded
-        # Translational coordinates.
-        columnTrLabels = [
-            'pelvis_tx', 'pelvis_ty', 'pelvis_tz']        
+        # Find rotational and translational coordinates.
         self.idxColumnTrLabels = [
-            self.columnLabels.index(i) for i in columnTrLabels]
+            self.columnLabels.index(i) for i in self.coordinates if \
+            self.coordinateSet.get(i).getMotionType() == 2]
         self.idxColumnRotLabels = [
-            self.columnLabels.index(i) for i in self.columnLabels 
-            if not i in columnTrLabels]
+            self.columnLabels.index(i) for i in self.coordinates if \
+            self.coordinateSet.get(i).getMotionType() == 1]
         
         # TODO: hard coded
         self.rootCoordinates = [
@@ -142,7 +155,30 @@ class kinematics:
                                'elbow_flex_r', 'pro_sup_r', 
                                'arm_flex_l', 'arm_add_l', 'arm_rot_l', 
                                'elbow_flex_l', 'pro_sup_l']
-            
+    
+    # Only set the state trajectory when needed because it is slow.
+    def stateTrajectory(self):
+        if self._stateTrajectory is None:
+            self._stateTrajectory = (
+                opensim.StatesTrajectory.createFromStatesTable(
+                    self.model, self.table))
+        return self._stateTrajectory
+    
+    def get_marker_dict(self, session_dir, trial_name, 
+                        lowpass_cutoff_frequency=-1):
+        
+        trcFilePath = os.path.join(session_dir,
+                                   'MarkerData',
+                                   '{}.trc'.format(trial_name))
+        
+        markerDict = trc_2_dict(trcFilePath)
+        if lowpass_cutoff_frequency > 0:
+            markerDict['markers'] = {
+                marker_name: lowPassFilter(self.time, data, lowpass_cutoff_frequency) 
+                for marker_name, data in markerDict['markers'].items()}
+        
+        return markerDict
+        
     def get_coordinate_values(self, in_degrees=True, 
                               lowpass_cutoff_frequency=-1):
         
@@ -224,14 +260,14 @@ class kinematics:
         # Compute muscle-tendon lengths.
         lMT = np.zeros((self.table.getNumRows(), self.nMuscles))
         for i in range(self.table.getNumRows()):
-            self.model.realizePosition(self.stateTrajectory[i])
+            self.model.realizePosition(self.stateTrajectory()[i])
             if i == 0:
                 muscleNames = [] 
             for m in range(self.forceSet.getSize()):        
                 c_force_elt = self.forceSet.get(m)  
                 if 'Muscle' in c_force_elt.getConcreteClassName():
                     cObj = opensim.Muscle.safeDownCast(c_force_elt)            
-                    lMT[i,m] = cObj.getLength(self.stateTrajectory[i])
+                    lMT[i,m] = cObj.getLength(self.stateTrajectory()[i])
                     if i == 0:
                         muscleNames.append(c_force_elt.getName())
                         
@@ -253,7 +289,7 @@ class kinematics:
         dM =  np.zeros((self.table.getNumRows(), self.nMuscles, 
                         self.nCoordinates))
         for i in range(self.table.getNumRows()):            
-            self.model.realizePosition(self.stateTrajectory[i])
+            self.model.realizePosition(self.stateTrajectory()[i])
             if i == 0:
                 muscleNames = []
             for m in range(self.forceSet.getSize()):        
@@ -280,7 +316,7 @@ class kinematics:
                             coordinate = self.coordinateSet.get(
                                 self.coordinates.index(coord))
                             dM[i, m, c] = cObj.computeMomentArm(
-                                self.stateTrajectory[i], coordinate)
+                                self.stateTrajectory()[i], coordinate)
                             
         # Clean numerical artefacts (ie, moment arms smaller than 1e-5 m).
         dM[np.abs(dM) < 1e-5] = 0
@@ -307,11 +343,11 @@ class kinematics:
         self.com_values = np.zeros((self.table.getNumRows(),3))
         self.com_speeds = np.zeros((self.table.getNumRows(),3))        
         for i in range(self.table.getNumRows()):            
-            self.model.realizeVelocity(self.stateTrajectory[i])
+            self.model.realizeVelocity(self.stateTrajectory()[i])
             self.com_values[i,:] = self.model.calcMassCenterPosition(
-                self.stateTrajectory[i]).to_numpy()
+                self.stateTrajectory()[i]).to_numpy()
             self.com_speeds[i,:] = self.model.calcMassCenterVelocity(
-                self.stateTrajectory[i]).to_numpy()
+                self.stateTrajectory()[i]).to_numpy()
             
     def get_center_of_mass_values(self, lowpass_cutoff_frequency=-1):
         
