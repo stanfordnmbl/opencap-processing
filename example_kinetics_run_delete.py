@@ -162,14 +162,22 @@ elif session_type == 'treadmill':
         
 # %% Overwrite
 
-# motion_type = 'my_periodic_running'
 trial_name = 'run_1'
 session_id = "45061bfd-5714-4783-bdae-0287a77bf216"
+
+# Did not converge muscle driven max iterations
+# motion_type = 'my_periodic_running'
 # time_window = [1.88,2.45] # Did not converge muscle driven
 
+# case 0 -> converged but just flying
+# motion_type = 'running_torque_driven'
+# time_window = [2.25,2.5]
+
 # case 1
-motion_type = 'running_torque_driven'
-time_window = [2.25,2.5]
+time_window = [1.88,2.45]
+motion_type = 'my_periodic_running'
+
+
     
 # Set to True to solve the optimal control problem.
 solveProblem = True
