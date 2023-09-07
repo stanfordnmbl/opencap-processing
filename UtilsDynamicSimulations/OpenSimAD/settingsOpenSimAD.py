@@ -302,9 +302,7 @@ def get_setup(motion_type):
         'enableLimitTorques': True,
         'filter_Qs_toTrack': True,
         'cutoff_freq_Qs': 6,
-        'periodicConstraints': {
-            # All lower limb coordinates but pelvis_tx.
-            'coordinateValues': ['pelvis_tilt', 'pelvis_list', 'pelvis_rotation', 
+        'coordinateValues': ['pelvis_tilt', 'pelvis_list', 'pelvis_rotation', 
                    'pelvis_ty', 'pelvis_tz', 'hip_flexion_l', 
                    'hip_adduction_l', 'hip_rotation_l', 'hip_flexion_r',
                    'hip_adduction_r', 'hip_rotation_r', 'knee_angle_l',
@@ -312,9 +310,7 @@ def get_setup(motion_type):
                    'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l',
                    'mtp_angle_r', 'lumbar_extension', 'lumbar_bending',
                    'lumbar_rotation'],
-            'coordinateSpeeds': ['lowerLimbJoints'],
-            'muscleActivationsForces': ['all'],
-            'lumbarJointActivations': ['all']},
+        'torque_driven_model': True,
         'meshDensity': 100}
     
     setups['drop_jump'] = {
