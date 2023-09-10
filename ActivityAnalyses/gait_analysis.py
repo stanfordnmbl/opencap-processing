@@ -73,6 +73,11 @@ class gait_analysis(kinematics):
             self._R_world_to_gait = self.compute_gait_frame()
         return self._R_world_to_gait
     
+    def get_gait_events(self):
+        
+        return self.gaitEvents
+        
+    
     def compute_scalars(self,scalarNames):
                
         # Verify that scalarNames are methods in gait_analysis.
@@ -190,9 +195,28 @@ class gait_analysis(kinematics):
         
         return stepWidth
     
+    def compute_stance_time(self):
+        
+        stanceTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
+        
+        # Average across all strides.
+        stanceTime = np.mean(stanceTime)
+        
+        return stanceTime
+    
+    def compute_swing_time(self):
+        
+        swingTime = np.diff(self.gaitEvents['ipsilateralTime'][:,1:])
+        
+        # Average across all strides.
+        swingTime = np.mean(swingTime)
+        
+        return swingTime
+    
     def compute_single_support_time(self):
         
-        singleSupportTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
+        # Contralateral swing time
+        singleSupportTime = np.diff(self.gaitEvents['contralateralTime'][:,:2])        
         
         # Average across all strides.
         singleSupportTime = np.mean(singleSupportTime)
@@ -201,7 +225,7 @@ class gait_analysis(kinematics):
         
     def compute_double_support_time(self):
         
-        # Ipsilateral single support time - contralateral swing time.
+        # Ipsilateral stance time - contralateral swing time.
         doubleSupportTime = (
             np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
             np.diff(self.gaitEvents['contralateralTime'][:,:2]))
