@@ -439,9 +439,10 @@ class gait_analysis(kinematics):
         
         # Remove any nan rows
         mask_ips = (gaitEvents_ips == -1).any(axis=1)
-        mask_cont = (gaitEvents_cont == -1).any(axis=1)
+        if all(mask_ips):
+            raise Exception('No good steps for ' + leg + ' leg.')
         gaitEvents_ips = gaitEvents_ips[~mask_ips]
-        gaitEvents_cont = gaitEvents_cont[~mask_cont]
+        gaitEvents_cont = gaitEvents_cont[~mask_ips]
             
         # Convert gaitEvents to times using self.markerDict['time'].
         gaitEventTimes_ips = self.markerDict['time'][gaitEvents_ips]
