@@ -45,8 +45,8 @@
 '''
 
 # %% Select the example you want to run.
-runTorqueDrivenProblem = True
-runMuscleDrivenProblem = False
+runTorqueDrivenProblem = False
+runMuscleDrivenProblem = True
 runComparison = False
 
 # %% Directories, paths, and imports. You should not need to change anything.
@@ -62,6 +62,7 @@ from mainOpenSimAD import run_tracking
 from utilsAuthentication import get_token
 from utilsProcessing import segment_gait
 from utils import get_trial_id, download_trial
+from utilsKineticsOpenSimAD import kineticsOpenSimAD
 
 # %% OpenCap authentication. Visit https://app.opencap.ai/login to create an
 # account if you don't have one yet.
@@ -245,12 +246,42 @@ if runMuscleDrivenProblem:
     #   - Windows (Windows 10):    converged in 586 iterations
     #   - macOS   (Monterey 12.2): converged in 499 iterations
     #   - Linux   (Ubuntu 20.04):  converged in 645 iterations
-    run_tracking(baseDir, dataFolder, session_id, settings, case=case)
+    # run_tracking(baseDir, dataFolder, session_id, settings, case=case)
 
     # Plot some results.
-    plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+    # plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+
+    # Retrieve results from the optimal solution.
+    optimalSolution_obj = kineticsOpenSimAD(dataFolder, session_id, trial_name, settings, case)
+    coordinate_values = optimalSolution_obj.get_coordinate_values()
+    coordinate_values_tracked = optimalSolution_obj.get_tracked_coordinate_values()
+    coordinate_speeds = optimalSolution_obj.get_coordinate_speeds()
+    coordinate_speeds_tracked = optimalSolution_obj.get_tracked_coordinate_speeds()
+    coordinate_accelerations = optimalSolution_obj.get_coordinate_accelerations()
+    coordinate_accelerations_tracked = optimalSolution_obj.get_tracked_coordinate_accelerations()
+    muscle_activations = optimalSolution_obj.get_muscle_activations()
+    muscle_forces = optimalSolution_obj.get_muscle_forces()
+    ground_reaction_forces = optimalSolution_obj.get_ground_reaction_forces()
+    ground_reaction_moments = optimalSolution_obj.get_ground_reaction_moments()
+    ground_reaction_free_moments = optimalSolution_obj.get_ground_reaction_free_moments()
+    centers_of_pressure = optimalSolution_obj.get_centers_of_pressure()
+    joint_moments = optimalSolution_obj.get_joint_moments()
+    knee_adduction_moments = optimalSolution_obj.get_knee_adduction_moments()
+    medial_knee_contact_forces = optimalSolution_obj.get_medial_knee_contact_forces()
 
 # %% Comparison torque-driven vs. muscle-driven model.
 if runComparison:
     plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings,
                         ['torque_driven', 'muscle_driven'])
+    
+    
+import numpy as np
+pathOSData = os.path.join(dataFolder, session_id, 'OpenSimData')
+suff_path = ''
+if 'repetition' in settings:
+    suff_path = '_rep' + str(settings['repetition'])
+c_pathResults = os.path.join(pathOSData, 'Dynamics', 
+                             trial_name + suff_path)    
+c_tr = np.load(os.path.join(c_pathResults, 'optimaltrajectories.npy'),
+               allow_pickle=True).item()
+optimaltrajectory = c_tr[case]
