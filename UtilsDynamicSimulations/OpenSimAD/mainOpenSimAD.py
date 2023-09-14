@@ -31,6 +31,7 @@ import yaml
 import scipy.interpolate as interpolate
 import platform
 import copy
+import importlib
 
 # %% Settings.
 def run_tracking(baseDir, dataDir, subject, settings, case='0',
@@ -325,7 +326,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             weights['coordinateExcitationTerm'] = (
                 settings['weights']['coordinateExcitationTerm'])
 
+    # Set useExpressionGraphFunction to True to use the expression graph
+    # directly instead of compiling it to a function. This allows using the
+    # CasADi type SX, which should be computationally more efficient. This is
+    # an experimental feature.
+    useExpressionGraphFunction = True
+    if 'useExpressionGraphFunction' in settings:
+        useExpressionGraphFunction = settings['useExpressionGraphFunction']
+
     # %% Paths and dirs.
+    pathMain = os.getcwd()
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
     pathModelFolder = os.path.join(pathOSData, 'Model')
     pathModelFile = os.path.join(pathModelFolder, model_full_name + ".osim")
@@ -748,40 +758,47 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 f_polynomial['l'], polynomialData['l'], momentArmIndices)
     
     # %% External functions.
-    # The external function is written in C++ and compiled as a library, which
-    # can then be called with CasADi. In the external function, we build the
-    # OpenSim model and run inverse dynamics. The function takes as inputs
-    # joint positions, velocities, and accelerations, which are states and
-    # controls of the optimal control problem. The external function returns
-    # joint torques as well as some outputs of interest, eg segment origins,
-    # that you may want to use as part of the problem formulation.
-    if platform.system() == 'Windows':
-        ext_F = '.dll'
-    elif platform.system() == 'Darwin':
-        ext_F = '.dylib'
-    elif platform.system() == 'Linux':
-        ext_F = '.so'
-    else:
-        raise ValueError("Platform not supported.")
-    suff_tread = ''
+    # The external function builds the OpenSim model and run inverse dynamics.
+    # The function takes as inputs joint positions, velocities, and 
+    # accelerations, which are states and controls of the optimal control 
+    # problem. It returns joint torques as well as some outputs of interest, 
+    # eg segment origins, that you may want to use for the problem formulation.
+    # The external function is written in C++ and compiled as an executable,
+    # which when called with numerical values returns the undelrying expression
+    # graph as a function foo. We used to generate c code from the expression
+    # graph using CasADi and then compile the c code as a library to be called
+    # as an external function. This is not necessary anymore. The expression
+    # graph is saved as a function that can be called directly with CasADi. This
+    # allows using SX only, whereas actual external functions require MX. For
+    # backward compatibility, we still check if the external function is there.
+
+    F_name = 'F'
+    dim = 3*nJoints
     if treadmill:
-        suff_tread = '_treadmill'
-        
-    # test
-    import importlib
-    import foo
-    importlib.reload(foo)
-    dim = 100
-    arg = ca.SX.sym('arg', dim)
-    y,_,_ = foo.foo(arg)
-    F = ca.Function('F',[arg],[y])    
-        
-    
-    # F = ca.external('F', 
-    #     os.path.join(pathExternalFunctionFolder, 'F' + suff_tread + ext_F))
+        F_name += '_treadmill'
+        dim += 1
+    if useExpressionGraphFunction:
+        from utilsOpenSimAD import getF_expressingGraph
+        # Import function for expression graph.    
+        sys.path.append(pathExternalFunctionFolder)
+        os.chdir(pathExternalFunctionFolder)    
+        F = getF_expressingGraph(dim, F_name)
+        os.chdir(pathMain)
+    else: # This will be deprecated
+        if platform.system() == 'Windows':
+            ext_F = '.dll'
+        elif platform.system() == 'Darwin':
+            ext_F = '.dylib'
+        elif platform.system() == 'Linux':
+            ext_F = '.so'
+        else:
+            raise ValueError("Platform not supported.")
+        F = ca.external('F', 
+            os.path.join(pathExternalFunctionFolder, F_name + ext_F))
+    # F_map contains information about input/output of the function.
     F_map = np.load(
         os.path.join(pathExternalFunctionFolder, 
-                     'F' + suff_tread + '_map.npy'), allow_pickle=True).item()
+                     F_name + '_map.npy'), allow_pickle=True).item()
     
     # Indices outputs external function.
     if 'nContactSpheres' not in F_map['GRFs']:
@@ -1705,7 +1722,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         # which is not what we want. This functions allows using bounds and not
         # constraints.
         from utilsOpenSimAD import solve_with_bounds
-        w_opt, stats = solve_with_bounds(opti, ipopt_tolerance)             
+        w_opt, stats = solve_with_bounds(opti, ipopt_tolerance,
+                                         useExpressionGraphFunction)             
         np.save(os.path.join(pathResults, 'w_opt_{}.npy'.format(case)), w_opt)
         np.save(os.path.join(pathResults, 'stats_{}.npy'.format(case)), stats)
         
