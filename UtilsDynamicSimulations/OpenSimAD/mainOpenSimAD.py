@@ -1924,6 +1924,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         GRF_s_opt, COP_s_opt = {}, {}
         GRF_all_opt['all'] = np.zeros((len(contactSides)*3, N))
         GRM_all_opt['all'] = np.zeros((len(contactSides)*3, N))
+        COP_all_opt['all'] = np.zeros((len(contactSides)*3, N))
+        freeT_all_opt['all'] = np.zeros((len(contactSides)*3, N))
         for c_s, side in enumerate(contactSides):
             GRF_all_opt[side] = F_out_pp[idxGR['GRF']['all'][side], :]
             GRM_all_opt[side] = F_out_pp[idxGR['GRM']['all'][side], :]
@@ -1931,6 +1933,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 GRF_all_opt[side], GRM_all_opt[side])
             GRF_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRF_all_opt[side]
             GRM_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRM_all_opt[side]
+            COP_all_opt['all'][c_s*3:(c_s+1)*3, :] = COP_all_opt[side]
+            freeT_all_opt['all'][c_s*3:(c_s+1)*3, :] = freeT_all_opt[side]
             GRF_s_opt[side], COP_s_opt[side] = {}, {}
             for c_sphere, sphere in enumerate(contactSpheres[side]):                
                 GRF_s_opt[side][sphere] = (
@@ -1953,7 +1957,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         GR_labels['GRF']['all'] = {}
         GR_labels['COP']['all'] = {}
         GR_labels['GRM']['all'] = {}
-        GR_labels_fig = []
+        GRF_labels_fig, GRM_labels_fig, COP_labels_fig = [], [], []
         for c_side, side in enumerate(contactSides):            
             GR_labels['GRF']['all'][side] = []
             GR_labels['COP']['all'][side] = []
@@ -1973,8 +1977,12 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 GR_labels['GRF']['all'][side].append("ground_force_{}_v{}".format(side, dimension))
                 GR_labels['COP']['all'][side].append("ground_force_{}_p{}".format(side, dimension))
                 GR_labels['GRM']['all'][side].append("ground_torque_{}_{}".format(side, dimension))
-            GR_labels_fig.append(GR_labels['GRF']['all'][side])
-        GR_labels_fig = [item for sublist in GR_labels_fig for item in sublist]
+            GRF_labels_fig.append(GR_labels['GRF']['all'][side])
+            GRM_labels_fig.append(GR_labels['GRM']['all'][side])
+            COP_labels_fig.append(GR_labels['COP']['all'][side])
+        GRF_labels_fig = [item for sublist in GRF_labels_fig for item in sublist]
+        GRM_labels_fig = [item for sublist in GRM_labels_fig for item in sublist]
+        COP_labels_fig = [item for sublist in COP_labels_fig for item in sublist]
         
         if writeGUI:
             # Kinematics and activations.
@@ -2319,7 +2327,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             sys.path.append(os.path.join(baseDir, 'OpenSimPipeline',
                                          'JointReaction'))
             from computeJointLoading import computeKAM
-            KAM_labels = ['KAM_r', 'KAM_l']
+            KAM_labels = ['knee_adduction_r', 'knee_adduction_l']
             IDPath = os.path.join(
                 pathResults, 'kinetics_{}_{}.mot'.format(trialName, case))
             IKPath = os.path.join(
@@ -2421,7 +2429,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 sys.path.append(os.path.join(baseDir, 'OpenSimPipeline',
                                              'JointReaction'))
             from computeJointLoading import computeMCF
-            MCF_labels = ['MCF_r', 'MCF_l']
+            MCF_labels = ['medial_knee_contact_force_r', 
+                          'medial_knee_contact_force_l']
             forcePath = os.path.join(pathResults, 
                 'forces_{}_{}.mot'.format(trialName, case))
             IK_act_Path = os.path.join(pathResults, 
@@ -2475,9 +2484,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             'GRF_BW': GRF_BW_all_opt,
             'GRM': GRM_all_opt['all'],
             'GRM_BWht': GRM_BWht_all_opt,
+            'COP': COP_all_opt['all'],
+            'freeM': freeT_all_opt['all'],
             'coordinates': joints,
             'rotationalCoordinates': rotationalJoints,
-            'GRF_labels': GR_labels_fig,
+            'GRF_labels': GRF_labels_fig,
+            'GRM_labels': GRM_labels_fig,
+            'COP_labels': COP_labels_fig,
             'time': tgridf,
             'muscles': bothSidesMuscles,
             'passive_limit_torques': pT_opt,
@@ -2496,7 +2509,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         if torque_driven_model:
             optimaltrajectories[case]['coordinate_activations'] = aCoord_opt_nsc
         else:
-            optimaltrajectories[case]['muscle_activations'] = a_opt        
+            optimaltrajectories[case]['muscle_activations'] = a_opt
+            optimaltrajectories[case]['muscle_forces'] = Ft_opt  
             optimaltrajectories[case]['passive_muscle_torques'] = pMT_opt
             optimaltrajectories[case]['passive_muscle_torques'] = aMT_opt
                 
