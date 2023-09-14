@@ -764,13 +764,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # problem. It returns joint torques as well as some outputs of interest, 
     # eg segment origins, that you may want to use for the problem formulation.
     # The external function is written in C++ and compiled as an executable,
-    # which when called with numerical values returns the undelrying expression
+    # which when called with numerical values returns the underlying expression
     # graph as a function foo. We used to generate c code from the expression
     # graph using CasADi and then compile the c code as a library to be called
     # as an external function. This is not necessary anymore. The expression
     # graph is saved as a function that can be called directly with CasADi. This
-    # allows using SX only, whereas actual external functions require MX. For
-    # backward compatibility, we still check if the external function is there.
+    # allows using SX only, whereas actual external functions require MX. We
+    # still support the older approach (useExpressionGraphFunction=False).
 
     F_name = 'F'
     dim = 3*nJoints

@@ -45,8 +45,8 @@
 '''
 
 # %% Select the example you want to run.
-runTorqueDrivenProblem = False
-runMuscleDrivenProblem = True
+runTorqueDrivenProblem = True
+runMuscleDrivenProblem = False
 runComparison = False
 
 # %% Directories, paths, and imports. You should not need to change anything.
@@ -180,19 +180,13 @@ settings['meshDensity'] = 50
 
 # Run the dynamic simulation.
 if runTorqueDrivenProblem:
-    # Here are some reference numbers for convergence of the problem. Note that
-    # it might vary depending on the machine and the package versions.
-    #   - Windows (Windows 10):    converged in 99 iterations
-    #   - macOS   (Monterey 12.2): converged in 110 iterations 
-    #   - Linux   (Ubuntu 20.04):  converged in 109 iterations
     run_tracking(baseDir, dataFolder, session_id, settings, case=case)
-
     # Plot some results.
     plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
 
 # %% Sub-example 2: walking simulation with muscle-driven model.
 # Insert a string to "name" you case.
-case = 'muscle_driven_MX'
+case = 'muscle_driven'
 
 # Prepare inputs for dynamic simulation (this will be skipped if already done):
 #   - Download data from OpenCap database
@@ -201,8 +195,7 @@ case = 'muscle_driven_MX'
 #   - Generate external function (OpenSimAD)
 settings = processInputsOpenSimAD(
     baseDir, dataFolder, session_id, trial_name, motion_type, 
-    time_window=time_window, treadmill_speed=treadmill_speed,
-    useExpressionGraphFunction=False)
+    time_window=time_window, treadmill_speed=treadmill_speed)
 
 # Add periodic constraints to the problem. This will constrain initial and
 # final states of the problem to be the same. This is useful for obtaining
@@ -241,17 +234,11 @@ settings['meshDensity'] = 50
 
 # Run the dynamic simulation.
 if runMuscleDrivenProblem:
-    # Here are some reference numbers for convergence of the problem. Note that
-    # it might vary depending on the machine and the package versions.
-    #   - Windows (Windows 10):    converged in 586 iterations
-    #   - macOS   (Monterey 12.2): converged in 499 iterations
-    #   - Linux   (Ubuntu 20.04):  converged in 645 iterations
     run_tracking(baseDir, dataFolder, session_id, settings, case=case)
-
     # Plot some results.
     plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
 
 # %% Comparison torque-driven vs. muscle-driven model.
 if runComparison:
     plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings,
-                        ['torque_driven_SX', 'torque_driven_MX'])
+                        ['torque_driven', 'muscle_driven'])

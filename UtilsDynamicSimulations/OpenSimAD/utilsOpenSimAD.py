@@ -1526,8 +1526,8 @@ def generateExternalFunction(
             3*nCoordinates, treadmill=treadmill, 
             useExpressionGraphFunction=useExpressionGraphFunction)
         
-    # %% Verification..
-    if verifyID:        
+    # %% Verification.
+    if verifyID:
         # Run ID with the .osim file
         pathGenericTemplates = os.path.join(baseDir, "OpenSimPipeline") 
         pathGenericIDFolder = os.path.join(pathGenericTemplates,
@@ -1589,7 +1589,7 @@ def generateExternalFunction(
             vec3 = np.concatenate((vec1,vec2))
 
         if useExpressionGraphFunction:
-            # Approach 2: Expression graph.
+            # Approach 1: Expression graph.
             pathExpressionGraph = os.path.join(
                 pathOutputExternalFunctionFolder, externalFunctionName + '.py')
             if os.path.exists(pathExpressionGraph):
