@@ -26,31 +26,49 @@ import opensim
 
 class kineticsOpenSimAD:
     
-    def __init__(self, data_dir, session_id, trial_name, settings, case,
+    def __init__(self, data_dir, session_id, trial_name, case, repetition=None,
                  modelName=None):
         """
-        Initializes the kineticsOpenSimAD class.
+        Initializes the kineticsOpenSimAD class for extracting data from a
+        dynamic simulation.
 
         Args:
-            optimal_results (dict): A dictionary containing optimal results.
+            data_dir (str): The directory where data is stored.
+            session_id (str): The identifier for the data collection session.
+            trial_name (str): The name of the motion trial.
+            repetition (int, optional): The index of the motion repetition, only
+            applicable if motion_type is 'sit_to_stand' or 'squats' 
             case (str): The case for which to retrieve optimal results.
-        """
+            modelName (str, optional): The name of the OpenSim model used in the 
+            simulation (ignore if default).
 
+        This class is designed to extract data from a dynamic simulation 
+        conducted using OpenSimAD.
+        """
+        
         # Load optimal results.
         sessionDir = os.path.join(data_dir, session_id)
         opensimDir = os.path.join(sessionDir, 'OpenSimData')
         repetitionSuffix = ''
-        if 'repetition' in settings:
-            repetitionSuffix = '_rep' + str(settings['repetition'])
+        if not repetition is None:
+            repetitionSuffix = '_rep' + str(repetition)
         resultsDir = os.path.join(opensimDir, 'Dynamics', 
-                                  trial_name + repetitionSuffix)    
+                                  trial_name + repetitionSuffix)
+        # Check if results directory exists.
+        if not os.path.exists(resultsDir):
+            raise Exception(
+                'Results directory: ' + resultsDir + ' does not exist. \
+                      Have you run the simulation for ' + trial_name + ' ? \
+                        Have you set the repetition index if simulating \
+                            a sit to stand or a squat?')
+
         optimal_results = np.load(
             os.path.join(resultsDir, 'optimaltrajectories.npy'), 
             allow_pickle=True).item() 
 
         self.optimal_result = optimal_results[case]
 
-        # OpenSim model.
+        # Load OpenSim model.
         modelBasePath = os.path.join(opensimDir, 'Model')
         # Load model if specified, otherwise load the one that was on server.
         if modelName is None:
@@ -88,6 +106,11 @@ class kineticsOpenSimAD:
         
         # Muscles.
         self.muscle_names = self.optimal_result['muscles']
+
+        # Time.
+        # We do not include the last time point control values are not specified
+        # at the last time point.
+        self.time = self.optimal_result['time'][0, :-1].flatten()
     
     def get_coordinate_values(self):
         """
@@ -106,6 +129,7 @@ class kineticsOpenSimAD:
     
         output = pd.DataFrame(coordinate_values[:,:-1].T, 
                               columns=self.coordinate_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -127,6 +151,7 @@ class kineticsOpenSimAD:
     
         output = pd.DataFrame(coordinate_values.T, 
                               columns=self.coordinate_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -148,6 +173,7 @@ class kineticsOpenSimAD:
     
         output = pd.DataFrame(coordinate_speeds[:,:-1].T, 
                               columns=self.coordinate_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -170,6 +196,7 @@ class kineticsOpenSimAD:
     
         output = pd.DataFrame(coordinate_speeds.T, 
                               columns=self.coordinate_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -193,6 +220,7 @@ class kineticsOpenSimAD:
     
         output = pd.DataFrame(coordinate_accelerations.T, 
                               columns=self.coordinate_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -217,6 +245,7 @@ class kineticsOpenSimAD:
     
         output = pd.DataFrame(coordinate_accelerations.T, 
                               columns=self.coordinate_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -236,6 +265,7 @@ class kineticsOpenSimAD:
         """   
         output = pd.DataFrame(self.optimal_result['GRF'].T, 
                               columns=self.optimal_result['GRF_labels'])
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -257,6 +287,7 @@ class kineticsOpenSimAD:
         """   
         output = pd.DataFrame(self.optimal_result['GRM'].T, 
                               columns=self.optimal_result['GRM_labels'])
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -278,6 +309,7 @@ class kineticsOpenSimAD:
         """   
         output = pd.DataFrame(self.optimal_result['freeM'].T, 
                               columns=self.optimal_result['GRM_labels'])
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -299,6 +331,7 @@ class kineticsOpenSimAD:
         """   
         output = pd.DataFrame(self.optimal_result['COP'].T, 
                               columns=self.optimal_result['COP_labels'])
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -315,6 +348,7 @@ class kineticsOpenSimAD:
         """
         output = pd.DataFrame(self.optimal_result['torques'].T, 
                               columns=self.coordinate_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -331,6 +365,7 @@ class kineticsOpenSimAD:
         """
         output = pd.DataFrame(self.optimal_result['muscle_activations'][:,:-1].T, 
                               columns=self.muscle_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -347,6 +382,7 @@ class kineticsOpenSimAD:
         """
         output = pd.DataFrame(self.optimal_result['muscle_forces'].T, 
                               columns=self.muscle_names)
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -362,6 +398,7 @@ class kineticsOpenSimAD:
         """
         output = pd.DataFrame(self.optimal_result['KAM'].T, 
                               columns=self.optimal_result['KAM_labels'])
+        output.insert(0, 'time', self.time)
     
         return output
     
@@ -377,6 +414,7 @@ class kineticsOpenSimAD:
         """
         output = pd.DataFrame(self.optimal_result['MCF'].T, 
                               columns=self.optimal_result['MCF_labels'])
+        output.insert(0, 'time', self.time)
     
         return output
         
