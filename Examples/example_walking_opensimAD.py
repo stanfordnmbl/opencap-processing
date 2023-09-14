@@ -181,7 +181,7 @@ settings['meshDensity'] = 50
 # Run the dynamic simulation.
 if runTorqueDrivenProblem:
     # Here are some reference numbers for convergence of the problem. Note that
-    # it might vary depending on the machine you are using.
+    # it might vary depending on the machine and the package versions.
     #   - Windows (Windows 10):    converged in 99 iterations
     #   - macOS   (Monterey 12.2): converged in 110 iterations 
     #   - Linux   (Ubuntu 20.04):  converged in 109 iterations
@@ -192,7 +192,7 @@ if runTorqueDrivenProblem:
 
 # %% Sub-example 2: walking simulation with muscle-driven model.
 # Insert a string to "name" you case.
-case = 'muscle_driven_SX'
+case = 'muscle_driven_MX'
 
 # Prepare inputs for dynamic simulation (this will be skipped if already done):
 #   - Download data from OpenCap database
@@ -202,7 +202,7 @@ case = 'muscle_driven_SX'
 settings = processInputsOpenSimAD(
     baseDir, dataFolder, session_id, trial_name, motion_type, 
     time_window=time_window, treadmill_speed=treadmill_speed,
-    useExpressionGraphFunction=True)
+    useExpressionGraphFunction=False)
 
 # Add periodic constraints to the problem. This will constrain initial and
 # final states of the problem to be the same. This is useful for obtaining
@@ -242,7 +242,7 @@ settings['meshDensity'] = 50
 # Run the dynamic simulation.
 if runMuscleDrivenProblem:
     # Here are some reference numbers for convergence of the problem. Note that
-    # it might vary depending on the machine you are using.
+    # it might vary depending on the machine and the package versions.
     #   - Windows (Windows 10):    converged in 586 iterations
     #   - macOS   (Monterey 12.2): converged in 499 iterations
     #   - Linux   (Ubuntu 20.04):  converged in 645 iterations

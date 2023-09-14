@@ -1809,7 +1809,8 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
         shutil.rmtree(pathBuild)
         shutil.rmtree(path_external_functions_filename_install)
         shutil.rmtree(path_external_functions_filename_build)
-    os.remove(path_external_filename_foo)    
+    if os_system == 'Windows':
+        os.remove(path_external_filename_foo)
     
 # %% Download file given url (approach 1).
 def download_file(url, file_name):
