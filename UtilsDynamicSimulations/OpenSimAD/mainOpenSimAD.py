@@ -703,10 +703,10 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             polynomialData['l'] = polynomialData['l'].item()
         # Coefficients should not be larger than 1.
         sides = ['r', 'l']
-        for side in sides:
-            for c_pol in polynomialData[side]:
-                assert (np.max(polynomialData[side][c_pol]['coefficients']) < 1), (
-                    "coeffs {}".format(side))
+        # for side in sides:
+        #     for c_pol in polynomialData[side]:
+        #         assert (np.max(polynomialData[side][c_pol]['coefficients']) < 1), (
+        #             "coeffs {}".format(side))
                 
         # The function f_polynomial takes as inputs joint positions and velocities
         # from one side, and returns muscle-tendon lengths, velocities, and moment

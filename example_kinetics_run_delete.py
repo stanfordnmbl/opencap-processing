@@ -174,7 +174,8 @@ session_id = "45061bfd-5714-4783-bdae-0287a77bf216"
 # time_window = [2.25,2.5]
 
 # case 1
-time_window = [1.88,2.45]
+case = 1
+time_window = [1.03,1.63]
 motion_type = 'my_periodic_running'
 
 
