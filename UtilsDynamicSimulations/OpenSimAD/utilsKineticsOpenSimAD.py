@@ -26,8 +26,8 @@ import opensim
 
 class kineticsOpenSimAD:
     
-    def __init__(self, data_dir, session_id, trial_name, case, repetition=None,
-                 modelName=None):
+    def __init__(self, data_dir, session_id, trial_name, case=None, 
+                 repetition=None, modelName=None):
         """
         Initializes the kineticsOpenSimAD class for extracting data from a
         dynamic simulation.
@@ -38,7 +38,8 @@ class kineticsOpenSimAD:
             trial_name (str): The name of the motion trial.
             repetition (int, optional): The index of the motion repetition, only
             applicable if motion_type is 'sit_to_stand' or 'squats' 
-            case (str): The case for which to retrieve optimal results.
+            case (str, optional): The case for which to retrieve results. If no
+            case is specified and only one case exists, it is returned.
             modelName (str, optional): The name of the OpenSim model used in the 
             simulation (ignore if default).
 
@@ -64,8 +65,12 @@ class kineticsOpenSimAD:
 
         optimal_results = np.load(
             os.path.join(resultsDir, 'optimaltrajectories.npy'), 
-            allow_pickle=True).item() 
+            allow_pickle=True).item()
 
+        if case is None and len(optimal_results) > 1:
+            raise Exception("Multiple cases found. Please specify a case.")
+        elif case is None and len(optimal_results) == 1:
+            case = list(optimal_results.keys())[0]
         self.optimal_result = optimal_results[case]
 
         # Load OpenSim model.
@@ -279,11 +284,13 @@ class kineticsOpenSimAD:
     
         Notes:
             - Moments are reported in Newton-meters.
-            - The moments are expressed in the ground reference frame with 
-              respect to the ground origin.
+            - The moments are expressed in the ground reference frame.
             - Side: right and left indicate right and left legs, respectively.
             - Direction: x, y, and z indicate the posterior-anterior, 
               inferior-superior, and medial-lateral directions, respectively.
+            - Ground reactions can be expressed with ground reaction forces and
+              moments, or as ground reaction forces, center-of-pressure, and 
+              free moments. These representations should not be mixed.
         """   
         output = pd.DataFrame(self.optimal_result['GRM'].T, 
                               columns=self.optimal_result['GRM_labels'])
@@ -301,11 +308,13 @@ class kineticsOpenSimAD:
     
         Notes:
             - Moments are reported in Newton-meters.
-            - The moments are expressed in the ground reference frame with 
-              respect to the center of pressure position.
+            - The moments are expressed in the ground reference frame.
             - Side: right and left indicate right and left legs, respectively.
             - Direction: x, y, and z indicate the posterior-anterior, 
               inferior-superior, and medial-lateral directions, respectively.
+            - Ground reactions can be expressed with ground reaction forces and
+              moments, or as ground reaction forces, center-of-pressure, and 
+              free moments. These representations should not be mixed.
         """   
         output = pd.DataFrame(self.optimal_result['freeM'].T, 
                               columns=self.optimal_result['GRM_labels'])
@@ -328,6 +337,9 @@ class kineticsOpenSimAD:
             - Side: right and left indicate right and left legs, respectively.
             - Direction: x, y, and z indicate the posterior-anterior, 
               inferior-superior, and medial-lateral directions, respectively.
+            - Ground reactions can be expressed with ground reaction forces and
+              moments, or as ground reaction forces, center-of-pressure, and 
+              free moments. These representations should not be mixed.
         """   
         output = pd.DataFrame(self.optimal_result['COP'].T, 
                               columns=self.optimal_result['COP_labels'])
