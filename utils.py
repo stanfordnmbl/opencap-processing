@@ -58,7 +58,7 @@ def get_session_json(session_id):
     sessionJson['trials'].sort(key=get_created_at)
     
     return sessionJson
-
+    
 # Returns a list of all sessions of the user.
 def get_user_sessions():
     sessions = requests.get(
@@ -136,6 +136,17 @@ def get_model_and_metadata(session_id, session_path):
         
     return modelName
         
+def get_model_name_from_metadata(sessionFolder,appendText='_scaled'):
+    metadataPath = os.path.join(sessionFolder,'sessionMetadata.yaml')
+    
+    if os.path.exists(metadataPath):
+        metadata = import_metadata(os.path.join(sessionFolder,'sessionMetadata.yaml'))
+        modelName = metadata['openSimModel'] + appendText + '.osim'
+    else:
+        raise Exception('Session metadata not found, could not identify OpenSim model.')
+        
+    return modelName
+
         
 def get_motion_data(trial_id, session_path):
     trial = get_trial_json(trial_id)
@@ -244,6 +255,32 @@ def download_kinematics(session_id, folder=None, trialNames=None):
     get_geometries(folder, modelName=modelName)
         
     return loadedTrialNames, modelName
+
+# Download pertinent trial data.
+def download_trial(trial_id, folder, session_id=None):
+    
+    trial = get_trial_json(trial_id)
+    if session_id is None:
+        session_id = trial['session_id']
+        
+    os.makedirs(folder,exist_ok=True)
+    
+    # download model
+    get_model_and_metadata(session_id, folder)
+    
+    # download trc and mot
+    get_motion_data(trial_id,folder)
+    
+    return trial['name']
+
+
+# Get trial ID from name.
+def get_trial_id(session_id,trial_name):
+    session = get_session_json(session_id)
+    
+    trial_id = [t['id'] for t in session['trials'] if t['name'] == trial_name]
+    
+    return trial_id[0]
 
 # %%  Storage file to numpy array.
 def storage_to_numpy(storage_file, excess_header_entries=0):
@@ -358,7 +395,6 @@ def numpy_to_storage(labels, data, storage_file, datatype=None):
         f.write('\n')
         
     f.close()
-
 
 def download_videos_from_server(session_id,trial_id,
                              isCalibration=False, isStaticPose=False,
@@ -596,3 +632,4 @@ def download_session(session_id, sessionBasePath= None,
     if writeToDB:
         post_file_to_trial(session_zip,dynamic_ids[-1],tag='session_zip',
                            device_id='all')    
+    

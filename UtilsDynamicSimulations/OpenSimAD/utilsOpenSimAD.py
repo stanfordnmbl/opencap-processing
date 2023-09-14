@@ -37,8 +37,8 @@ import seaborn as sns
 
 from utils import (storage_to_numpy, storage_to_dataframe, 
                    download_kinematics, import_metadata, numpy_to_storage)
-from utilsProcessing import (segmentSquats, segmentSTS, adjustMuscleWrapping,
-                             generateModelWithContacts)
+from utilsProcessing import (segment_squats, segment_STS, adjust_muscle_wrapping,
+                             generate_model_with_contacts)
 from settingsOpenSimAD import get_setup
 
 # %% Filter numpy array.
@@ -2179,10 +2179,10 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     
     # Prepare inputs for dynamic simulations.
     # Adjust muscle wrapping.    
-    adjustMuscleWrapping(baseDir, dataFolder, session_id,
+    adjust_muscle_wrapping(baseDir, dataFolder, session_id,
                          OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Add foot-ground contacts to musculoskeletal model.    
-    generateModelWithContacts(dataFolder, session_id, 
+    generate_model_with_contacts(dataFolder, session_id, 
                               OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Generate external function.    
     generateExternalFunction(baseDir, dataFolder, session_id,
@@ -2198,9 +2198,9 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     if (repetition is not None and 
         (motion_type == 'squats' or motion_type == 'sit_to_stand')): 
         if motion_type == 'squats':
-            times_window = segmentSquats(pathMotionFile, visualize=True)
+            times_window = segment_squats(pathMotionFile, visualize=True)
         elif motion_type == 'sit_to_stand':
-            _, _, times_window = segmentSTS(pathMotionFile, visualize=True)
+            _, _, times_window = segment_STS(pathMotionFile, visualize=True)
         time_window = times_window[repetition]
         settings['repetition'] = repetition
     else:

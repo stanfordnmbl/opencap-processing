@@ -60,6 +60,8 @@ sys.path.append(opensimADDir)
 from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
 from utilsAuthentication import get_token
+from utilsProcessing import segment_gait
+from utils import get_trial_id, download_trial
 
 # %% OpenCap authentication. Visit https://app.opencap.ai/login to create an
 # account if you don't have one yet.
@@ -76,6 +78,9 @@ session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 # Insert the name of the trial you want to simulate.
 trial_name = 'walk_1_25ms'
 
+# Insert the path to where you want the data to be downloaded.
+dataFolder = os.path.join(baseDir, 'Data')
+
 # Insert the type of activity you want to simulate. We have pre-defined settings
 # for different activities (more details above). Visit 
 # ./UtilsDynamicSimulations/OpenSimAD/settingsOpenSimAD.py to see all available
@@ -86,17 +91,25 @@ motion_type = 'walking'
 # Insert the time interval you want to simulate. It is recommended to simulate
 # trials shorter than 2s (more details above). Set to [] to simulate full trial.
 # We here selected a time window that corresponds to a full gait stride in order
-# to use poeriodic constraints.
-time_window = [5.7333333, 6.9333333]
-
-# Insert the speed of the treadmill in m/s. A positive value indicates that the
-# subject is moving forward. You should ignore this parameter or set it to 0 if
-# the trial was not measured on a treadmill.
-treadmill_speed = 1.25
+# to use periodic constraints. You can use the gait segmentation function to
+# automatically segment the gait cycle. Also insert the speed of the treadmill
+# in m/s. A positive value indicates that the subject is moving forward. 
+# You should ignore this parameter or set it to 0 if the trial was not measured
+# on a treadmill. You can also use the gait segmenter to automatically extract
+# the treadmill speed.
+segmentation_method = 'manual'
+if segmentation_method == 'automatic':
+    # Download the trial.
+    download_trial(get_trial_id(session_id,trial_name),
+                   os.path.join(dataFolder,session_id),
+                   session_id=session_id)    
+    time_window, gaitObject = segment_gait(
+        session_id, trial_name, dataFolder, gait_cycles_from_end=3)
+    treadmill_speed = gaitObject.treadmillSpeed
+else:
+    time_window = [5.7333333, 6.9333333]
+    treadmill_speed = 1.25
     
-# Insert the path to where you want the data to be downloaded.
-dataFolder = os.path.join(baseDir, 'Data')
-
 # %% Sub-example 1: walking simulation with torque-driven model.
 # Insert a string to "name" you case.
 case = 'torque_driven'
