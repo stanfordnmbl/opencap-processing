@@ -531,19 +531,23 @@ def generateExternalFunction(
                                   externalFunctionName + ".cpp")
     pathOutputMap = os.path.join(pathOutputExternalFunctionFolder, 
                                  externalFunctionName + "_map.npy")
-    if platform.system() == 'Windows':
-        ext_F = '.dll'
-    elif platform.system() == 'Darwin':
-        ext_F = '.dylib'
-    elif platform.system() == 'Linux':
-        ext_F = '.so'
-    else:
-        raise ValueError("Platform not supported.")
-    pathOutputDll = os.path.join(pathOutputExternalFunctionFolder, 
-                                 externalFunctionName + ext_F)
+    pathExpressionGraph = os.path.join(pathOutputExternalFunctionFolder, 
+                                       externalFunctionName + '.py')
+
+    # This will be deprecated in the future.
+    # if platform.system() == 'Windows':
+    #     ext_F = '.dll'
+    # elif platform.system() == 'Darwin':
+    #     ext_F = '.dylib'
+    # elif platform.system() == 'Linux':
+    #     ext_F = '.so'
+    # else:
+    #     raise ValueError("Platform not supported.")
+    # pathOutputDll = os.path.join(pathOutputExternalFunctionFolder, 
+    #                              externalFunctionName + ext_F)    
     
     if (overwrite is False and os.path.exists(pathOutputFile) and 
-        os.path.exists(pathOutputMap) and os.path.exists(pathOutputDll)):
+        os.path.exists(pathOutputMap) and os.path.exists(pathExpressionGraph)):
         return      
     else:
         print('Generate external function to leverage automatic differentiation.')
