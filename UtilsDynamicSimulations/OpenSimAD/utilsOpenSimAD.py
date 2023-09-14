@@ -1516,7 +1516,7 @@ def generateExternalFunction(
             3*nCoordinates, treadmill=treadmill)
         
     # %% Verification..
-    if verifyID:    
+    if verifyID:        
         # Run ID with the .osim file
         pathGenericTemplates = os.path.join(baseDir, "OpenSimPipeline") 
         pathGenericIDFolder = os.path.join(pathGenericTemplates,
@@ -1566,18 +1566,7 @@ def generateExternalFunction(
             ID_osim[count] = ID_osim_df.iloc[0][coordinate + suffix_header]
             count += 1
         
-        # Extract torques from external function.
-        import casadi as ca
-        os_system = platform.system()
-        if os_system == 'Windows':
-            F_ext = '.dll'
-        elif os_system == 'Linux':
-            F_ext = '.so'
-        elif os_system == 'Darwin':
-            F_ext = '.dylib'
-        F = ca.external('F', os.path.join(
-            pathOutputExternalFunctionFolder, externalFunctionName + F_ext))
-        
+        # Extract torques from external function.        
         vec1 = np.zeros((nCoordinates*2, 1))
         vec1[::2, :] = 0.05   
         vec1[8, :] = -0.05
@@ -1587,10 +1576,45 @@ def generateExternalFunction(
             vec3 = np.concatenate((vec1,vec2,vec4))
         else:            
             vec3 = np.concatenate((vec1,vec2))
-        ID_F = (F(vec3)).full().flatten()[:nCoordinates]
-        assert(np.max(np.abs(ID_osim - ID_F)) < 1e-6), (
-            'error F vs ID tool {}'.format(np.max(np.abs(ID_osim - ID_F))))
-        print('Verification torque generation: success')
+
+        # Approach 1: External function.
+        # Will be deprecated in the future.
+        os_system = platform.system()
+        if os_system == 'Windows':
+            F_ext = '.dll'
+        elif os_system == 'Linux':
+            F_ext = '.so'
+        elif os_system == 'Darwin':
+            F_ext = '.dylib'
+        pathExternalFunction = os.path.join(
+            pathOutputExternalFunctionFolder, externalFunctionName + F_ext)
+        if os.path.exists(pathExternalFunction):
+            import casadi as ca            
+            F = ca.external('F', pathExternalFunction)
+            ID_F = (F(vec3)).full().flatten()[:nCoordinates]
+            assert(np.max(np.abs(ID_osim - ID_F)) < 1e-6), (
+                'error F vs ID tool {}'.format(np.max(np.abs(ID_osim - ID_F))))
+            print('Verification torque with external function: success')
+
+        # Approach 2: Expression graph.
+        pathExpressionGraph = os.path.join(
+            pathOutputExternalFunctionFolder, externalFunctionName + '.py')
+        if os.path.exists(pathExpressionGraph):
+            sys.path.append(pathOutputExternalFunctionFolder)
+            os.chdir(pathOutputExternalFunctionFolder)            
+            # Hack to import function.
+            os.rename(pathExpressionGraph, 
+                      os.path.join(pathOutputExternalFunctionFolder, 'foo.py'))
+            dim = vec3.shape[0]
+            F = getF_expressingGraph(dim)
+            # Rename back to original name.
+            os.rename(os.path.join(pathOutputExternalFunctionFolder, 'foo.py'),
+                      pathExpressionGraph)
+            ID_F = (F(vec3)).full().flatten()[:nCoordinates]
+            assert(np.max(np.abs(ID_osim - ID_F)) < 1e-6), (
+                'error F vs ID tool {}'.format(np.max(np.abs(ID_osim - ID_F))))
+            print('Verification torque with expression graph: success')
+        # Clean up.
         os.remove(os.path.join(
             pathOutputExternalFunctionFolder,"ID_withOsimAndIDTool.sto"))
         os.remove(os.path.join(
@@ -1607,6 +1631,15 @@ def generateF(dim):
     cg.add(F)
     cg.add(F.jacobian())
     cg.generate()
+    
+# %% Generate function from expression graph.
+def getF_expressingGraph(dim):
+    import foo
+    importlib.reload(foo)
+    arg = ca.SX.sym('arg', dim)
+    y,_,_ = foo.foo(arg)
+    F = ca.Function('F',[arg],[y])    
+    return F    
 
 # %% Compile external function.
 def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
@@ -1718,13 +1751,17 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
     
     # %% Part 2: build external function (i.e., build .dll/.so/.dylib).
     fooName = "foo.py"
-    pathBuildExternalFunction = os.path.join(pathDCAD, 'buildExternalFunction')
     path_external_filename_foo = os.path.join(BIN_DIR, fooName)
+    shutil.copy2(path_external_filename_foo, CPP_DIR)
+    os.rename(os.path.join(CPP_DIR, fooName), os.path.join(CPP_DIR, filename + '.py'))
+    # The part below will be deprecated when only using expression graph and not
+    # external function. Keeping it in for now for backward compatibility.
+    pathBuildExternalFunction = os.path.join(pathDCAD, 'buildExternalFunction')    
     path_external_functions_filename_build = os.path.join(pathDCAD, 'build-ExternalFunction' + filename)
     path_external_functions_filename_install = os.path.join(pathDCAD, 'install-ExternalFunction' + filename)
     os.makedirs(path_external_functions_filename_build, exist_ok=True) 
     os.makedirs(path_external_functions_filename_install, exist_ok=True)
-    shutil.copy2(path_external_filename_foo, pathBuildExternalFunction)
+    shutil.copy2(path_external_filename_foo, pathBuildExternalFunction)    
     
     sys.path.append(pathBuildExternalFunction)
     os.chdir(pathBuildExternalFunction)
@@ -1759,7 +1796,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
         os.rename(os.path.join(CPP_DIR, 'lib' + filename + '.dylib'), os.path.join(CPP_DIR, filename + '.dylib'))
     
     os.remove(os.path.join(pathBuildExternalFunction, "foo_jac.c"))
-    os.remove(os.path.join(pathBuildExternalFunction, fooName))
+    os.remove(os.path.join(pathBuildExternalFunction, fooName)) 
     os.remove(path_external_filename_foo)
     shutil.rmtree(pathBuild)
     shutil.rmtree(path_external_functions_filename_install)
