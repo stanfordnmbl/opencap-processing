@@ -62,6 +62,8 @@ from mainOpenSimAD import run_tracking
 from utilsAuthentication import get_token
 from utilsProcessing import segment_gait
 from utils import get_trial_id, download_trial
+from utilsKineticsOpenSimAD import kineticsOpenSimAD
+from utilsPlotting import plot_dataframe
 
 # %% OpenCap authentication. Visit https://app.opencap.ai/login to create an
 # account if you don't have one yet.
@@ -237,6 +239,17 @@ if runMuscleDrivenProblem:
     run_tracking(baseDir, dataFolder, session_id, settings, case=case)
     # Plot some results.
     plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, [case])
+
+    # Retrieve results from the optimal solution using utilsKineticsOpenSimAD.
+    opt_sol_obj = kineticsOpenSimAD(dataFolder, session_id, trial_name, case)
+    # Extract and plot muscle forces.
+    muscle_forces = opt_sol_obj.get_muscle_forces()
+    plot_dataframe(
+        dataframes = [muscle_forces],
+        xlabel = 'Time (s)',
+        ylabel = 'Force (N)',
+        title = 'Muscle forces',
+        labels = [trial_name])
 
 # %% Comparison torque-driven vs. muscle-driven model.
 if runComparison:
