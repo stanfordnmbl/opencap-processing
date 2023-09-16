@@ -74,8 +74,20 @@ class bounds_tracking:
             lowerBoundsPosition.insert(count, joint, [lb]) 
             # Special cases.
             if joint == 'mtp_angle_l' or joint == 'mtp_angle_r':
-                upperBoundsPosition[joint] = [5 * np.pi / 180]
-                lowerBoundsPosition[joint] = [-45 * np.pi / 180]                
+                # The kinematic data for the mtp angles is not meaningful, not
+                # estimated from the videos. We therefore keep the original
+                # values from polynomial bounds.
+                if joint in upperBoundsPosition_all:
+                    upperBoundsPosition[joint] = (
+                        upperBoundsPosition_all[joint][0])
+                    lowerBoundsPosition[joint] = (
+                        lowerBoundsPosition_all[joint][0])
+                else:
+                    message = 'No bounds set for mtp angles in ' \
+                        'polynomial_bounds. Setting to default [-45, 5] deg.'
+                    print(message)
+                    upperBoundsPosition[joint] = 5 * np.pi / 180
+                    lowerBoundsPosition[joint] = -45 * np.pi / 180                    
             # Scaling.               
             s = np.max(np.array([abs(upperBoundsPosition[joint])[0],
                                  abs(lowerBoundsPosition[joint])[0]]))
