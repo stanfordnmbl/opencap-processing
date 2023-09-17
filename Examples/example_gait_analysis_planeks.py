@@ -31,7 +31,8 @@ sys.path.append("../")
 sys.path.append("../ActivityAnalyses")
 
 from gait_analysis import gait_analysis
-from utils import get_trial_id, download_trial
+from utils import get_trial_id, download_trial, import_metadata
+from utilsPlotting import create_custom_bar_subplots
 
 # %% Paths.
 baseDir = os.path.join(os.getcwd(), '..')
@@ -109,9 +110,55 @@ indices['end'] = int(gait_events[last_leg]['ipsilateralIdx'][0,-1])
 gait_metrics = {}
 for scalar_name in scalar_names:
     gait_metrics[scalar_name] = np.round(gait_scalars[scalar_name], 2)
+    print(scalar_name, gait_metrics[scalar_name])
 
 # %% Dump data into json file.
 # Create results dictionnary with indices and gait_metrics.
 results = {'indices': indices, 'gait_metrics': gait_metrics}
 with open('results.json', 'w') as outfile:
     json.dump(results, outfile)
+
+# %% Example scalar plots.
+# Stride length : Clear with at least 40% of height (cm)
+# Step width : Clear with 7 cm or less
+# Gait speed : Clear with 67m/min or more
+# Cadence : Clear with 100steps/min or more
+# Contact time
+# ・Single support : Clear with increase/no change from the previous session
+# ・Double support : Clear with decrease/no change from the previous session
+# Joint angles （every joint angle detected and shown as a graph in current OpenCap system)
+
+metadataPath = os.path.join(sessionDir, 'sessionMetadata.yaml')
+metadata = import_metadata(metadataPath)
+subject_height = metadata['height_m']
+
+gait_speed_threshold = 67/60
+step_width_threshold = 0.25
+stride_length_threshold = 1.4 #subject_height*0.4
+cadence_threshold = 95
+single_support_time_threshold = 0.4
+double_support_time_threshold = 0.3
+
+thresholds = {'gait_speed': gait_speed_threshold,
+              'step_width': step_width_threshold,
+              'stride_length': stride_length_threshold,
+              'cadence': cadence_threshold,
+              'single_support_time': single_support_time_threshold,
+              'double_support_time': double_support_time_threshold}
+scalar_reverse_colors = ['step_width']
+
+data_dict_list = []
+for scalar_name in scalar_names:
+    lower_bound = 0.95*thresholds[scalar_name]
+    upper_bound = 1.05*thresholds[scalar_name]
+    vertical_values = [gait_metrics[scalar_name]]
+    data_dict = {
+        'name': scalar_name,
+        'bounds': (lower_bound, upper_bound),
+        'values': vertical_values,
+    }
+    if scalar_name in scalar_reverse_colors:
+        data_dict['reverse_colors'] = True
+    data_dict_list.append(data_dict)
+
+create_custom_bar_subplots(data_dict_list)

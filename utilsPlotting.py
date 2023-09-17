@@ -207,3 +207,103 @@ def plot_dataframe_with_shading(mean_dataframe, sd_dataframe=None, y=None,
 
     plt.tight_layout()
     plt.show()
+
+# def custom_bar(lower_bound, upper_bound, vertical_values, reverse_colors=False):
+#     middle_width = upper_bound - lower_bound
+#     green_width = 2 * middle_width  # Green segment is twice the width of the middle segment
+#     red_width = 2 * middle_width    # Red segment is twice the width of the middle segment
+
+#     if reverse_colors:
+#         colors = ['green', 'yellow', 'red']
+#     else:
+#         colors = ['red', 'yellow', 'green']
+    
+#     fig, ax = plt.subplots(figsize=(10, 2))
+    
+#     # Plot the green segment to the left
+#     ax.barh(0, green_width, left=lower_bound - green_width, color=colors[0], height=1, label='Below Lower Bound')
+    
+#     # Plot the yellow (middle) segment
+#     ax.barh(0, middle_width, left=lower_bound, color=colors[1], height=1, label='Between Bounds')
+    
+#     # Plot the red segment to the right
+#     ax.barh(0, red_width, left=upper_bound, color=colors[2], height=1, label='Above Upper Bound')
+    
+#     # Plot vertical bars for the specified values
+#     for value in vertical_values:
+#         ax.axvline(value, color='black', linestyle='--', linewidth=1)
+    
+#     ax.set_xlim(lower_bound - green_width, upper_bound + red_width)  # Adjusted xlim
+#     ax.set_yticks([])
+#     ax.set_xticks([])
+
+#     # Hide all spines
+#     for spine in ax.spines.values():
+#         spine.set_visible(False)   
+
+#     plt.show()
+
+# # Example usage:
+# lower_bound = -40
+# upper_bound = 40
+# vertical_values = [-30, 0, 20]
+# custom_bar(lower_bound, upper_bound, vertical_values, reverse_colors=True)
+
+def create_custom_bar_subplots(data_dict_list):
+    num_subplots = len(data_dict_list)
+    fig, axs = plt.subplots(num_subplots, 1, figsize=(6, 2 * num_subplots), sharex=False)
+    
+    for i, data_dict in enumerate(data_dict_list):
+        name = data_dict['name']
+        lower_bound, upper_bound = data_dict['bounds']
+        vertical_values = data_dict['values']
+        reverse_colors = data_dict.get('reverse_colors', False)
+
+        middle_width = upper_bound - lower_bound
+        green_width = 2 * middle_width  # Green segment is twice the width of the middle segment
+        red_width = 2 * middle_width    # Red segment is twice the width of the middle segment
+
+        if reverse_colors:
+            colors = ['#06D6A0', '#FFD166', '#FF6B6B']  # Warm color palette
+        else:
+            colors = ['#FF6B6B', '#FFD166', '#06D6A0']  # Warm color palette, reversed
+
+        axs[i].barh(0, green_width, left=lower_bound - green_width, color=colors[0], height=1, label='Below Lower Bound')
+        axs[i].barh(0, middle_width, left=lower_bound, color=colors[1], height=1, label='Between Bounds')
+        axs[i].barh(0, red_width, left=upper_bound, color=colors[2], height=1, label='Above Upper Bound')
+
+        for value in vertical_values:
+            axs[i].axvline(value, color='black', linestyle='--', linewidth=1)
+
+        axs[i].set_xlim(lower_bound - green_width, upper_bound + red_width)
+        axs[i].set_yticks([])
+        axs[i].set_xticks([lower_bound, upper_bound])
+
+        for spine in axs[i].spines.values():
+            spine.set_visible(False)
+
+        axs[i].set_title(name)
+
+    plt.tight_layout()
+    plt.show()
+
+# Example usage:
+# data_dict_list = [
+#     {
+#         'name': 'Custom Bar 1',
+#         'bounds': (-2, 1),
+#         'values': [-1, 0, 1],
+#         'reverse_colors': False
+#     },
+#     {
+#         'name': 'Custom Bar 2',
+#         'bounds': (-400, 1367),
+#         'values': [-300, 0, 300, 800, 1200],
+#         'reverse_colors': True
+#     },
+#     {
+#         'name': 'Custom Bar 3',
+#         'bounds': (-10, 10),
+#         'values': [-5, 0, 5]
+#     }
+# ]
