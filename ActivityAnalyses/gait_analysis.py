@@ -134,7 +134,7 @@ class gait_analysis(kinematics):
     def compute_cadence(self):
         
         # In steps per second.
-        cadence = 1/np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
+        cadence = 2/np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
         
         # Average across all strides.
         cadence = np.mean(cadence)
