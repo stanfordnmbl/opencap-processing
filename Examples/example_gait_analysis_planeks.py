@@ -119,6 +119,7 @@ with open('results.json', 'w') as outfile:
     json.dump(results, outfile)
 
 # %% Example scalar plots.
+# Thesholds for scalar metrics.
 # Stride length : Clear with at least 40% of height (cm)
 # Step width : Clear with 7 cm or less
 # Gait speed : Clear with 67m/min or more
@@ -126,27 +127,25 @@ with open('results.json', 'w') as outfile:
 # Contact time
 # ・Single support : Clear with increase/no change from the previous session
 # ・Double support : Clear with decrease/no change from the previous session
-# Joint angles （every joint angle detected and shown as a graph in current OpenCap system)
-
 metadataPath = os.path.join(sessionDir, 'sessionMetadata.yaml')
 metadata = import_metadata(metadataPath)
 subject_height = metadata['height_m']
-
 gait_speed_threshold = 67/60
 step_width_threshold = 0.25
-stride_length_threshold = 1.4 #subject_height*0.4
+stride_length_threshold = 1.4 # subject_height*0.4
 cadence_threshold = 95
 single_support_time_threshold = 0.4
 double_support_time_threshold = 0.3
-
 thresholds = {'gait_speed': gait_speed_threshold,
               'step_width': step_width_threshold,
               'stride_length': stride_length_threshold,
               'cadence': cadence_threshold,
               'single_support_time': single_support_time_threshold,
               'double_support_time': double_support_time_threshold}
+# Whether below-threshold values should be colored in red (default) or green (reverse).
 scalar_reverse_colors = ['step_width']
 
+# Create data dictionary for each scalar.
 data_dict_list = []
 for scalar_name in scalar_names:
     lower_bound = 0.95*thresholds[scalar_name]

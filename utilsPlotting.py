@@ -273,7 +273,7 @@ def create_custom_bar_subplots(data_dict_list):
         axs[i].barh(0, red_width, left=upper_bound, color=colors[2], height=1, label='Above Upper Bound')
 
         for value in vertical_values:
-            axs[i].axvline(value, color='black', linestyle='--', linewidth=1)
+            axs[i].axvline(value, color='black', linestyle='-', linewidth=3)
 
         axs[i].set_xlim(lower_bound - green_width, upper_bound + red_width)
         axs[i].set_yticks([])
