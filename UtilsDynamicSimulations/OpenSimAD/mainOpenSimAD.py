@@ -2488,6 +2488,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             KAM_BWht = KAM / BW_ht * 100
         if computeMCF:
             MCF_BW = MCF / BW * 100
+
+        # %% Compute joint powers.
+        poweredJoints = []
+        for joint in joints:
+            if not joint in groundPelvisJoints:
+                poweredJoints.append(joint)
+        idxPoweredJoints = getIndices(joints, poweredJoints)
+        # Powers (W) = Torques (Nm) * Angular velocities (rad/s).
+        powers_opts = (torques_opt[idxPoweredJoints, :] 
+                       * Qds_opt_nsc[idxPoweredJoints, :-1])  
             
         # %% Compute joint powers.
         poweredJoints = []
