@@ -32,6 +32,9 @@ import platform
 
 from utilsAPI import get_api_url
 from utilsAuthentication import get_token
+import matplotlib.pyplot as plt
+from scipy.signal import gaussian
+
 
 API_URL = get_api_url()
 API_TOKEN = get_token()
@@ -633,3 +636,54 @@ def download_session(session_id, sessionBasePath= None,
         post_file_to_trial(session_zip,dynamic_ids[-1],tag='session_zip',
                            device_id='all')    
     
+def cross_corr(y1, y2,multCorrGaussianStd=None,visualize=False):
+    """Calculates the cross correlation and lags without normalization.
+    
+    The definition of the discrete cross-correlation is in:
+    https://www.mathworks.com/help/matlab/ref/xcorr.html
+    
+    Args:
+    y1, y2: Should have the same length.
+    
+    Returns:
+    max_corr: Maximum correlation without normalization.
+    lag: The lag in terms of the index.
+    """
+    # Pad shorter signal with 0s
+    if len(y1) > len(y2):
+        temp = np.zeros(len(y1))
+        temp[0:len(y2)] = y2
+        y2 = np.copy(temp)
+    elif len(y2)>len(y1):
+        temp = np.zeros(len(y2))
+        temp[0:len(y1)] = y1
+        y1 = np.copy(temp)
+        
+    y1_auto_corr = np.dot(y1, y1) / len(y1)
+    y2_auto_corr = np.dot(y2, y2) / len(y1)
+    corr = np.correlate(y1, y2, mode='same')
+    # The unbiased sample size is N - lag.
+    unbiased_sample_size = np.correlate(np.ones(len(y1)), np.ones(len(y1)), mode='same')
+    corr = corr / unbiased_sample_size / np.sqrt(y1_auto_corr * y2_auto_corr)
+    shift = len(y1) // 2
+    max_corr = np.max(corr)
+    argmax_corr = np.argmax(corr)    
+        
+    if visualize:
+        plt.figure()
+        plt.plot(corr)
+        plt.title('vertical velocity correlation')
+        
+    # Multiply correlation curve by gaussian (prioritizing lag solution closest to 0)
+    if multCorrGaussianStd is not None:
+        corr = np.multiply(corr,gaussian(len(corr),multCorrGaussianStd))
+        if visualize: 
+            plt.plot(corr,color=[.4,.4,.4])
+            plt.legend(['corr','corr*gaussian'])  
+    
+    argmax_corr = np.argmax(corr)
+    max_corr = np.nanmax(corr)
+    
+    lag = argmax_corr-shift
+    
+    return max_corr, lag
