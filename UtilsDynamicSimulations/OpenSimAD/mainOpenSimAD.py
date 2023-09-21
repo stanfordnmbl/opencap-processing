@@ -2497,16 +2497,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         idxPoweredJoints = getIndices(joints, poweredJoints)
         # Powers (W) = Torques (Nm) * Angular velocities (rad/s).
         powers_opts = (torques_opt[idxPoweredJoints, :] 
-                       * Qds_opt_nsc[idxPoweredJoints, :-1])  
-            
-        # %% Compute joint powers.
-        poweredJoints = []
-        for joint in joints:
-            if not joint in groundPelvisJoints:
-                poweredJoints.append(joint)
-        idxPoweredJoints = getIndices(joints, poweredJoints)
-        powers_opts = (torques_opt[idxPoweredJoints, :] 
-                       * Qds_opt_nsc[idxPoweredJoints, :-1])        
+                       * Qds_opt_nsc[idxPoweredJoints, :-1])    
             
         # %% Save optimal trajectories.
         if not os.path.exists(os.path.join(pathResults,
