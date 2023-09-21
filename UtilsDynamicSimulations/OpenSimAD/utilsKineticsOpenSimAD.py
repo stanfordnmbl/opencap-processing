@@ -364,6 +364,23 @@ class kineticsOpenSimAD:
     
         return output
     
+    def get_joint_powers(self):
+        """
+        Retrieves the joint powers from the dynamic simulation.
+    
+        Returns:
+            pandas.DataFrame: A DataFrame containing joint powers with columns
+            after the coordinates.
+    
+        Notes:
+            - Powers are reported in Watts.
+        """
+        output = pd.DataFrame(self.optimal_result['powers'].T, 
+                              columns=self.optimal_result['coordinates_power'])
+        output.insert(0, 'time', self.time)
+    
+        return output
+    
     def get_muscle_activations(self):
         """
         Retrieves the muscle activations from the dynamic simulation.

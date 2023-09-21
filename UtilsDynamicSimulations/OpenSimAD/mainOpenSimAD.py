@@ -31,7 +31,6 @@ import yaml
 import scipy.interpolate as interpolate
 import platform
 import copy
-import importlib
 
 # %% Settings.
 def run_tracking(baseDir, dataDir, subject, settings, case='0',
@@ -781,7 +780,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         from utilsOpenSimAD import getF_expressingGraph
         # Import function for expression graph.    
         sys.path.append(pathExternalFunctionFolder)
-        os.chdir(pathExternalFunctionFolder)    
+        os.chdir(pathExternalFunctionFolder) 
         F = getF_expressingGraph(dim, F_name)
         os.chdir(pathMain)
     else: # This will be deprecated
@@ -2490,6 +2489,15 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         if computeMCF:
             MCF_BW = MCF / BW * 100
             
+        # %% Compute joint powers.
+        poweredJoints = []
+        for joint in joints:
+            if not joint in groundPelvisJoints:
+                poweredJoints.append(joint)
+        idxPoweredJoints = getIndices(joints, poweredJoints)
+        powers_opts = (torques_opt[idxPoweredJoints, :] 
+                       * Qds_opt_nsc[idxPoweredJoints, :-1])        
+            
         # %% Save optimal trajectories.
         if not os.path.exists(os.path.join(pathResults,
                                            'optimaltrajectories.npy')): 
@@ -2508,6 +2516,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             'coordinate_accelerations': Qdds_opt_nsc,
             'torques': torques_opt,
             'torques_BWht': torques_BWht_opt,
+            'powers': powers_opts,
             'GRF': GRF_all_opt['all'],
             'GRF_BW': GRF_BW_all_opt,
             'GRM': GRM_all_opt['all'],
@@ -2515,6 +2524,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             'COP': COP_all_opt['all'],
             'freeM': freeT_all_opt['all'],
             'coordinates': joints,
+            'coordinates_power': poweredJoints,
             'rotationalCoordinates': rotationalJoints,
             'GRF_labels': GRF_labels_fig,
             'GRM_labels': GRM_labels_fig,
