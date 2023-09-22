@@ -266,12 +266,12 @@ def download_trial(trial_id, folder, session_id=None):
     os.makedirs(folder,exist_ok=True)
     
     # download model
-    get_model_and_metadata(session_id, folder)
+    modelName = get_model_and_metadata(session_id, folder)
     
     # download trc and mot
     get_motion_data(trial_id,folder)
     
-    return trial['name']
+    return trial['name'], modelName
 
 
 # Get trial ID from name.

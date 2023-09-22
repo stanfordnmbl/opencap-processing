@@ -66,7 +66,7 @@ trial_id = get_trial_id(session_id,trial_name)
 sessionDir = os.path.join(dataFolder, session_id)
 
 # Download data.
-trialName = download_trial(trial_id,sessionDir,session_id=session_id) 
+trialName, _ = download_trial(trial_id,sessionDir,session_id=session_id) 
 
 # Init gait analysis.
 gait_r = gait_analysis(
