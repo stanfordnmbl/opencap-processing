@@ -214,9 +214,13 @@ if visualize_synchronization:
     plt.plot(force_data_new[:,0],forces_for_cross_corr, label = 'vGRF')
     plt.legend()
 
+# Force data directories
+force_folder = os.path.join(data_folder,'MeasuredForces',trial_name)
+os.makedirs(force_folder,exist_ok=True)
+
 # Save force data
 root,ext = os.path.splitext(force_file_name)
-force_output_path = os.path.join(force_dir,root + '_syncd' + ext)
+force_output_path = os.path.join(force_folder,trial_name + '_syncd_forces.mot')
 ut.numpy_to_storage(force_headers, force_data_new, force_output_path, datatype=None)
 
 # Identify time range for ID
@@ -226,10 +230,9 @@ time_range['end'] = np.min([force_data_new[-1,0], kinematics.time[-1]])
 
 # %% Run Inverse Dynamics
 
-id_path_generic = os.path.join(script_folder,'ID','Setup_ID.xml')
-el_path_generic = os.path.join(script_folder,'ID','Setup_ExternalLoads.xml')
-
+# Make folders
 opensim_folder = os.path.join(data_folder,'OpenSimData')
+
 id_folder = os.path.join(opensim_folder,'InverseDynamics',trial_name)
 os.makedirs(id_folder,exist_ok=True)
 
@@ -237,6 +240,10 @@ model_path = os.path.join(opensim_folder,'Model',model_name + '.osim')
 ik_path = os.path.join(opensim_folder,'Kinematics', trial_name + '.mot')
 el_path = os.path.join(id_folder,'Setup_ExternalLoads.xml')
 id_path = os.path.join(id_folder,'Setup_ID.xml')
+
+# Generic setups
+id_path_generic = os.path.join(script_folder,'ID','Setup_ID.xml')
+el_path_generic = os.path.join(script_folder,'ID','Setup_ExternalLoads.xml')
 
 if run_ID:
     # External loads
