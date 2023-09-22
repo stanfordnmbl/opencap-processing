@@ -645,8 +645,7 @@ def align_markers_with_ground(sessionDir, trialName,
     if lowpass_cutoff_frequency_for_marker_values > 0:
         mid_m = lowPassFilter(
             time, mid_m, lowpass_cutoff_frequency_for_marker_values)
-    spline = interpolate.InterpolatedUnivariateSpline(
-        time, mid_m[:,1], k=3)
+    spline = interpolate.InterpolatedUnivariateSpline(time, mid_m[:,1], k=3)
     splineD1 = spline.derivative(n=1)
     mid_m_speed = splineD1(time)
 
