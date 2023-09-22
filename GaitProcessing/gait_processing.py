@@ -62,14 +62,20 @@ n_gait_cycles = 1
 filter_frequency = 6
 
 # Settings for dynamic simulation.
-motion_type = 'walking_periodic_torque_driven'
-case = '1'
-solveProblem = False
-analyzeResults = True
-# motion_type = 'walking_periodic'
-# case = '0'
+# motion_type = 'walking_periodic_torque_driven'
+# case = '2'
 # solveProblem = True
 # analyzeResults = True
+motion_type = 'walking_periodic'
+case = '10'
+solveProblem = True
+analyzeResults = True
+
+
+if case == '2' or case == '3':
+    contact_configuration = 'dhondt2023'
+else:
+    contact_configuration = 'generic'
 
 # %% Gait segmentation and kinematic analysis.
 # Get trial id from name.
@@ -100,12 +106,32 @@ for leg in legs:
     test= [1.2, 2.4] 
     settings = processInputsOpenSimAD(
         baseDir, dataFolder, session_id, trial_name, 
-        motion_type, time_window=time_window)
+        motion_type, time_window=time_window, 
+        contact_configuration=contact_configuration)
+    
+    settings['contact_configuration'] = contact_configuration
+    if case == '4':    
+        settings['tendon_compliances'] =  {'soleus_r': 17.5, 'gaslat_r': 17.5, 'gasmed_r': 17.5,
+                                           'soleus_l': 17.5, 'gaslat_l': 17.5, 'gasmed_l': 17.5}
+    if case == '5' or case == '6' or case == '7':
+        settings['weights']['activationTerm'] = 10 
+
+    if case == '7':
+        settings['weights']['accelerationTrackingTerm'] = 10 
+
+    if case == '8':
+        settings['weights']['positionTrackingTerm'] = 20
+    if case == '9':
+        settings['weights']['positionTrackingTerm'] = 50
+    if case == '10':
+        settings['weights']['positionTrackingTerm'] = 100
+        
     # Simulation.
-    # run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-    #              solveProblem=solveProblem, analyzeResults=analyzeResults)
-    plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, ['0', case])
-    test=1
+    run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
+                  solveProblem=solveProblem, analyzeResults=analyzeResults)
+
+# plotResultsOpenSimAD(dataFolder, session_id, trial_name, cases=['6', '7'])
+    # test=1
 
 # # %% Print scalar results.
 # print('\nRight foot gait metrics:')

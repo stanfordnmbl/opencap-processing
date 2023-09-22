@@ -57,7 +57,7 @@ def polynomialApproximation(musclesPolynomials, polynomialData, NPolynomial):
         
 # %% CasADi function to describe the Hill equilibrium based on the
 # DeGrooteFregly2016MuscleModel muscle model.
-def hillEquilibrium(mtParameters, tendonCompliance, tendonShift,
+def hillEquilibrium(mtParameters, tendonCompliance,
                     specificTension, ignorePassiveFiberForce=False):
     
     NMuscles = mtParameters.shape[1]
@@ -85,7 +85,7 @@ def hillEquilibrium(mtParameters, tendonCompliance, tendonShift,
             mtParameters[:, m], activation[m], mtLength[m],
             mtVelocity[m], normTendonForce[m], 
             normTendonForceDT[m], tendonCompliance[:, m],
-            tendonShift[:, m], specificTension[:, m],
+            specificTension[:, m],
             ignorePassiveFiberForce=ignorePassiveFiberForce)
         hillEquilibrium[m] = muscle.deriveHillEquilibrium()
         tendonForce[m] = muscle.getTendonForce()

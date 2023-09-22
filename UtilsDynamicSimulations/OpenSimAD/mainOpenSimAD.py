@@ -333,6 +333,20 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     if 'useExpressionGraphFunction' in settings:
         useExpressionGraphFunction = settings['useExpressionGraphFunction']
 
+    # Contact configuration. This is used to specify the configuration of the 
+    # contact spheres. Generic has 6 spheres with stiffness=1e6, whereas
+    # dhont2023 (https://www.biorxiv.org/content/10.1101/2023.03.22.533790v1)
+    # has 5 spheres with stiffness=1e7. The position of the spheres also
+    # slightly differ.
+    contact_configuration = 'generic'
+    if 'contact_configuration' in settings:
+        contact_configuration = settings['contact_configuration']
+
+
+    tendon_compliances = {}
+    if 'tendon_compliances' in settings:
+        tendon_compliances = settings['tendon_compliances']
+        
     # %% Paths and dirs.
     pathMain = os.getcwd()
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
@@ -401,10 +415,13 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     sideTendonCompliance = tendonCompliance(nSideMuscles)
     tendonCompliance = np.concatenate((sideTendonCompliance, 
                                        sideTendonCompliance), axis=1)
-    from muscleDataOpenSimAD import tendonShift
-    sideTendonShift = tendonShift(nSideMuscles)
-    tendonShift = np.concatenate((sideTendonShift, sideTendonShift), axis=1)
-     
+    # Adjust tendon compliance (if applicable).
+    if tendon_compliances:
+        print('antoine')
+        for i in tendon_compliances:
+            tendonCompliance[0, bothSidesMuscles.index(i)] = (
+                tendon_compliances[i])
+    
     # Specific tension.
     specificTension = 0.5*np.ones((1, nMuscles))
     
@@ -416,7 +433,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # contraction dynamic equations".
     from functionCasADiOpenSimAD import hillEquilibrium    
     f_hillEquilibrium = hillEquilibrium(
-        mtParameters, tendonCompliance, tendonShift, specificTension,
+        mtParameters, tendonCompliance, specificTension,
         ignorePassiveFiberForce=ignorePassiveFiberForce)
         
     # Time constants for activation dynamics.
@@ -772,6 +789,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # still support the older approach (useExpressionGraphFunction=False).
 
     F_name = 'F'
+    if contact_configuration == 'dhondt2023':
+        F_name += '_dhondt2023'
     dim = 3*nJoints
     if treadmill:
         F_name += '_treadmill'
@@ -780,7 +799,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         from utilsOpenSimAD import getF_expressingGraph
         # Import function for expression graph.    
         sys.path.append(pathExternalFunctionFolder)
-        os.chdir(pathExternalFunctionFolder) 
+        os.chdir(pathExternalFunctionFolder)
         F = getF_expressingGraph(dim, F_name)
         os.chdir(pathMain)
     else: # This will be deprecated

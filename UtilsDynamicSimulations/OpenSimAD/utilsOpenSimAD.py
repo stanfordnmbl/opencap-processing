@@ -517,14 +517,19 @@ def generateExternalFunction(
         OpenSimModel="LaiUhlrich2022",
         treadmill=False, build_externalFunction=True, verifyID=True, 
         externalFunctionName='F', overwrite=False,
-        useExpressionGraphFunction=True):
+        useExpressionGraphFunction=True,
+        contact_configuration='generic'):
 
     # %% Process settings.
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
-    suffix_model = '_contacts'
-    outputModelFileName = (OpenSimModel + "_scaled" + suffix_MA + suffix_model)
+    if contact_configuration == 'generic':
+        suffix_contact = '_contacts'
+    elif contact_configuration == 'dhondt2023':
+        suffix_contact = '_contacts_dhondt2023'
+        externalFunctionName += '_dhondt2023'
+    outputModelFileName = (OpenSimModel + "_scaled" + suffix_MA + suffix_contact)
     pathModel = os.path.join(pathModelFolder, outputModelFileName + ".osim")
     pathOutputExternalFunctionFolder = os.path.join(pathModelFolder,
                                                     "ExternalFunction")
@@ -1826,14 +1831,15 @@ def download_file_2(url, file_name):
     
 # %% Plot results simulations.
 # TODO: simplify and clean up.
-def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
+def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings={},
                          cases=['default'], mainPlots=True):
     
     # %% Load optimal trajectories.
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
     suff_path = ''
-    if 'repetition' in settings:
-        suff_path = '_rep' + str(settings['repetition'])
+    if settings:
+        if 'repetition' in settings:
+            suff_path = '_rep' + str(settings['repetition'])
     c_pathResults = os.path.join(pathOSData, 'Dynamics', 
                                  motion_filename + suff_path)    
     c_tr = np.load(os.path.join(c_pathResults, 'optimaltrajectories.npy'),
@@ -2201,7 +2207,8 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
 def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                            motion_type, time_window=[], repetition=None,
                            treadmill_speed=0, overwrite=False,
-                           useExpressionGraphFunction=True):
+                           useExpressionGraphFunction=True,
+                           contact_configuration='generic'):
         
     # Path session folder.
     sessionFolder =  os.path.join(dataFolder, session_id)
@@ -2231,13 +2238,15 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                          OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Add foot-ground contacts to musculoskeletal model.    
     generate_model_with_contacts(dataFolder, session_id, 
-                              OpenSimModel=OpenSimModel, overwrite=overwrite)
+                              OpenSimModel=OpenSimModel, overwrite=overwrite,
+                              contact_configuration=contact_configuration)
     # Generate external function.    
     generateExternalFunction(baseDir, dataFolder, session_id,
                              OpenSimModel=OpenSimModel,
                              overwrite=overwrite, 
                              treadmill=bool(treadmill_speed),
-                             useExpressionGraphFunction=useExpressionGraphFunction)
+                             useExpressionGraphFunction=useExpressionGraphFunction,
+                             contact_configuration=contact_configuration)
     
     # Get settings.
     settings = get_setup(motion_type)
