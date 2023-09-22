@@ -29,6 +29,7 @@ import pickle
 import glob
 import zipfile
 import platform
+import opensim
 
 from utilsAPI import get_api_url
 from utilsAuthentication import get_token
@@ -138,6 +139,14 @@ def get_model_and_metadata(session_id, session_path):
         download_file(modelURL, modelPath)
         
     return modelName
+
+def get_main_settings(session_folder,trial_name):
+    settings_path = os.path.join(session_folder,'MarkerData',
+                                 'Settings','settings_' + trial_name + '.yaml')
+    main_settings = import_metadata(settings_path)
+    
+    return main_settings
+
         
 def get_model_name_from_metadata(sessionFolder,appendText='_scaled'):
     metadataPath = os.path.join(sessionFolder,'sessionMetadata.yaml')
@@ -171,6 +180,14 @@ def get_motion_data(trial_id, session_path):
         os.makedirs(ikFolder, exist_ok=True)
         ikURL = trial['results'][resultTags.index('ik_results')]['media']
         download_file(ikURL, ikPath)
+        
+    # Main settings
+    if 'main_settings' in resultTags:
+        settingsFolder = os.path.join(session_path, 'MarkerData', 'Settings')
+        settingsPath = os.path.join(settingsFolder, 'settings_' + trial_name + '.yaml')
+        os.makedirs(settingsFolder, exist_ok=True)
+        settingsURL = trial['results'][resultTags.index('main_settings')]['media']
+        download_file(settingsURL, settingsPath)  
         
         
 def get_geometries(session_path, modelName='LaiUhlrich2022_scaled'):
@@ -343,6 +360,21 @@ def storage_to_dataframe(storage_file, headers):
     
     return out
 
+# %% Load storage and output as dataframe or numpy
+def load_storage(file_path,outputFormat='numpy'):
+    table = opensim.TimeSeriesTable(file_path)    
+    data = table.getMatrix().to_numpy()
+    time = np.asarray(table.getIndependentColumn()).reshape(-1, 1)
+    data = np.hstack((time,data))
+    headers = ['time'] + list(table.getColumnLabels())
+    
+    if outputFormat == 'numpy':
+        return data,headers
+    elif outputFormat == 'dataframe':
+        return pd.DataFrame(data, columns=headers)
+    else:
+        return None    
+    
 # %%  Numpy array to storage file.
 def numpy_to_storage(labels, data, storage_file, datatype=None):
     
@@ -687,3 +719,20 @@ def cross_corr(y1, y2,multCorrGaussianStd=None,visualize=False):
     lag = argmax_corr-shift
     
     return max_corr, lag
+
+def downsample(data,time,framerate_in,framerate_out):
+    # Calculate the downsampling factor
+    downsampling_factor = framerate_in / framerate_out
+    
+    # Create new indices for downsampling
+    original_indices = np.arange(len(data))
+    new_indices = np.arange(0, len(data), downsampling_factor)
+    
+    # Perform downsampling with interpolation
+    downsampled_data = np.ndarray((len(new_indices), data.shape[1]))
+    for i in range(data.shape[1]):
+        downsampled_data[:,i] = np.interp(new_indices, original_indices, data[:,i])
+    
+    downsampled_time = np.interp(new_indices, original_indices, time)
+    
+    return downsampled_time, downsampled_data
