@@ -277,7 +277,10 @@ def create_custom_bar_subplots(data_dict_list):
 
         axs[i].set_xlim(lower_bound - green_width, upper_bound + red_width)
         axs[i].set_yticks([])
-        axs[i].set_xticks([lower_bound, upper_bound])
+        if reverse_colors:
+            axs[i].set_xticks([lower_bound])
+        else:
+            axs[i].set_xticks([upper_bound])
 
         for spine in axs[i].spines.values():
             spine.set_visible(False)

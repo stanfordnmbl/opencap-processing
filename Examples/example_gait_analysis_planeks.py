@@ -148,16 +148,21 @@ scalar_reverse_colors = ['step_width']
 # Create data dictionary for each scalar.
 data_dict_list = []
 for scalar_name in scalar_names:
-    lower_bound = 0.95*thresholds[scalar_name]
-    upper_bound = 1.05*thresholds[scalar_name]
     vertical_values = [gait_metrics[scalar_name]]
     data_dict = {
         'name': scalar_name,
-        'bounds': (lower_bound, upper_bound),
         'values': vertical_values,
     }
     if scalar_name in scalar_reverse_colors:
         data_dict['reverse_colors'] = True
+        lower_bound = thresholds[scalar_name]
+        # Margin zone (orange) is 10% above threshold.
+        upper_bound = 1.10*thresholds[scalar_name]        
+    else:
+        # Margin zone (orange) is 10% below threshold.
+        lower_bound = 0.90*thresholds[scalar_name]
+        upper_bound = thresholds[scalar_name]
+    data_dict['bounds'] = (lower_bound, upper_bound)
     data_dict_list.append(data_dict)
 
 create_custom_bar_subplots(data_dict_list)
