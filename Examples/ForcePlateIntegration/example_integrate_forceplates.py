@@ -50,7 +50,8 @@ import utilsKinematics
 
 # %% User-defined variables.
 
-# OpenCap session information
+# OpenCap session information from url.
+# View example at https://app.opencap.ai/session/9eea5bf0-a550-4fa5-bc69-f5f072765848
 session_id = '9eea5bf0-a550-4fa5-bc69-f5f072765848'
 trial_name = 'jump2'
 # Specify where to download the kinematic data. Make sure there are no spaces
