@@ -87,18 +87,16 @@ gaitResults['curves_l'] = gait_l.get_coordinates_normalized_time()
 
 # %% Print scalar results.
 print('\nRight foot gait metrics:')
-print('(units: m and s)')
 print('-----------------')
 for key, value in gaitResults['scalars_r'].items():
-    rounded_value = round(value, 2)
-    print(f"{key}: {rounded_value}")
+    rounded_value = round(value['value'], 2)
+    print(f"{key}: {rounded_value} {value['units']}")
     
 print('\nLeft foot gait metrics:')
-print('(units: m and s)')
 print('-----------------')
 for key, value in gaitResults['scalars_l'].items():
-    rounded_value = round(value, 2)
-    print(f"{key}: {rounded_value}")
+    rounded_value = round(value['value'], 2)
+    print(f"{key}: {rounded_value} {value['units']}")
 
     
 # %% You can plot multiple curves, in this case we compare right and left legs.

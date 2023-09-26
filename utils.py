@@ -29,9 +29,13 @@ import pickle
 import glob
 import zipfile
 import platform
+import opensim
 
 from utilsAPI import get_api_url
 from utilsAuthentication import get_token
+import matplotlib.pyplot as plt
+from scipy.signal import gaussian
+
 
 API_URL = get_api_url()
 API_TOKEN = get_token()
@@ -135,6 +139,14 @@ def get_model_and_metadata(session_id, session_path):
         download_file(modelURL, modelPath)
         
     return modelName
+
+def get_main_settings(session_folder,trial_name):
+    settings_path = os.path.join(session_folder,'MarkerData',
+                                 'Settings','settings_' + trial_name + '.yaml')
+    main_settings = import_metadata(settings_path)
+    
+    return main_settings
+
         
 def get_model_name_from_metadata(sessionFolder,appendText='_scaled'):
     metadataPath = os.path.join(sessionFolder,'sessionMetadata.yaml')
@@ -168,6 +180,14 @@ def get_motion_data(trial_id, session_path):
         os.makedirs(ikFolder, exist_ok=True)
         ikURL = trial['results'][resultTags.index('ik_results')]['media']
         download_file(ikURL, ikPath)
+        
+    # Main settings
+    if 'main_settings' in resultTags:
+        settingsFolder = os.path.join(session_path, 'MarkerData', 'Settings')
+        settingsPath = os.path.join(settingsFolder, 'settings_' + trial_name + '.yaml')
+        os.makedirs(settingsFolder, exist_ok=True)
+        settingsURL = trial['results'][resultTags.index('main_settings')]['media']
+        download_file(settingsURL, settingsPath)  
         
         
 def get_geometries(session_path, modelName='LaiUhlrich2022_scaled'):
@@ -340,6 +360,21 @@ def storage_to_dataframe(storage_file, headers):
     
     return out
 
+# %% Load storage and output as dataframe or numpy
+def load_storage(file_path,outputFormat='numpy'):
+    table = opensim.TimeSeriesTable(file_path)    
+    data = table.getMatrix().to_numpy()
+    time = np.asarray(table.getIndependentColumn()).reshape(-1, 1)
+    data = np.hstack((time,data))
+    headers = ['time'] + list(table.getColumnLabels())
+    
+    if outputFormat == 'numpy':
+        return data,headers
+    elif outputFormat == 'dataframe':
+        return pd.DataFrame(data, columns=headers)
+    else:
+        return None    
+    
 # %%  Numpy array to storage file.
 def numpy_to_storage(labels, data, storage_file, datatype=None):
     
@@ -633,3 +668,71 @@ def download_session(session_id, sessionBasePath= None,
         post_file_to_trial(session_zip,dynamic_ids[-1],tag='session_zip',
                            device_id='all')    
     
+def cross_corr(y1, y2,multCorrGaussianStd=None,visualize=False):
+    """Calculates the cross correlation and lags without normalization.
+    
+    The definition of the discrete cross-correlation is in:
+    https://www.mathworks.com/help/matlab/ref/xcorr.html
+    
+    Args:
+    y1, y2: Should have the same length.
+    
+    Returns:
+    max_corr: Maximum correlation without normalization.
+    lag: The lag in terms of the index.
+    """
+    # Pad shorter signal with 0s
+    if len(y1) > len(y2):
+        temp = np.zeros(len(y1))
+        temp[0:len(y2)] = y2
+        y2 = np.copy(temp)
+    elif len(y2)>len(y1):
+        temp = np.zeros(len(y2))
+        temp[0:len(y1)] = y1
+        y1 = np.copy(temp)
+        
+    y1_auto_corr = np.dot(y1, y1) / len(y1)
+    y2_auto_corr = np.dot(y2, y2) / len(y1)
+    corr = np.correlate(y1, y2, mode='same')
+    # The unbiased sample size is N - lag.
+    unbiased_sample_size = np.correlate(np.ones(len(y1)), np.ones(len(y1)), mode='same')
+    corr = corr / unbiased_sample_size / np.sqrt(y1_auto_corr * y2_auto_corr)
+    shift = len(y1) // 2
+    max_corr = np.max(corr)
+    argmax_corr = np.argmax(corr)    
+        
+    if visualize:
+        plt.figure()
+        plt.plot(corr)
+        plt.title('vertical velocity correlation')
+        
+    # Multiply correlation curve by gaussian (prioritizing lag solution closest to 0)
+    if multCorrGaussianStd is not None:
+        corr = np.multiply(corr,gaussian(len(corr),multCorrGaussianStd))
+        if visualize: 
+            plt.plot(corr,color=[.4,.4,.4])
+            plt.legend(['corr','corr*gaussian'])  
+    
+    argmax_corr = np.argmax(corr)
+    max_corr = np.nanmax(corr)
+    
+    lag = argmax_corr-shift
+    
+    return max_corr, lag
+
+def downsample(data,time,framerate_in,framerate_out):
+    # Calculate the downsampling factor
+    downsampling_factor = framerate_in / framerate_out
+    
+    # Create new indices for downsampling
+    original_indices = np.arange(len(data))
+    new_indices = np.arange(0, len(data), downsampling_factor)
+    
+    # Perform downsampling with interpolation
+    downsampled_data = np.ndarray((len(new_indices), data.shape[1]))
+    for i in range(data.shape[1]):
+        downsampled_data[:,i] = np.interp(new_indices, original_indices, data[:,i])
+    
+    downsampled_time = np.interp(new_indices, original_indices, time)
+    
+    return downsampled_time, downsampled_data
