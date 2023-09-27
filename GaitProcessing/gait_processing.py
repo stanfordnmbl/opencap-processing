@@ -67,10 +67,10 @@ filter_frequency = 6
 # solveProblem = True
 # analyzeResults = True
 motion_type = 'walking_periodic'
-case = '10'
+case = '18'
 solveProblem = True
 analyzeResults = True
-
+runProblem = True
 
 if case == '2' or case == '3':
     contact_configuration = 'dhondt2023'
@@ -84,53 +84,82 @@ trial_id = get_trial_id(session_id,trial_name)
 # Set session path.
 sessionDir = os.path.join(dataFolder, session_id)
 
-# Download data.
-trialName = download_trial(trial_id,sessionDir,session_id=session_id) 
-
-# Data processing.
-legs = ['r']
-gait, gaitResults = {}, {}
-for leg in legs:
-    gaitResults[leg] = {}
-    gait[leg] = gait_analysis(
-        sessionDir, trialName, leg=leg,
-        lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-        n_gait_cycles=n_gait_cycles)
-    # Compute scalars.
-    gaitResults[leg]['scalars'] = gait[leg].compute_scalars(scalar_names)
-    # Get gait events.
-    gaitResults[leg]['events'] = gait[leg].get_gait_events()
-    # Setup dynamic optimization problem.
-    time_window = [float(gaitResults[leg]['events']['ipsilateralTime'][0, 0]),
-                   float(gaitResults[leg]['events']['ipsilateralTime'][0, -1])]
-    test= [1.2, 2.4] 
-    settings = processInputsOpenSimAD(
-        baseDir, dataFolder, session_id, trial_name, 
-        motion_type, time_window=time_window, 
-        contact_configuration=contact_configuration)
+if runProblem:
+    # Download data.
+    trialName = download_trial(trial_id,sessionDir,session_id=session_id) 
     
-    settings['contact_configuration'] = contact_configuration
-    if case == '4':    
-        settings['tendon_compliances'] =  {'soleus_r': 17.5, 'gaslat_r': 17.5, 'gasmed_r': 17.5,
-                                           'soleus_l': 17.5, 'gaslat_l': 17.5, 'gasmed_l': 17.5}
-    if case == '5' or case == '6' or case == '7':
-        settings['weights']['activationTerm'] = 10 
-
-    if case == '7':
-        settings['weights']['accelerationTrackingTerm'] = 10 
-
-    if case == '8':
-        settings['weights']['positionTrackingTerm'] = 20
-    if case == '9':
-        settings['weights']['positionTrackingTerm'] = 50
-    if case == '10':
-        settings['weights']['positionTrackingTerm'] = 100
+    # Data processing.
+    legs = ['r']
+    gait, gaitResults = {}, {}
+    for leg in legs:
+        gaitResults[leg] = {}
+        gait[leg] = gait_analysis(
+            sessionDir, trialName, leg=leg,
+            lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
+            n_gait_cycles=n_gait_cycles)
+        # Compute scalars.
+        gaitResults[leg]['scalars'] = gait[leg].compute_scalars(scalar_names)
+        # Get gait events.
+        gaitResults[leg]['events'] = gait[leg].get_gait_events()
+        # Setup dynamic optimization problem.
+        time_window = [float(gaitResults[leg]['events']['ipsilateralTime'][0, 0]),
+                       float(gaitResults[leg]['events']['ipsilateralTime'][0, -1])]
+        test= [1.2, 2.4] 
+        settings = processInputsOpenSimAD(
+            baseDir, dataFolder, session_id, trial_name, 
+            motion_type, time_window=time_window, 
+            contact_configuration=contact_configuration)
         
-    # Simulation.
-    run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-                  solveProblem=solveProblem, analyzeResults=analyzeResults)
+        settings['contact_configuration'] = contact_configuration
+        if case == '4':    
+            settings['tendon_compliances'] =  {'soleus_r': 17.5, 'gaslat_r': 17.5, 'gasmed_r': 17.5,
+                                               'soleus_l': 17.5, 'gaslat_l': 17.5, 'gasmed_l': 17.5}
+        if case == '5' or case == '6' or case == '7' or case == '11' or case == '12' or case == '13':
+            settings['weights']['activationTerm'] = 10 
+    
+        if case == '7':
+            settings['weights']['accelerationTrackingTerm'] = 10 
+    
+        if case == '8' or case == '11':
+            settings['weights']['positionTrackingTerm'] = 20
+        if case == '9' or case == '12':
+            settings['weights']['positionTrackingTerm'] = 50
+        if case == '10' or case == '13':
+            settings['weights']['positionTrackingTerm'] = 100
+    
+        if case == '14':
+            settings['weights']['activationTerm'] = 10
+            settings['periodicConstraints']['coordinateValues'] = ['pelvis_ty']
+            settings['periodicConstraints']['coordinateSpeeds'] = ['pelvis_ty']
+            
+        if case == '15':
+            settings['weights']['activationTerm'] = 10
+            settings['scaleIsometricMuscleForce'] = 1.5
 
-# plotResultsOpenSimAD(dataFolder, session_id, trial_name, cases=['6', '7'])
+        if case == '16':
+            settings['weights']['activationTerm'] = 10
+            settings['withReserveActuators'] = True
+            settings['reserveActuatorCoordinates']= {
+                'mtp_angle_l': 30, 'mtp_angle_r': 30}
+            
+        if case == '17':
+            settings['weights']['activationTerm'] = 10
+            settings['trackQdds'] = False
+            
+        if case == '18':
+            settings['weights']['activationTerm'] = 10
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 50 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 50 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 50 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 50 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 50 
+            
+        # Simulation.
+        run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
+                      solveProblem=solveProblem, analyzeResults=analyzeResults)
+else:
+    plotResultsOpenSimAD(dataFolder, session_id, trial_name, cases=['6', '16'], mainPlots=False)
     # test=1
 
 # # %% Print scalar results.

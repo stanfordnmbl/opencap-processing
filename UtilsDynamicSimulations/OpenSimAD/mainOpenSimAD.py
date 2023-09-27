@@ -1524,9 +1524,21 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 positionTrackingTerm = f_NQsToTrackWSum2(
                     Qskj[idx_coordinates_toTrack, 0],
                     dataToTrack_Qs_sc_offset[:, k], w_dataToTrack)
+                if weights['positionTrackingTerm'] > 0:
+                    J += ((weights['positionTrackingTerm'] * positionTrackingTerm) * h * B[j + 1])
                 velocityTrackingTerm = f_NQsToTrackWSum2(
                     Qdskj[idx_coordinates_toTrack, 0],
-                    dataToTrack_Qds_sc[:, k], w_dataToTrack)                
+                    dataToTrack_Qds_sc[:, k], w_dataToTrack)   
+                if weights['velocityTrackingTerm'] > 0:
+                    J += ((
+                    weights['positionTrackingTerm'] * positionTrackingTerm +
+                    weights['velocityTrackingTerm'] * velocityTrackingTerm +
+                    weights['jointAccelerationTerm'] * jointAccelerationTerm) * h * B[j + 1]) 
+
+
+
+
+                             
                 J += ((
                     weights['positionTrackingTerm'] * positionTrackingTerm +
                     weights['velocityTrackingTerm'] * velocityTrackingTerm +
