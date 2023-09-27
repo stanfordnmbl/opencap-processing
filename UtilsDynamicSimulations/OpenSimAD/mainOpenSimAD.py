@@ -1520,29 +1520,19 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     opti.subject_to(h*aLumbarDtj - aLumbarp == 0)
                 
                 # Cost function
-                jointAccelerationTerm = f_nJointsSum2(Qddsk)
-                positionTrackingTerm = f_NQsToTrackWSum2(
-                    Qskj[idx_coordinates_toTrack, 0],
-                    dataToTrack_Qs_sc_offset[:, k], w_dataToTrack)
                 if weights['positionTrackingTerm'] > 0:
-                    J += ((weights['positionTrackingTerm'] * positionTrackingTerm) * h * B[j + 1])
-                velocityTrackingTerm = f_NQsToTrackWSum2(
-                    Qdskj[idx_coordinates_toTrack, 0],
-                    dataToTrack_Qds_sc[:, k], w_dataToTrack)   
+                    positionTrackingTerm = f_NQsToTrackWSum2(
+                        Qskj[idx_coordinates_toTrack, 0],
+                        dataToTrack_Qs_sc_offset[:, k], w_dataToTrack)
+                    J += ((weights['positionTrackingTerm'] * positionTrackingTerm) * h * B[j + 1])                   
                 if weights['velocityTrackingTerm'] > 0:
-                    J += ((
-                    weights['positionTrackingTerm'] * positionTrackingTerm +
-                    weights['velocityTrackingTerm'] * velocityTrackingTerm +
-                    weights['jointAccelerationTerm'] * jointAccelerationTerm) * h * B[j + 1]) 
-
-
-
-
-                             
-                J += ((
-                    weights['positionTrackingTerm'] * positionTrackingTerm +
-                    weights['velocityTrackingTerm'] * velocityTrackingTerm +
-                    weights['jointAccelerationTerm'] * jointAccelerationTerm) * h * B[j + 1])                
+                    velocityTrackingTerm = f_NQsToTrackWSum2(
+                        Qdskj[idx_coordinates_toTrack, 0],
+                        dataToTrack_Qds_sc[:, k], w_dataToTrack)
+                    J += ((weights['velocityTrackingTerm'] * velocityTrackingTerm) * h * B[j + 1]) 
+                if weights['jointAccelerationTerm'] > 0:
+                    jointAccelerationTerm = f_nJointsSum2(Qddsk) 
+                    J += ((weights['jointAccelerationTerm'] * jointAccelerationTerm) * h * B[j + 1])                
                 if torque_driven_model:
                     coordinateExcitationTerm = f_nCoordinatesSum2(eCoordk)
                     J += (weights['coordinateExcitationTerm'] * 

@@ -25,7 +25,6 @@
 
 import os
 import sys
-import numpy as np
 sys.path.append("../")
 sys.path.append("../ActivityAnalyses")
 sys.path.append("../UtilsDynamicSimulations/OpenSimAD")
@@ -39,6 +38,9 @@ sys.path.append(opensimADDir)
 from gait_analysis import gait_analysis
 from utils import get_trial_id, download_trial
 from utilsPlotting import plot_dataframe
+
+from utilsProcessing import align_markers_with_ground
+from utilsOpenSim import runIKTool
 
 from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
@@ -68,10 +70,10 @@ filter_frequency = 6
 # solveProblem = True
 # analyzeResults = True
 motion_type = 'walking_periodic'
-case = '25'
+case = '6'
 solveProblem = True
 analyzeResults = True
-runProblem = True
+runProblem = False
 
 if case == '2' or case == '3':
     contact_configuration = 'dhondt2023'
@@ -87,15 +89,34 @@ sessionDir = os.path.join(dataFolder, session_id)
 
 if runProblem:
     # Download data.
-    trialName, _ = download_trial(trial_id,sessionDir,session_id=session_id) 
+    trialName, modelName = download_trial(trial_id,sessionDir,session_id=session_id)
+
+    # Align markers with ground.
+    print('Aligning markers with ground...')
+    suffixOutputFileName = 'aligned'
+    pathTRCFile_out = align_markers_with_ground(
+        sessionDir, trialName,
+        suffixOutputFileName=suffixOutputFileName,
+        lowpass_cutoff_frequency_for_marker_values=filter_frequency)
+    trialName_aligned = trialName + '_' + suffixOutputFileName
+
+    # Run inverse kinematics.
+    print('Running inverse kinematics...')
+    pathGenericSetupFile = os.path.join(
+        baseDir, 'OpenSimPipeline', 
+        'InverseKinematics', 'Setup_InverseKinematics.xml')
+    pathScaledModel = os.path.join(sessionDir, 'OpenSimData', 'Model', modelName)
+    pathOutputFolder = os.path.join(sessionDir, 'OpenSimData', 'Kinematics')
+    runIKTool(pathGenericSetupFile, pathScaledModel, pathTRCFile_out, pathOutputFolder) 
     
     # Data processing.
+    print('Processing data...')
     legs = ['r']
     gait, gaitResults = {}, {}
     for leg in legs:
         gaitResults[leg] = {}
         gait[leg] = gait_analysis(
-            sessionDir, trialName, leg=leg,
+            sessionDir, trialName_aligned, leg=leg,
             lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
             n_gait_cycles=n_gait_cycles)
         # Compute scalars.
@@ -105,9 +126,10 @@ if runProblem:
         # Setup dynamic optimization problem.
         time_window = [float(gaitResults[leg]['events']['ipsilateralTime'][0, 0]),
                        float(gaitResults[leg]['events']['ipsilateralTime'][0, -1])]
-        
+
+        print('Processing data for dynamic simulation...')
         settings = processInputsOpenSimAD(
-            baseDir, dataFolder, session_id, trial_name, 
+            baseDir, dataFolder, session_id, trialName_aligned, 
             motion_type, time_window=time_window, 
             contact_configuration=contact_configuration)
         
@@ -156,94 +178,11 @@ if runProblem:
             settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 50 
             settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 50 
             
-        if case == '19':
-            settings['weights']['activationTerm'] = 10
-            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
-            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100 
-            
-        if case == '20':
-            settings['weights']['activationTerm'] = 10
-            settings['enableLimitTorques'] = False
-            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
-            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100 
-            
-        if case == '21':
-            settings['weights']['activationTerm'] = 10
-            settings['weights']['velocityTrackingTerm'] = 1
-            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
-            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100 
-            
-        if case == '22':
-            settings['weights']['activationTerm'] = 10
-            settings['ignorePassiveFiberForce'] = True
-            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
-            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100 
-            
-        if case == '23':
-            settings['weights']['activationTerm'] = 10
-            settings['weights']['velocityTrackingTerm'] = 1            
-            settings['coordinate_constraints']['hip_flexion_l'] = {'env_bound': 3 * np.pi / 180}
-            settings['coordinate_constraints']['hip_flexion_r'] = {'env_bound': 3 * np.pi / 180}
-            settings['coordinate_constraints']['knee_angle_l'] = {'env_bound': 3 * np.pi / 180}
-            settings['coordinate_constraints']['knee_angle_r'] = {'env_bound': 3 * np.pi / 180}
-            settings['coordinate_constraints']['ankle_angle_l'] = {'env_bound': 3 * np.pi / 180}
-            settings['coordinate_constraints']['ankle_angle_r'] = {'env_bound': 3 * np.pi / 180}
-            
-        if case == '24':
-            settings['weights']['activationTerm'] = 10
-            settings['weights']['positionTrackingTerm'] = 20
-            settings['weights']['velocityTrackingTerm'] = 1
-            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
-            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100 
-            
-        if case == '25':
-            settings['weights']['activationTerm'] = 10
-            settings['weights']['positionTrackingTerm'] = 20
-            settings['weights']['velocityTrackingTerm'] = 1
-            settings['weights']['accelerationTrackingTerm'] = 10 
-            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
-            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
-            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100 
-            
-            # settings['periodicConstraints']['coordinateValues'] = ['pelvis_tilt', 'pelvis_list', 'pelvis_rotation', 'pelvis_ty', 
-            # 'hip_flexion_l', 'hip_adduction_l', 'hip_rotation_l', 
-            # 'hip_flexion_r', 'hip_adduction_r', 'hip_rotation_r', 
-            # 'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
-            # 'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
-            # 'lumbar_extension', 'lumbar_bending', 'lumbar_rotation']
-            # settings['periodicConstraints']['coordinateSpeeds'] = ['pelvis_ty']
-            
-            
-            
-            
         # Simulation.
         run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
                       solveProblem=solveProblem, analyzeResults=analyzeResults)
 else:
-    plotResultsOpenSimAD(dataFolder, session_id, trial_name, cases=['18', '19'], mainPlots=False)
+    plotResultsOpenSimAD(dataFolder, session_id, trial_name, cases=['6'], mainPlots=False)
     # test=1
 
 # # %% Print scalar results.

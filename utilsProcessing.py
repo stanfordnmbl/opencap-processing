@@ -677,8 +677,8 @@ def align_markers_with_ground(sessionDir, trialName,
     mid_m_speed = splineD1(time)
 
     # We assume peak vertical speeds should match across gait cycles.
-    peaks, _ = signal.find_peaks(mid_m_speed, distance=30, 
-                                 width=15, prominence=0.1)
+    peaks, _ = signal.find_peaks(mid_m_speed, distance=20, 
+                                 width=5, prominence=0.1)
     
     # The beginning of the trial is not always great, we here select the gait
     # cycles that have similar durations (+/-20%).
@@ -709,6 +709,8 @@ def align_markers_with_ground(sessionDir, trialName,
     
     # Convert the angle from radians to degrees if needed.
     angle_deg = np.degrees(angle_rad)
+    
+    print('Angle between reference vector and original vector: {:.2f} deg'.format(angle_deg))
     
     # Rotate marker data about the z-axis.
     trc_file.rotate('z', angle_deg)
