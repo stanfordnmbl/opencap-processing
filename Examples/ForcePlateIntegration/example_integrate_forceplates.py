@@ -96,12 +96,12 @@ r_C0_to_forceOrigin_exp_C = {'R': [0,-.191,.083],
                              'L': [0,-.191,.083]}
 
 
-## Rotation from force plates to checkerboard
+## Rotation from checkerboard to force plates
 # You can represent rotations however you like, just make it a 
 # scipy.spatial.transform.Rotation object. 
 # docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html
 
-R_forcePlates_to_C = {'R':R.from_euler('y',90,degrees=True),
+R_C_to_forcePlates = {'R':R.from_euler('y',90,degrees=True),
                       'L':R.from_euler('y',90,degrees=True)}
 
 # Flags
@@ -159,7 +159,7 @@ directions = ['x','y','z']
 for q in quantity:
     for leg in ['R','L']:
         force_columns= get_columns([leg + '_' + q + d for d in directions],force_headers)
-        rot = R_forcePlates_to_C[leg]
+        rot = R_C_to_forcePlates[leg]
         force_data[:,force_columns] = rot.apply(force_data[:,force_columns])                                      
        
 ## Transform COP from force plates to G
