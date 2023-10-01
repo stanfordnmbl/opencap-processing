@@ -3,7 +3,7 @@ __pycache__
 *.log
 *.ipynb_checkpoints
 Data/*
-*/Data/*
+**/Data/
 
 *DS_Store
 

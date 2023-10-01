@@ -31,6 +31,7 @@ import yaml
 import scipy.interpolate as interpolate
 import platform
 import copy
+import importlib
 
 # %% Settings.
 def run_tracking(baseDir, dataDir, subject, settings, case='0',
@@ -325,7 +326,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             weights['coordinateExcitationTerm'] = (
                 settings['weights']['coordinateExcitationTerm'])
 
+    # Set useExpressionGraphFunction to True to use the expression graph
+    # directly instead of compiling it to a function. This allows using the
+    # CasADi type SX, which should be computationally more efficient. This is
+    # an experimental feature.
+    useExpressionGraphFunction = True
+    if 'useExpressionGraphFunction' in settings:
+        useExpressionGraphFunction = settings['useExpressionGraphFunction']
+
     # %% Paths and dirs.
+    pathMain = os.getcwd()
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
     pathModelFolder = os.path.join(pathOSData, 'Model')
     pathModelFile = os.path.join(pathModelFolder, model_full_name + ".osim")
@@ -748,30 +758,47 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 f_polynomial['l'], polynomialData['l'], momentArmIndices)
     
     # %% External functions.
-    # The external function is written in C++ and compiled as a library, which
-    # can then be called with CasADi. In the external function, we build the
-    # OpenSim model and run inverse dynamics. The function takes as inputs
-    # joint positions, velocities, and accelerations, which are states and
-    # controls of the optimal control problem. The external function returns
-    # joint torques as well as some outputs of interest, eg segment origins,
-    # that you may want to use as part of the problem formulation.
-    if platform.system() == 'Windows':
-        ext_F = '.dll'
-    elif platform.system() == 'Darwin':
-        ext_F = '.dylib'
-    elif platform.system() == 'Linux':
-        ext_F = '.so'
-    else:
-        raise ValueError("Platform not supported.")
-    suff_tread = ''
+    # The external function builds the OpenSim model and run inverse dynamics.
+    # The function takes as inputs joint positions, velocities, and 
+    # accelerations, which are states and controls of the optimal control 
+    # problem. It returns joint torques as well as some outputs of interest, 
+    # eg segment origins, that you may want to use for the problem formulation.
+    # The external function is written in C++ and compiled as an executable,
+    # which when called with numerical values returns the underlying expression
+    # graph as a function foo. We used to generate c code from the expression
+    # graph using CasADi and then compile the c code as a library to be called
+    # as an external function. This is not necessary anymore. The expression
+    # graph is saved as a function that can be called directly with CasADi. This
+    # allows using SX only, whereas actual external functions require MX. We
+    # still support the older approach (useExpressionGraphFunction=False).
+
+    F_name = 'F'
+    dim = 3*nJoints
     if treadmill:
-        suff_tread = '_treadmill'
-    
-    F = ca.external('F', 
-        os.path.join(pathExternalFunctionFolder, 'F' + suff_tread + ext_F))
+        F_name += '_treadmill'
+        dim += 1
+    if useExpressionGraphFunction:
+        from utilsOpenSimAD import getF_expressingGraph
+        # Import function for expression graph.    
+        sys.path.append(pathExternalFunctionFolder)
+        os.chdir(pathExternalFunctionFolder)    
+        F = getF_expressingGraph(dim, F_name)
+        os.chdir(pathMain)
+    else: # This will be deprecated
+        if platform.system() == 'Windows':
+            ext_F = '.dll'
+        elif platform.system() == 'Darwin':
+            ext_F = '.dylib'
+        elif platform.system() == 'Linux':
+            ext_F = '.so'
+        else:
+            raise ValueError("Platform not supported.")
+        F = ca.external('F', 
+            os.path.join(pathExternalFunctionFolder, F_name + ext_F))
+    # F_map contains information about input/output of the function.
     F_map = np.load(
         os.path.join(pathExternalFunctionFolder, 
-                     'F' + suff_tread + '_map.npy'), allow_pickle=True).item()
+                     F_name + '_map.npy'), allow_pickle=True).item()
     
     # Indices outputs external function.
     if 'nContactSpheres' not in F_map['GRFs']:
@@ -1695,7 +1722,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         # which is not what we want. This functions allows using bounds and not
         # constraints.
         from utilsOpenSimAD import solve_with_bounds
-        w_opt, stats = solve_with_bounds(opti, ipopt_tolerance)             
+        w_opt, stats = solve_with_bounds(opti, ipopt_tolerance,
+                                         useExpressionGraphFunction)             
         np.save(os.path.join(pathResults, 'w_opt_{}.npy'.format(case)), w_opt)
         np.save(os.path.join(pathResults, 'stats_{}.npy'.format(case)), stats)
         
@@ -1924,6 +1952,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         GRF_s_opt, COP_s_opt = {}, {}
         GRF_all_opt['all'] = np.zeros((len(contactSides)*3, N))
         GRM_all_opt['all'] = np.zeros((len(contactSides)*3, N))
+        COP_all_opt['all'] = np.zeros((len(contactSides)*3, N))
+        freeT_all_opt['all'] = np.zeros((len(contactSides)*3, N))
         for c_s, side in enumerate(contactSides):
             GRF_all_opt[side] = F_out_pp[idxGR['GRF']['all'][side], :]
             GRM_all_opt[side] = F_out_pp[idxGR['GRM']['all'][side], :]
@@ -1931,6 +1961,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 GRF_all_opt[side], GRM_all_opt[side])
             GRF_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRF_all_opt[side]
             GRM_all_opt['all'][c_s*3:(c_s+1)*3, :] = GRM_all_opt[side]
+            COP_all_opt['all'][c_s*3:(c_s+1)*3, :] = COP_all_opt[side]
+            freeT_all_opt['all'][c_s*3:(c_s+1)*3, :] = freeT_all_opt[side]
             GRF_s_opt[side], COP_s_opt[side] = {}, {}
             for c_sphere, sphere in enumerate(contactSpheres[side]):                
                 GRF_s_opt[side][sphere] = (
@@ -1953,7 +1985,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         GR_labels['GRF']['all'] = {}
         GR_labels['COP']['all'] = {}
         GR_labels['GRM']['all'] = {}
-        GR_labels_fig = []
+        GRF_labels_fig, GRM_labels_fig, COP_labels_fig = [], [], []
         for c_side, side in enumerate(contactSides):            
             GR_labels['GRF']['all'][side] = []
             GR_labels['COP']['all'][side] = []
@@ -1973,8 +2005,12 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 GR_labels['GRF']['all'][side].append("ground_force_{}_v{}".format(side, dimension))
                 GR_labels['COP']['all'][side].append("ground_force_{}_p{}".format(side, dimension))
                 GR_labels['GRM']['all'][side].append("ground_torque_{}_{}".format(side, dimension))
-            GR_labels_fig.append(GR_labels['GRF']['all'][side])
-        GR_labels_fig = [item for sublist in GR_labels_fig for item in sublist]
+            GRF_labels_fig.append(GR_labels['GRF']['all'][side])
+            GRM_labels_fig.append(GR_labels['GRM']['all'][side])
+            COP_labels_fig.append(GR_labels['COP']['all'][side])
+        GRF_labels_fig = [item for sublist in GRF_labels_fig for item in sublist]
+        GRM_labels_fig = [item for sublist in GRM_labels_fig for item in sublist]
+        COP_labels_fig = [item for sublist in COP_labels_fig for item in sublist]
         
         if writeGUI:
             # Kinematics and activations.
@@ -2319,7 +2355,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             sys.path.append(os.path.join(baseDir, 'OpenSimPipeline',
                                          'JointReaction'))
             from computeJointLoading import computeKAM
-            KAM_labels = ['KAM_r', 'KAM_l']
+            KAM_labels = ['knee_adduction_r', 'knee_adduction_l']
             IDPath = os.path.join(
                 pathResults, 'kinetics_{}_{}.mot'.format(trialName, case))
             IKPath = os.path.join(
@@ -2421,7 +2457,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 sys.path.append(os.path.join(baseDir, 'OpenSimPipeline',
                                              'JointReaction'))
             from computeJointLoading import computeMCF
-            MCF_labels = ['MCF_r', 'MCF_l']
+            MCF_labels = ['medial_knee_contact_force_r', 
+                          'medial_knee_contact_force_l']
             forcePath = os.path.join(pathResults, 
                 'forces_{}_{}.mot'.format(trialName, case))
             IK_act_Path = os.path.join(pathResults, 
@@ -2452,6 +2489,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             KAM_BWht = KAM / BW_ht * 100
         if computeMCF:
             MCF_BW = MCF / BW * 100
+
+        # %% Compute joint powers.
+        poweredJoints = []
+        for joint in joints:
+            if not joint in groundPelvisJoints:
+                poweredJoints.append(joint)
+        idxPoweredJoints = getIndices(joints, poweredJoints)
+        # Powers (W) = Torques (Nm) * Angular velocities (rad/s).
+        powers_opts = (torques_opt[idxPoweredJoints, :] 
+                       * Qds_opt_nsc[idxPoweredJoints, :-1])  
             
         # %% Save optimal trajectories.
         if not os.path.exists(os.path.join(pathResults,
@@ -2471,13 +2518,19 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             'coordinate_accelerations': Qdds_opt_nsc,
             'torques': torques_opt,
             'torques_BWht': torques_BWht_opt,
+            'powers': powers_opts,
             'GRF': GRF_all_opt['all'],
             'GRF_BW': GRF_BW_all_opt,
             'GRM': GRM_all_opt['all'],
             'GRM_BWht': GRM_BWht_all_opt,
+            'COP': COP_all_opt['all'],
+            'freeM': freeT_all_opt['all'],
             'coordinates': joints,
+            'coordinates_power': poweredJoints,
             'rotationalCoordinates': rotationalJoints,
-            'GRF_labels': GR_labels_fig,
+            'GRF_labels': GRF_labels_fig,
+            'GRM_labels': GRM_labels_fig,
+            'COP_labels': COP_labels_fig,
             'time': tgridf,
             'muscles': bothSidesMuscles,
             'passive_limit_torques': pT_opt,
@@ -2496,7 +2549,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         if torque_driven_model:
             optimaltrajectories[case]['coordinate_activations'] = aCoord_opt_nsc
         else:
-            optimaltrajectories[case]['muscle_activations'] = a_opt        
+            optimaltrajectories[case]['muscle_activations'] = a_opt
+            optimaltrajectories[case]['muscle_forces'] = Ft_opt  
             optimaltrajectories[case]['passive_muscle_torques'] = pMT_opt
             optimaltrajectories[case]['passive_muscle_torques'] = aMT_opt
                 
