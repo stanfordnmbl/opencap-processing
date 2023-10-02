@@ -783,6 +783,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         sys.path.append(pathExternalFunctionFolder)
         os.chdir(pathExternalFunctionFolder)    
         F = getF_expressingGraph(dim, F_name)
+        sys.path.remove(pathExternalFunctionFolder)
         os.chdir(pathMain)
     else: # This will be deprecated
         if platform.system() == 'Windows':

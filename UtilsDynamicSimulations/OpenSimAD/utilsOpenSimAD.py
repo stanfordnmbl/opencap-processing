@@ -520,6 +520,7 @@ def generateExternalFunction(
         useExpressionGraphFunction=True):
 
     # %% Process settings.
+    pathCWD = os.getcwd()
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
@@ -1593,10 +1594,12 @@ def generateExternalFunction(
             pathExpressionGraph = os.path.join(
                 pathOutputExternalFunctionFolder, externalFunctionName + '.py')
             if os.path.exists(pathExpressionGraph):
+                dim = vec3.shape[0]
                 sys.path.append(pathOutputExternalFunctionFolder)
                 os.chdir(pathOutputExternalFunctionFolder)
-                dim = vec3.shape[0]
                 F = getF_expressingGraph(dim, externalFunctionName)
+                sys.path.remove(pathOutputExternalFunctionFolder)
+                os.chdir(pathCWD)
                 ID_F = (F(vec3)).full().flatten()[:nCoordinates]
                 assert(np.max(np.abs(ID_osim - ID_F)) < 1e-6), (
                     'error F vs ID tool {}'.format(np.max(np.abs(ID_osim - ID_F))))
