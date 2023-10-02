@@ -33,7 +33,7 @@ import platform
 import copy
 
 # %% Settings.
-def run_tracking(baseDir, dataDir, subject, settings, case='0',
+def run_tracking(baseDir, dataDir, settings, case='0',
                  solveProblem=True, analyzeResults=True, writeGUI=True,
                  computeKAM=True, computeMCF=True):
     
@@ -359,7 +359,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         
     # %% Paths and dirs.
     pathMain = os.getcwd()
-    pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
+    pathOSData = os.path.join(dataDir, 'OpenSimData')
     pathModelFolder = os.path.join(pathOSData, 'Model')
     pathModelFile = os.path.join(pathModelFolder, model_full_name + ".osim")
     pathExternalFunctionFolder = os.path.join(pathModelFolder,
@@ -701,9 +701,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             'mtp_angle_r': {'max': 5, 'min': -45}}
     # Check if the Qs (coordinate values) to track are within the bounds
     # used to define the polynomials. If not, adjust the polynomial bounds.
-    from utilsOpenSimAD import checkQsWithinPolynomialBounds
-    updated_bounds = checkQsWithinPolynomialBounds(
+    # from utilsOpenSimAD import checkQsWithinPolynomialBounds
+    # updated_bounds = checkQsWithinPolynomialBounds(
+    #     dataToTrack_Qs_nsc, polynomial_bounds, coordinates_toTrack_l)
+    # TODO: test
+    from utilsOpenSimAD import getTrialPolynomialBounds
+    updated_bounds = getTrialPolynomialBounds(
         dataToTrack_Qs_nsc, polynomial_bounds, coordinates_toTrack_l)
+    updated_bounds['mtp_angle_l'] = {'max': 5, 'min': -45}
+    updated_bounds['mtp_angle_r'] = {'max': 5, 'min': -45}
+    
     type_bounds_polynomials = 'default'
     if len(updated_bounds) > 0:
         # Modify the values of polynomial_bounds based on the values in
@@ -1775,7 +1782,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                         allow_pickle=True).item()  
         if not stats['success'] == True:
             print('PROBLEM DID NOT CONVERGE - {} - {} - {} \n\n'.format( 
-                  stats['return_status'], subject, trialName))
+                  stats['return_status'], dataDir, trialName))
             return
         
         # Extract results.

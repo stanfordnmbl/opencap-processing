@@ -220,7 +220,36 @@ def checkQsWithinPolynomialBounds(data, bounds, coordinates):
                 updated_bounds[coord] = {'max': np.round(np.max(c_data) * 180 / np.pi, 0)}
             if not np.all(c_data * 180 / np.pi >= bounds[coord]['min'] - 1):
                 print('WARNING: the {} coordinate values to track have values below default lower bound ROM for polynomial fitting: {}deg <= {}deg'.format(coord, np.round(np.min(c_data) / np.pi * 180, 0), np.round(bounds[coord]['min'], 2)))
-                updated_bounds[coord] = {'min': np.round(np.min(c_data) * 180 / np.pi, 0)}
+                if 'max' in updated_bounds[coord]:
+                    updated_bounds[coord]['min'] = np.round(np.min(c_data) * 180 / np.pi, 0)
+                else:
+                    updated_bounds[coord] = {'min': np.round(np.min(c_data) * 180 / np.pi, 0)}
+    
+    return updated_bounds
+
+def getTrialPolynomialBounds(data, bounds, coordinates, margin=10):
+    
+    updated_bounds = {}    
+    for coord in coordinates:
+        if coord in bounds:
+            c_idc = coordinates.index(coord)
+            c_data = data[c_idc, :]
+            
+            # Max
+            if np.round(np.max(c_data) * 180 / np.pi, 0) > bounds[coord]['max'] + 1:
+                updated_bounds[coord] = {'max': np.round(np.max(c_data) * 180 / np.pi, 0)}
+            elif np.round(np.max(c_data) * 180 / np.pi, 0) + margin > bounds[coord]['max']:
+                updated_bounds[coord] = {'max': bounds[coord]['max']}                
+            else:
+                updated_bounds[coord] = {'max': np.round(np.max(c_data) * 180 / np.pi, 0) + margin}
+                
+            # Min
+            if np.round(np.min(c_data) * 180 / np.pi, 0) < bounds[coord]['min'] - 1:
+                updated_bounds[coord]['min'] = np.round(np.min(c_data) * 180 / np.pi, 0)
+            elif np.round(np.min(c_data) * 180 / np.pi, 0) - margin < bounds[coord]['min']:
+                updated_bounds[coord]['min'] =  bounds[coord]['min']
+            else:
+                updated_bounds[coord]['min'] = np.round(np.min(c_data) * 180 / np.pi, 0) - margin
     
     return updated_bounds
 
