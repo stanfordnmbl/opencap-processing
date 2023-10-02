@@ -70,7 +70,7 @@ filter_frequency = 6
 # solveProblem = True
 # analyzeResults = True
 motion_type = 'walking_periodic'
-case = '6'
+case = '40'
 solveProblem = True
 analyzeResults = True
 runProblem = False
@@ -94,20 +94,20 @@ if runProblem:
     # Align markers with ground.
     print('Aligning markers with ground...')
     suffixOutputFileName = 'aligned'
-    pathTRCFile_out = align_markers_with_ground(
-        sessionDir, trialName,
-        suffixOutputFileName=suffixOutputFileName,
-        lowpass_cutoff_frequency_for_marker_values=filter_frequency)
+    # pathTRCFile_out = align_markers_with_ground(
+    #     sessionDir, trialName,
+    #     suffixOutputFileName=suffixOutputFileName,
+    #     lowpass_cutoff_frequency_for_marker_values=filter_frequency)
     trialName_aligned = trialName + '_' + suffixOutputFileName
 
     # Run inverse kinematics.
-    print('Running inverse kinematics...')
-    pathGenericSetupFile = os.path.join(
-        baseDir, 'OpenSimPipeline', 
-        'InverseKinematics', 'Setup_InverseKinematics.xml')
-    pathScaledModel = os.path.join(sessionDir, 'OpenSimData', 'Model', modelName)
-    pathOutputFolder = os.path.join(sessionDir, 'OpenSimData', 'Kinematics')
-    runIKTool(pathGenericSetupFile, pathScaledModel, pathTRCFile_out, pathOutputFolder) 
+    # print('Running inverse kinematics...')
+    # pathGenericSetupFile = os.path.join(
+    #     baseDir, 'OpenSimPipeline', 
+    #     'InverseKinematics', 'Setup_InverseKinematics.xml')
+    # pathScaledModel = os.path.join(sessionDir, 'OpenSimData', 'Model', modelName)
+    # pathOutputFolder = os.path.join(sessionDir, 'OpenSimData', 'Kinematics')
+    # runIKTool(pathGenericSetupFile, pathScaledModel, pathTRCFile_out, pathOutputFolder) 
     
     # Data processing.
     print('Processing data...')
@@ -178,12 +178,72 @@ if runProblem:
             settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 50 
             settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 50 
             
-        # Simulation.
-        run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
-                      solveProblem=solveProblem, analyzeResults=analyzeResults)
+        if case == '39':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['pelvis_tilt']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tx']['weight'] = 50
+            settings['coordinates_toTrack']['lumbar_extension']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tz']['weight'] = 50
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['hip_adduction_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_adduction_r']['weight'] = 50
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+        
+        if case == '40':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['pelvis_tilt']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tx']['weight'] = 50
+            settings['coordinates_toTrack']['lumbar_extension']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tz']['weight'] = 50
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['hip_adduction_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_adduction_r']['weight'] = 50
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints'] = {}            
+            settings['timeInterval'] = [settings['timeInterval'][0]-0.3, settings['timeInterval'][1]+0.3]
+        
+        
+        
+    # Simulation.
+    run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
+                  solveProblem=solveProblem, analyzeResults=analyzeResults)
+    test=1
+    
 else:
-    plotResultsOpenSimAD(dataFolder, session_id, trial_name, cases=['6'], mainPlots=False)
-    # test=1
+    suffixOutputFileName = 'aligned'
+    trialName_aligned = trial_name + '_' + suffixOutputFileName
+    plotResultsOpenSimAD(dataFolder, session_id, trialName_aligned, cases=['39', '40'], mainPlots=False)
+    test=1
 
 # # %% Print scalar results.
 # print('\nRight foot gait metrics:')

@@ -68,7 +68,7 @@ filter_frequency = 6
 # solveProblem = True
 # analyzeResults = True
 motion_type = 'walking_periodic'
-case = '25'
+case = '41'
 solveProblem = True
 analyzeResults = True
 runProblem = True
@@ -235,15 +235,435 @@ if runProblem:
             # 'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
             # 'lumbar_extension', 'lumbar_bending', 'lumbar_rotation']
             # settings['periodicConstraints']['coordinateSpeeds'] = ['pelvis_ty']
+
+        if case == '26':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
             
+        if case == '27':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
             
+        if case == '28':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
             
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_tilt', 'pelvis_list', 'pelvis_ty', 
+                'hip_flexion_l', 'hip_adduction_l', 
+                'hip_flexion_r', 'hip_adduction_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension', 'lumbar_bending']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tilt', 'pelvis_list', 'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l', 'hip_adduction_l', 
+                'hip_flexion_r', 'hip_adduction_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension', 'lumbar_bending']
+            
+        if case == '29':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_tilt', 'pelvis_list', 'pelvis_ty', 
+                'hip_flexion_l', 'hip_adduction_l', 
+                'hip_flexion_r', 'hip_adduction_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension', 'lumbar_bending']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tilt', 'pelvis_list', 'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l', 'hip_adduction_l', 
+                'hip_flexion_r', 'hip_adduction_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension', 'lumbar_bending']
+            
+        if case == '30':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_tilt', 'pelvis_list', 'pelvis_ty',
+                'lumbar_extension', 'lumbar_bending']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tilt', 'pelvis_list', 'pelvis_tx', 'pelvis_ty',
+                'lumbar_extension', 'lumbar_bending']
+            
+        if case == '31':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_tilt', 'pelvis_ty', 
+                'hip_flexion_l', 'hip_adduction_l', 
+                'hip_flexion_r', 'hip_adduction_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tilt', 'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l', 'hip_adduction_l', 
+                'hip_flexion_r', 'hip_adduction_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension']
+            
+        if case == '32':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_tilt', 'pelvis_list', 'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension', 'lumbar_bending']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tilt', 'pelvis_list', 'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension', 'lumbar_bending']
+            
+        if case == '33':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_tilt', 'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tilt', 'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension']
+            
+        if case == '34':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension']
+            
+        if case == '35':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_tilt', 'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tilt', 'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            
+        if case == '36':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100
+            settings['coordinates_toTrack']['hip_adduction_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_adduction_r']['weight'] = 50
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_tilt', 'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tilt', 'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r',
+                'lumbar_extension']
+            
+        if case == '37':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['hip_adduction_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_adduction_r']['weight'] = 50
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            
+        if case == '38':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['pelvis_tx']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tz']['weight'] = 50
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['hip_adduction_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_adduction_r']['weight'] = 50
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            
+        if case == '39':
+            settings['weights']['activationTerm'] = 10
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['pelvis_tilt']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tx']['weight'] = 50
+            settings['coordinates_toTrack']['lumbar_extension']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tz']['weight'] = 50
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['hip_adduction_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_adduction_r']['weight'] = 50
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            
+        if case == '40':
+            settings['weights']['activationTerm'] = 15
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['pelvis_tilt']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tx']['weight'] = 50
+            settings['coordinates_toTrack']['lumbar_extension']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tz']['weight'] = 50
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['hip_adduction_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_adduction_r']['weight'] = 50
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            
+        if case == '41':
+            settings['weights']['activationTerm'] = 20
+            settings['weights']['velocityTrackingTerm'] = 1
+            settings['weights']['accelerationTrackingTerm'] = 100
+            settings['coordinates_toTrack']['pelvis_tilt']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tx']['weight'] = 50
+            settings['coordinates_toTrack']['lumbar_extension']['weight'] = 50
+            settings['coordinates_toTrack']['pelvis_tz']['weight'] = 50
+            settings['coordinates_toTrack']['hip_flexion_l']['weight'] = 100
+            settings['coordinates_toTrack']['hip_flexion_r']['weight'] = 100 
+            settings['coordinates_toTrack']['hip_adduction_l']['weight'] = 50
+            settings['coordinates_toTrack']['hip_adduction_r']['weight'] = 50
+            settings['coordinates_toTrack']['knee_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['knee_angle_r']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_l']['weight'] = 100 
+            settings['coordinates_toTrack']['ankle_angle_r']['weight'] = 100
+            settings['use_same_weight_individual_coordinate_value_acceleration'] = False
+            settings['use_same_weight_individual_coordinate_value_speed'] = False
+            
+            settings['periodicConstraints']['coordinateValues'] = [
+                'pelvis_ty', 
+                'hip_flexion_l', 
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+            settings['periodicConstraints']['coordinateSpeeds'] = [
+                'pelvis_tx', 'pelvis_ty', 
+                'hip_flexion_l',
+                'hip_flexion_r',
+                'knee_angle_l', 'knee_angle_r', 'ankle_angle_l', 'ankle_angle_r', 
+                'subtalar_angle_l', 'subtalar_angle_r', 'mtp_angle_l', 'mtp_angle_r']
+        
             
         # Simulation.
         run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
                       solveProblem=solveProblem, analyzeResults=analyzeResults)
 else:
-    plotResultsOpenSimAD(dataFolder, session_id, trial_name, cases=['18', '19'], mainPlots=False)
+    plotResultsOpenSimAD(dataFolder, session_id, trial_name, cases=['39', '40', '41'], mainPlots=False)
     # test=1
 
 # # %% Print scalar results.

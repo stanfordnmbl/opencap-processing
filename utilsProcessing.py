@@ -229,12 +229,12 @@ def segment_STS(ikFilePath, pelvis_ty=None, timeVec=None, velSeated=0.3,
 # are made for the gmax1, iliacus, and psoas. Changes are documented in
 # modelAdjustment.log.
 def adjust_muscle_wrapping(
-        baseDir, dataDir, subject, poseDetector='DefaultPD', 
+        baseDir, dataDir, poseDetector='DefaultPD', 
         cameraSetup='DefaultModel', OpenSimModel="LaiUhlrich2022",
         overwrite=False):
     
     # Paths
-    osDir = os.path.join(dataDir, subject, 'OpenSimData')
+    osDir = os.path.join(dataDir, 'OpenSimData')
     pathModelFolder = os.path.join(osDir, 'Model')
     
     # We changed the OpenSim model name after some time:
@@ -505,12 +505,12 @@ def getMomentArms(model, poses, muscleName, coordinateForMomentArm):
 
 # %% Generate model with contacts.
 def generate_model_with_contacts(
-        dataDir, subject, poseDetector='DefaultPD', cameraSetup='DefaultModel',
+        dataDir, poseDetector='DefaultPD', cameraSetup='DefaultModel',
         OpenSimModel="LaiUhlrich2022", setPatellaMasstoZero=True, 
         overwrite=False, contact_configuration='generic'):
     
     # %% Process settings.
-    osDir = os.path.join(dataDir, subject, 'OpenSimData')
+    osDir = os.path.join(dataDir, 'OpenSimData')
     # pathModelFolder = os.path.join(osDir, poseDetector, cameraSetup, 'Model')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
@@ -654,42 +654,59 @@ def generate_model_with_contacts(
 # look like if the subject is going uphill or downhill. This function computes
 # the angle between the checkerboard and the ground, and then rotates the
 # marker data such that the checkerboard is aligned with the ground. 
-def align_markers_with_ground(sessionDir, trialName, 
-                              referenceMarker1='r.PSIS_study',
-                              referenceMarker2='L.PSIS_study',
-                              suffixOutputFileName='aligned',
-                              lowpass_cutoff_frequency_for_marker_values=-1,
-                              addOffset=True):
+def align_markers_with_ground_2(sessionDir, trialName,
+                                referenceMarker='r_calc_study',
+                                suffixOutputFileName='aligned',
+                                lowpass_cutoff_frequency_for_marker_values=-1,
+                                addOffset=True, visualize=False):
 
     pathTRCFile = os.path.join(sessionDir, 'MarkerData', trialName + '.trc')
     trc_file = TRCFile(pathTRCFile)
     time = trc_file.time
 
     # Extract data from reference markers.
-    m1 = trc_file.marker(referenceMarker1)
-    m2 = trc_file.marker(referenceMarker2)
-    mid_m = (m1+m2)/2
+    m = trc_file.marker(referenceMarker)
     if lowpass_cutoff_frequency_for_marker_values > 0:
-        mid_m = lowPassFilter(
-            time, mid_m, lowpass_cutoff_frequency_for_marker_values)
-    spline = interpolate.InterpolatedUnivariateSpline(time, mid_m[:,1], k=3)
-    splineD1 = spline.derivative(n=1)
-    mid_m_speed = splineD1(time)
+        m = lowPassFilter(time, m, lowpass_cutoff_frequency_for_marker_values)
+        
+    cutEnd = True
+    if cutEnd:
+        sf = trc_file.camera_rate
+        end_offset = -int(0.5*sf)
+    else:
+        end_offset = len(time)
+
+        
+    if visualize:
+        plt.figure()
+        plt.plot(-m[:end_offset,1])
+        # plt.plot(time, center_of_mass_speeds['y'])
+        # plt.plot(time, mid_m_speed_filt)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Speed (m/s)')
+        plt.title('Speed of mid marker')
+        plt.show()
+        
+        
+        
+    # spline = interpolate.InterpolatedUnivariateSpline(time, mid_m[:,1], k=3)
+    # splineD1 = spline.derivative(n=1)
+    # mid_m_speed = splineD1(time)
 
     # We assume peak vertical speeds should match across gait cycles.
-    peaks, _ = signal.find_peaks(mid_m_speed, distance=20, 
-                                 width=5, prominence=0.1)
+    peaks, _ = signal.find_peaks(-m[:end_offset,1], distance=30, 
+                                  width=15, prominence=0.02)
     
     # The beginning of the trial is not always great, we here select the gait
     # cycles that have similar durations (+/-20%).
     diff_peaks = np.diff([peaks])    
-    for i in range(len(diff_peaks[0])-2, 0, -1):
+    for i in range(len(diff_peaks[0])-2, len(diff_peaks[0])-4, -1):
         if np.abs(diff_peaks[0][i]-diff_peaks[0][i+1]) > 0.2*diff_peaks[0][i+1]:
             break
     
     # Extract marker data at first and last peaks.
-    pos_start = mid_m[peaks[i+1], :]
-    pos_end = mid_m[peaks[-1], :]
+    pos_start = m[peaks[i+1], :]
+    pos_end = m[peaks[-1], :]
     
     # Calculate the original vector.
     original_vector = pos_end - pos_start
@@ -710,21 +727,24 @@ def align_markers_with_ground(sessionDir, trialName,
     # Convert the angle from radians to degrees if needed.
     angle_deg = np.degrees(angle_rad)
     
-    print('Angle between reference vector and original vector: {:.2f} deg'.format(angle_deg))
-    
     # Rotate marker data about the z-axis.
     trc_file.rotate('z', angle_deg)
     
-    if addOffset:
-        # Compute offset
-        markers = trc_file.marker_names
-        offset = float('inf')
-        for marker in markers:
-            min_y_pos = np.min(trc_file.marker(marker)[:,1])
-            if min_y_pos < offset:
-                offset = min_y_pos                
-        # Subtract offset
-        trc_file.offset('y', -offset)       
+    print('Angle between reference vector and original vector: {:.2f} deg'.format(angle_deg))
+    
+    # if addOffset:
+    #     # Compute offset
+    #     markers = trc_file.marker_names
+    #     offset = float('inf')
+    #     # Cut off last 0.5s to avoid issues with the end of the trial.
+        
+    #     for marker in markers:
+    #         min_y_pos = np.min(trc_file.marker(marker)[:end_offset,1])
+    #         if min_y_pos < offset:
+    #             offset = min_y_pos                
+    #     # Subtract offset
+    #     trc_file.offset('y', -offset)
+    trc_file.offset('y', -(pos_end[1]-0.03))       
 
     # Print a new trc file.
     pathTRCFile_out = os.path.join(
@@ -733,3 +753,151 @@ def align_markers_with_ground(sessionDir, trialName,
     trc_file.write(pathTRCFile_out)
 
     return pathTRCFile_out
+
+
+# def align_markers_with_ground(sessionDir, trialName, kinematics_obj,
+#                               referenceMarker1='r.PSIS_study',
+#                               referenceMarker2='L.PSIS_study',
+#                               suffixOutputFileName='aligned',
+#                               lowpass_cutoff_frequency_for_marker_values=-1,
+#                               addOffset=True, visualize=False,
+#                               ):
+
+#     pathTRCFile = os.path.join(sessionDir, 'MarkerData', trialName + '.trc')
+#     trc_file = TRCFile(pathTRCFile)
+#     time = trc_file.time
+
+#     '''
+#     # Extract data from reference markers.
+#     m1 = trc_file.marker(referenceMarker1)
+#     m2 = trc_file.marker(referenceMarker2)
+#     mid_m = (m1+m2)/2
+#     if lowpass_cutoff_frequency_for_marker_values > 0:
+#         mid_m = lowPassFilter(
+#             time, mid_m, lowpass_cutoff_frequency_for_marker_values)
+#     spline = interpolate.InterpolatedUnivariateSpline(time, mid_m[:,1], k=3)
+#     splineD1 = spline.derivative(n=1)
+#     mid_m_speed = splineD1(time)
+#     mid_m_speed_filt = lowPassFilter(
+#         time, mid_m_speed, lowpass_cutoff_frequency_for_marker_values)
+#     '''
+    
+#     center_of_mass_values = kinematics_obj.get_center_of_mass_values(lowpass_cutoff_frequency=lowpass_cutoff_frequency_for_marker_values)
+#     # center_of_mass_speeds = kinematics_obj.get_center_of_mass_speeds(lowpass_cutoff_frequency=lowpass_cutoff_frequency_for_marker_values)
+
+#     cutEnd = True
+#     if cutEnd:
+#         sf = trc_file.camera_rate
+#         end_offset = -int(0.5*sf)
+#     else:
+#         end_offset = len(time)
+
+#     if visualize:
+#         plt.figure()
+#         plt.plot(time[:end_offset], center_of_mass_values['y'][:end_offset])
+#         # plt.plot(time, center_of_mass_speeds['y'])
+#         # plt.plot(time, mid_m_speed_filt)
+#         plt.xlabel('Time (s)')
+#         plt.ylabel('Speed (m/s)')
+#         plt.title('Speed of mid marker')
+#         plt.show()
+        
+    
+        
+#     mid_m = center_of_mass_values.to_numpy()[:,1:]
+
+#     # We assume peak vertical speeds should match across gait cycles.
+#     # peaks, _ = signal.find_peaks(mid_m_speed, distance=30, 
+#     #                              width=10, prominence=0.05)
+#     # peaks, _ = signal.find_peaks(center_of_mass_speeds['y'], distance=30, 
+#     #                              width=10, prominence=0.1)
+#     peaks, _ = signal.find_peaks(center_of_mass_values['y'][:end_offset], distance=30, 
+#                                  width=10)
+    
+#     # The beginning of the trial is not always great, we here select the gait
+#     # cycles that have similar durations (+/-20%).
+#     diff_peaks = np.diff([peaks])    
+#     for i in range(len(diff_peaks[0])-2, len(diff_peaks[0])-4, -1):
+#         if np.abs(diff_peaks[0][i]-diff_peaks[0][i+1]) > 0.2*diff_peaks[0][i+1]:
+#             break
+
+#     pos_start = mid_m[peaks[-2], :]
+#     pos_end = mid_m[peaks[-1], :]
+    
+#     # Calculate the original vector.
+#     original_vector = pos_end - pos_start
+
+#     # The reference vector is the vector along the x-axis.
+#     reference_vector = np.array([1, 0, 0])
+    
+#     # Calculate the dot product of the two vectors.
+#     dot_product = np.dot(reference_vector, original_vector)
+    
+#     # Calculate the magnitudes (lengths) of the vectors.
+#     magnitude_A = np.linalg.norm(reference_vector)
+#     magnitude_B = np.linalg.norm(original_vector)
+    
+#     # Calculate the angle between the two vectors in radians.
+#     angle_rad = np.arccos(dot_product / (magnitude_A * magnitude_B))
+    
+#     # Convert the angle from radians to degrees if needed.
+#     angle_deg = np.degrees(angle_rad)
+    
+#     print('Angle between reference vector and original vector: {:.2f} deg'.format(angle_deg))
+    
+#     # Extract marker data at first and last peaks.
+#     # angles_deg = []
+#     # count = 0
+#     # for j in range(i+1, peaks.shape[0]-1):
+    
+#     #     pos_start = mid_m[peaks[j], :]
+#     #     pos_end = mid_m[peaks[-1], :]
+        
+#     #     # Calculate the original vector.
+#     #     original_vector = pos_end - pos_start
+    
+#     #     # The reference vector is the vector along the x-axis.
+#     #     reference_vector = np.array([1, 0, 0])
+        
+#     #     # Calculate the dot product of the two vectors.
+#     #     dot_product = np.dot(reference_vector, original_vector)
+        
+#     #     # Calculate the magnitudes (lengths) of the vectors.
+#     #     magnitude_A = np.linalg.norm(reference_vector)
+#     #     magnitude_B = np.linalg.norm(original_vector)
+        
+#     #     # Calculate the angle between the two vectors in radians.
+#     #     angle_rad = np.arccos(dot_product / (magnitude_A * magnitude_B))
+        
+#     #     # Convert the angle from radians to degrees if needed.
+#     #     angles_deg.append(np.degrees(angle_rad))
+        
+#     #     print('Angle between reference vector and original vector: {:.2f} deg'.format(angles_deg[count]))
+#     #     count += 1
+#     # angle_deg = np.mean(angles_deg)
+#     # print('Final angle between reference vector and original vector: {:.2f} deg'.format(angle_deg))
+    
+#     # Rotate marker data about the z-axis.
+#     trc_file.rotate('z', angle_deg)
+    
+    
+#     if addOffset:
+#         # Compute offset
+#         markers = trc_file.marker_names
+#         offset = float('inf')
+#         # Cut off last 0.5s to avoid issues with the end of the trial.
+        
+#         for marker in markers:
+#             min_y_pos = np.min(trc_file.marker(marker)[:end_offset,1])
+#             if min_y_pos < offset:
+#                 offset = min_y_pos                
+#         # Subtract offset
+#         trc_file.offset('y', -offset)       
+
+#     # Print a new trc file.
+#     pathTRCFile_out = os.path.join(
+#         sessionDir, 'MarkerData', 
+#         trialName + '_{}.trc'.format(suffixOutputFileName))
+#     trc_file.write(pathTRCFile_out)
+
+#     return pathTRCFile_out

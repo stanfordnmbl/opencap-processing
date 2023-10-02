@@ -346,6 +346,16 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     tendon_compliances = {}
     if 'tendon_compliances' in settings:
         tendon_compliances = settings['tendon_compliances']
+
+    # Hack for backward compatibility.
+    use_same_weight_individual_coordinate_value_speed = True
+    if 'use_same_weight_individual_coordinate_value_speed' in settings:
+        use_same_weight_individual_coordinate_value_speed = (
+            settings['use_same_weight_individual_coordinate_value_speed'])
+    use_same_weight_individual_coordinate_value_acceleration = True
+    if 'use_same_weight_individual_coordinate_value_acceleration' in settings:
+        use_same_weight_individual_coordinate_value_acceleration = (
+            settings['use_same_weight_individual_coordinate_value_acceleration'])
         
     # %% Paths and dirs.
     pathMain = os.getcwd()
@@ -539,7 +549,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         
     # Specify which states should have periodic constraints.
     # See settingsOpenSimAD for example.
-    if periodicConstraints:        
+    if periodicConstraints:
         if 'coordinateValues' in periodicConstraints:
             if 'lowerLimbJoints' in periodicConstraints['coordinateValues']:
                 idxPeriodicQs = getIndices(joints, lowerLimbJoints)
@@ -631,15 +641,25 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         Qs_fromIK_filter, timeIntervals[0], timeIntervals[1])
     Qs_toTrack_s = copy.deepcopy(Qs_fromIK_sel) 
     nEl_toTrack = len(coordinates_toTrack)
-    # Individual coordinate weigths. Option to weight the contribution of the
+    # Individual coordinate weights. Option to weight the contribution of the
     # coordinates to the cost terms differently. This applies for coordinate
     # values, speeds, and accelerations tracking.
-    w_dataToTrack = np.ones((nEl_toTrack,1))
+    w_dataToTrack_values = np.ones((nEl_toTrack,1))
+    w_dataToTrack_speeds = np.ones((nEl_toTrack,1))
+    w_dataToTrack_accelerations = np.ones((nEl_toTrack,1))
     coordinates_toTrack_l = []
     for count, coord in enumerate(coordinates_toTrack):
         coordinates_toTrack_l.append(coord)
         if 'weight' in coordinates_toTrack[coord]:
-            w_dataToTrack[count, 0] = coordinates_toTrack[coord]['weight']      
+            w_dataToTrack_values[count, 0] = coordinates_toTrack[coord]['weight']
+            if use_same_weight_individual_coordinate_value_speed:
+                w_dataToTrack_speeds[count, 0] = coordinates_toTrack[coord]['weight']
+            if use_same_weight_individual_coordinate_value_acceleration:
+                w_dataToTrack_accelerations[count, 0] = coordinates_toTrack[coord]['weight']
+        if 'weight_speeds' in coordinates_toTrack[coord]:
+            w_dataToTrack_speeds[count, 0] = coordinates_toTrack[coord]['weight_speeds']
+        if 'weight_accelerations' in coordinates_toTrack[coord]:
+            w_dataToTrack_accelerations[count, 0] = coordinates_toTrack[coord]['weight_accelerations']        
     idx_coordinates_toTrack = getIndices(joints, coordinates_toTrack_l)
     
     from utilsOpenSimAD import scaleDataFrame, selectFromDataFrame     
@@ -801,6 +821,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         sys.path.append(pathExternalFunctionFolder)
         os.chdir(pathExternalFunctionFolder)
         F = getF_expressingGraph(dim, F_name)
+        sys.path.remove(pathExternalFunctionFolder)
         os.chdir(pathMain)
     else: # This will be deprecated
         if platform.system() == 'Windows':
@@ -1523,12 +1544,12 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                 if weights['positionTrackingTerm'] > 0:
                     positionTrackingTerm = f_NQsToTrackWSum2(
                         Qskj[idx_coordinates_toTrack, 0],
-                        dataToTrack_Qs_sc_offset[:, k], w_dataToTrack)
+                        dataToTrack_Qs_sc_offset[:, k], w_dataToTrack_values)
                     J += ((weights['positionTrackingTerm'] * positionTrackingTerm) * h * B[j + 1])                   
                 if weights['velocityTrackingTerm'] > 0:
                     velocityTrackingTerm = f_NQsToTrackWSum2(
                         Qdskj[idx_coordinates_toTrack, 0],
-                        dataToTrack_Qds_sc[:, k], w_dataToTrack)
+                        dataToTrack_Qds_sc[:, k], w_dataToTrack_speeds)
                     J += ((weights['velocityTrackingTerm'] * velocityTrackingTerm) * h * B[j + 1]) 
                 if weights['jointAccelerationTerm'] > 0:
                     jointAccelerationTerm = f_nJointsSum2(Qddsk) 
@@ -1558,7 +1579,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     accelerationTrackingTerm = f_NQsToTrackWSum2(
                         Qddsk[idx_coordinates_toTrack],
                         dataToTrack_Qdds_sc[:, k],
-                        w_dataToTrack)
+                        w_dataToTrack_accelerations)
                     J += (weights['accelerationTrackingTerm'] * 
                           accelerationTrackingTerm * h * B[j + 1])                    
                 if withReserveActuators:
@@ -2261,8 +2282,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     activationDtTerm_opt_all += weights['activationDtTerm'] * activationDtTerm_opt * h * B[j + 1]
                     forceDtTerm_opt_all += weights['forceDtTerm'] * forceDtTerm_opt * h * B[j + 1]
                 jointAccelerationTerm_opt = f_nJointsSum2(Qddsk_opt)                
-                positionTrackingTerm_opt = f_NQsToTrackWSum2(Qskj_opt[idx_coordinates_toTrack, 0], dataToTrack_Qs_sc_offset_opt[:, k], w_dataToTrack)                
-                velocityTrackingTerm_opt = f_NQsToTrackWSum2(Qdskj_opt[idx_coordinates_toTrack, 0], dataToTrack_Qds_sc[:, k], w_dataToTrack)                    
+                positionTrackingTerm_opt = f_NQsToTrackWSum2(Qskj_opt[idx_coordinates_toTrack, 0], dataToTrack_Qs_sc_offset_opt[:, k], w_dataToTrack_values)                
+                velocityTrackingTerm_opt = f_NQsToTrackWSum2(Qdskj_opt[idx_coordinates_toTrack, 0], dataToTrack_Qds_sc[:, k], w_dataToTrack_speeds)                    
                 positionTrackingTerm_opt_all += weights['positionTrackingTerm'] * positionTrackingTerm_opt * h * B[j + 1]
                 velocityTrackingTerm_opt_all += weights['velocityTrackingTerm'] * velocityTrackingTerm_opt * h * B[j + 1]
                 jointAccelerationTerm_opt_all += weights['jointAccelerationTerm'] * jointAccelerationTerm_opt * h * B[j + 1]                
@@ -2273,7 +2294,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
                     lumbarExcitationTerm_opt = f_nLumbarJointsSum2(eLumbark_opt) 
                     lumbarExcitationTerm_opt_all += weights['lumbarExcitationTerm'] * lumbarExcitationTerm_opt * h * B[j + 1]
                 if trackQdds:
-                    accelerationTrackingTerm_opt = f_NQsToTrackWSum2(Qddsk_opt[idx_coordinates_toTrack], dataToTrack_Qdds_sc[:, k], w_dataToTrack)
+                    accelerationTrackingTerm_opt = f_NQsToTrackWSum2(Qddsk_opt[idx_coordinates_toTrack], dataToTrack_Qdds_sc[:, k], w_dataToTrack_accelerations)
                     accelerationTrackingTerm_opt_all += (weights['accelerationTrackingTerm'] * accelerationTrackingTerm_opt * h * B[j + 1])
                 if withReserveActuators:
                     reserveActuatorTerm_opt = 0

@@ -171,7 +171,8 @@ def get_motion_data(trial_id, session_path):
         markerPath = os.path.join(markerFolder, trial_name + '.trc')
         os.makedirs(markerFolder, exist_ok=True)
         markerURL = trial['results'][resultTags.index('marker_data')]['media']
-        download_file(markerURL, markerPath)
+        if not os.path.exists(markerPath):
+            download_file(markerURL, markerPath)
     
     # IK data.
     if 'ik_results' in resultTags:
@@ -179,7 +180,8 @@ def get_motion_data(trial_id, session_path):
         ikPath = os.path.join(ikFolder, trial_name + '.mot')
         os.makedirs(ikFolder, exist_ok=True)
         ikURL = trial['results'][resultTags.index('ik_results')]['media']
-        download_file(ikURL, ikPath)
+        if not os.path.exists(ikPath):
+            download_file(ikURL, ikPath)
         
     # Main settings
     if 'main_settings' in resultTags:
@@ -187,7 +189,8 @@ def get_motion_data(trial_id, session_path):
         settingsPath = os.path.join(settingsFolder, 'settings_' + trial_name + '.yaml')
         os.makedirs(settingsFolder, exist_ok=True)
         settingsURL = trial['results'][resultTags.index('main_settings')]['media']
-        download_file(settingsURL, settingsPath)  
+        if not os.path.exists(settingsPath):
+            download_file(settingsURL, settingsPath)  
         
         
 def get_geometries(session_path, modelName='LaiUhlrich2022_scaled'):

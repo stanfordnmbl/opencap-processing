@@ -513,15 +513,16 @@ def getIndices(mylist, items):
 
 # %% Generate external function.
 def generateExternalFunction(
-        baseDir, dataDir, subject, 
+        baseDir, dataDir, 
         OpenSimModel="LaiUhlrich2022",
         treadmill=False, build_externalFunction=True, verifyID=True, 
         externalFunctionName='F', overwrite=False,
         useExpressionGraphFunction=True,
-        contact_configuration='generic'):
+        contact_configuration='generic'):    
 
     # %% Process settings.
-    osDir = os.path.join(dataDir, subject, 'OpenSimData')
+    pathCWD = os.getcwd()
+    osDir = os.path.join(dataDir, 'OpenSimData')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
     if contact_configuration == 'generic':
@@ -1598,10 +1599,12 @@ def generateExternalFunction(
             pathExpressionGraph = os.path.join(
                 pathOutputExternalFunctionFolder, externalFunctionName + '.py')
             if os.path.exists(pathExpressionGraph):
+                dim = vec3.shape[0]
                 sys.path.append(pathOutputExternalFunctionFolder)
                 os.chdir(pathOutputExternalFunctionFolder)
-                dim = vec3.shape[0]
                 F = getF_expressingGraph(dim, externalFunctionName)
+                sys.path.remove(pathOutputExternalFunctionFolder)
+                os.chdir(pathCWD)
                 ID_F = (F(vec3)).full().flatten()[:nCoordinates]
                 assert(np.max(np.abs(ID_osim - ID_F)) < 1e-6), (
                     'error F vs ID tool {}'.format(np.max(np.abs(ID_osim - ID_F))))
@@ -2211,18 +2214,18 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                            contact_configuration='generic'):
         
     # Path session folder.
-    sessionFolder =  os.path.join(dataFolder, session_id)
+    # sessionFolder =  os.path.join(dataFolder, session_id)
     
     # Download kinematics and model.    
-    pathTrial = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics', 
+    pathTrial = os.path.join(dataFolder, 'OpenSimData', 'Kinematics', 
                              trial_name + '.mot') 
     if not os.path.exists(pathTrial) or overwrite:
         print('Download kinematic data and/or model.')
-        _, _ = download_kinematics(session_id, sessionFolder, 
+        _, _ = download_kinematics(session_id, dataFolder, 
                                    trialNames=[trial_name])
         
     # Get metadata
-    metadata = import_metadata(os.path.join(sessionFolder, 'sessionMetadata.yaml'))
+    metadata = import_metadata(os.path.join(dataFolder, 'sessionMetadata.yaml'))
     OpenSimModel = metadata['openSimModel']
     
     # TODO: support new shoulder model
@@ -2234,14 +2237,14 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     
     # Prepare inputs for dynamic simulations.
     # Adjust muscle wrapping.    
-    adjust_muscle_wrapping(baseDir, dataFolder, session_id,
+    adjust_muscle_wrapping(baseDir, dataFolder,
                          OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Add foot-ground contacts to musculoskeletal model.    
-    generate_model_with_contacts(dataFolder, session_id, 
+    generate_model_with_contacts(dataFolder, 
                               OpenSimModel=OpenSimModel, overwrite=overwrite,
                               contact_configuration=contact_configuration)
     # Generate external function.    
-    generateExternalFunction(baseDir, dataFolder, session_id,
+    generateExternalFunction(baseDir, dataFolder,
                              OpenSimModel=OpenSimModel,
                              overwrite=overwrite, 
                              treadmill=bool(treadmill_speed),
@@ -2251,7 +2254,7 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     # Get settings.
     settings = get_setup(motion_type)
     # Add time to settings if not specified.
-    pathMotionFile = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics',
+    pathMotionFile = os.path.join(dataFolder, 'OpenSimData', 'Kinematics',
                                   trial_name + '.mot')
     if (repetition is not None and 
         (motion_type == 'squats' or motion_type == 'sit_to_stand')): 
