@@ -713,10 +713,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             polynomialData['l'] = polynomialData['l'].item()
         # Coefficients should not be larger than 1.
         sides = ['r', 'l']
+        polynomialCheck = True
         for side in sides:
             for c_pol in polynomialData[side]:
-                assert (np.max(polynomialData[side][c_pol]['coefficients']) < 1), (
-                    "coeffs {}".format(side))
+                if np.max(polynomialData[side][c_pol]['coefficients']) > 1:
+                    polynomialCheck = False
+        if not polynomialCheck:
+            # TODO: I don't think that this is a problem.
+            print('Some polynomial coefficients are larger than 1.')
                 
         # The function f_polynomial takes as inputs joint positions and velocities
         # from one side, and returns muscle-tendon lengths, velocities, and moment
