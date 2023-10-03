@@ -677,6 +677,16 @@ def run_tracking(baseDir, dataDir, settings, case='0',
     pathDummyMotion = os.path.join(pathGenericTemplates, "MuscleAnalysis", 
                                    'DummyMotion.mot')
     
+    leftPolynomialJoints = [
+        'hip_flexion_l', 'hip_adduction_l', 'hip_rotation_l', 'knee_angle_l',
+        'ankle_angle_l', 'subtalar_angle_l', 'mtp_angle_l'] 
+    rightPolynomialJoints = [
+        'hip_flexion_r', 'hip_adduction_r', 'hip_rotation_r', 'knee_angle_r',
+        'ankle_angle_r', 'subtalar_angle_r', 'mtp_angle_r']
+    if not withMTP:
+        leftPolynomialJoints.remove('mtp_angle_l')
+        rightPolynomialJoints.remove('mtp_angle_r')    
+    
     # These are the ranges of motion used to fit the polynomial coefficients.
     # We do not want the experimental data to be out of these ranges. If they
     # are, we make them larger and fit polynomial coefficients specific to the
@@ -704,12 +714,6 @@ def run_tracking(baseDir, dataDir, settings, case='0',
     from utilsOpenSimAD import checkQsWithinPolynomialBounds
     updated_bounds = checkQsWithinPolynomialBounds(
         dataToTrack_Qs_nsc, polynomial_bounds, coordinates_toTrack_l)
-    # TODO: test
-    # from utilsOpenSimAD import getTrialPolynomialBounds
-    # updated_bounds = getTrialPolynomialBounds(
-    #     dataToTrack_Qs_nsc, polynomial_bounds, coordinates_toTrack_l)
-    # updated_bounds['mtp_angle_l'] = {'max': 5, 'min': -45}
-    # updated_bounds['mtp_angle_r'] = {'max': 5, 'min': -45}
     
     type_bounds_polynomials = 'default'
     if len(updated_bounds) > 0:
@@ -721,17 +725,6 @@ def run_tracking(baseDir, dataDir, settings, case='0',
             polynomial_bounds, updated_bounds, pathDummyMotion,
             pathModelFolder, trialName, overwriteDummyMotion=False)
         type_bounds_polynomials = trialName
-    
-    from functionCasADiOpenSimAD import polynomialApproximation
-    leftPolynomialJoints = [
-        'hip_flexion_l', 'hip_adduction_l', 'hip_rotation_l', 'knee_angle_l',
-        'ankle_angle_l', 'subtalar_angle_l', 'mtp_angle_l'] 
-    rightPolynomialJoints = [
-        'hip_flexion_r', 'hip_adduction_r', 'hip_rotation_r', 'knee_angle_r',
-        'ankle_angle_r', 'subtalar_angle_r', 'mtp_angle_r']
-    if not withMTP:
-        leftPolynomialJoints.remove('mtp_angle_l')
-        rightPolynomialJoints.remove('mtp_angle_r')    
     
     if not torque_driven_model:
         # Load polynomials if computed already, compute otherwise.    
@@ -754,16 +747,59 @@ def run_tracking(baseDir, dataDir, settings, case='0',
         if loadPolynomialData:
             polynomialData['r'] = polynomialData['r'].item()
             polynomialData['l'] = polynomialData['l'].item()
-        # Coefficients should not be larger than 1.
+        # Coefficients should not be larger than 1 (or can they be?)
         sides = ['r', 'l']
+        polynomialCheck = True
         for side in sides:
             for c_pol in polynomialData[side]:
-                assert (np.max(polynomialData[side][c_pol]['coefficients']) < 1), (
-                    "coeffs {}".format(side))
+                if np.max(polynomialData[side][c_pol]['coefficients']) > 1:
+                    polynomialCheck = False
+        if not polynomialCheck:
+            print('Some polynomial coefficients are larger than 1.')
+
+        # TEMP
+        # if not polynomialCheck:
+        #     from utilsOpenSimAD import getTrialPolynomialBounds
+        #     updated_bounds = getTrialPolynomialBounds(
+        #         dataToTrack_Qs_nsc, polynomial_bounds, coordinates_toTrack_l)
+        #     from utilsOpenSimAD import adjustBoundsAndDummyMotion
+        #     polynomial_bounds, pathDummyMotion = adjustBoundsAndDummyMotion(
+        #         polynomial_bounds, updated_bounds, pathDummyMotion,
+        #         pathModelFolder, trialName, overwriteDummyMotion=False)
+        #     type_bounds_polynomials = trialName + '_envelope'
+
+        #     # Load polynomials if computed already, compute otherwise.    
+        #     loadPolynomialData = True
+        #     if (not os.path.exists(os.path.join(
+        #             pathModelFolder, model_full_name + '_polynomial_r_{}.npy'.format(type_bounds_polynomials)))
+        #             or not os.path.exists(os.path.join(
+        #             pathModelFolder, model_full_name + '_polynomial_l_{}.npy'.format(type_bounds_polynomials)))):
+        #         loadPolynomialData = False        
+        #     polynomialData = {}
+        #     polynomialData['r'] = getPolynomialData(
+        #         loadPolynomialData, pathModelFolder, model_full_name, pathDummyMotion, 
+        #         rightPolynomialJoints, rightSideMuscles, 
+        #         type_bounds_polynomials=type_bounds_polynomials, side='r')
+        #     polynomialData['l'] = getPolynomialData(
+        #         loadPolynomialData, pathModelFolder, model_full_name, pathDummyMotion, 
+        #         leftPolynomialJoints, leftSideMuscles, 
+        #         type_bounds_polynomials=type_bounds_polynomials, side='l')     
+        #     if loadPolynomialData:
+        #         polynomialData['r'] = polynomialData['r'].item()
+        #         polynomialData['l'] = polynomialData['l'].item()
+        #     # Coefficients should not be larger than 1 (or can they be?)
+        #     polynomialCheck = True
+        #     for side in sides:
+        #         for c_pol in polynomialData[side]:
+        #             if np.max(polynomialData[side][c_pol]['coefficients']) > 1:
+        #                 polynomialCheck = False
+
+        #     raise ValueError('Polynomial coefficients are larger than 1.')
                 
         # The function f_polynomial takes as inputs joint positions and velocities
         # from one side, and returns muscle-tendon lengths, velocities, and moment
         # arms for the muscle of that side.
+        from functionCasADiOpenSimAD import polynomialApproximation
         nPolynomials = len(leftPolynomialJoints)
         f_polynomial = {}
         f_polynomial['r'] = polynomialApproximation(

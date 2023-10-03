@@ -215,10 +215,10 @@ def checkQsWithinPolynomialBounds(data, bounds, coordinates):
             c_idc = coordinates.index(coord)
             c_data = data[c_idc, :]
             # Small margin to account for filtering.                
-            if not np.all(c_data * 180 / np.pi <= bounds[coord]['max'] + 1):
+            if not np.all(c_data * 180 / np.pi <= bounds[coord]['max']):
                 print('WARNING: the {} coordinate values to track have values above the default upper bound ROM for polynomial fitting: {}deg >= {}deg'.format(coord, np.round(np.max(c_data) / np.pi * 180, 0), np.round(bounds[coord]['max'], 2)))
                 updated_bounds[coord] = {'max': np.round(np.max(c_data) * 180 / np.pi, 0)}
-            if not np.all(c_data * 180 / np.pi >= bounds[coord]['min'] - 1):
+            if not np.all(c_data * 180 / np.pi >= bounds[coord]['min']):
                 print('WARNING: the {} coordinate values to track have values below default lower bound ROM for polynomial fitting: {}deg <= {}deg'.format(coord, np.round(np.min(c_data) / np.pi * 180, 0), np.round(bounds[coord]['min'], 2)))
                 if 'max' in updated_bounds[coord]:
                     updated_bounds[coord]['min'] = np.round(np.min(c_data) * 180 / np.pi, 0)
@@ -1863,11 +1863,11 @@ def download_file_2(url, file_name):
     
 # %% Plot results simulations.
 # TODO: simplify and clean up.
-def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings={},
+def plotResultsOpenSimAD(dataDir, motion_filename, settings={},
                          cases=['default'], mainPlots=True):
     
     # %% Load optimal trajectories.
-    pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
+    pathOSData = os.path.join(dataDir, 'OpenSimData')
     suff_path = ''
     if settings:
         if 'repetition' in settings:

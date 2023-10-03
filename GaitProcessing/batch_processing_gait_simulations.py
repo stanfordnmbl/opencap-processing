@@ -35,6 +35,7 @@ sys.path.append(activityAnalysesDir)
 opensimADDir = os.path.join(baseDir, 'UtilsDynamicSimulations', 'OpenSimAD')
 sys.path.append(opensimADDir)
 import json
+import numpy as np
 
 from gait_analysis import gait_analysis
 from utils import get_trial_id, download_trial, numpy_to_storage
@@ -65,21 +66,27 @@ n_gait_cycles = 1
 # Select lowpass filter frequency for kinematics data.
 filter_frequency = 6
 
+# Buffers
+buffer_start = 0.5
+buffer_end = 0.3
+
 # Settings for dynamic simulation.
 # motion_type = 'walking_periodic_torque_driven'
 # case = '2'
 # solveProblem = True
 # analyzeResults = True
 motion_type = 'walking_periodic_formulation_0'
-case = '0'
+case = '2'
+legs = ['l']
 solveProblem = True
 analyzeResults = True
 runProblem = True
 overwrite_aligned_data = False
 overwrite_gait_results = False
+overwrite_tracked_motion_file = False
 
 # %% Gait segmentation and kinematic analysis.
-trials_info = get_data_info(trial_indexes=[i for i in range(0,5)])
+trials_info = get_data_info(trial_indexes=[i for i in range(0,1)])
 trials_info_problems = get_data_info_problems()
 for trial in trials_info:
     # Get trial info.
@@ -95,31 +102,38 @@ for trial in trials_info:
 
     if runProblem:
         # Download data.
-        trialName, modelName = download_trial(trial_id, sessionDir, session_id=session_id)
+        try:
+            trialName, modelName = download_trial(trial_id, sessionDir, session_id=session_id)
+        except Exception as e:
+            print(f"Error downloading trial {trial_id}: {e}")
+            continue
         
         # Align markers with ground.
         suffixOutputFileName = 'aligned'
         trialName_aligned = trialName + '_' + suffixOutputFileName
+        pathResults = os.path.join(sessionDir, 'OpenSimData', 'Dynamics', trialName_aligned)
         # Do if not already done or if overwrite_aligned_data is True.
         if not os.path.exists(os.path.join(sessionDir, 'OpenSimData', 'Kinematics', trialName_aligned + '.mot')) or overwrite_aligned_data:
-            print('Aligning markers with ground...')            
-            pathTRCFile_out = align_markers_with_ground_2(
-                sessionDir, trialName,
-                suffixOutputFileName=suffixOutputFileName,
-                lowpass_cutoff_frequency_for_marker_values=filter_frequency)
-            # Run inverse kinematics.
-            print('Running inverse kinematics...')
-            pathGenericSetupFile = os.path.join(
-                baseDir, 'OpenSimPipeline', 
-                'InverseKinematics', 'Setup_InverseKinematics.xml')
-            pathScaledModel = os.path.join(sessionDir, 'OpenSimData', 'Model', modelName)        
-            runIKTool(pathGenericSetupFile, pathScaledModel, pathTRCFile_out, pathKinematicsFolder) 
+            print('Aligning markers with ground...')     
+            try:       
+                pathTRCFile_out = align_markers_with_ground_2(
+                    sessionDir, trialName,
+                    suffixOutputFileName=suffixOutputFileName,
+                    lowpass_cutoff_frequency_for_marker_values=filter_frequency)
+                # Run inverse kinematics.
+                print('Running inverse kinematics...')
+                pathGenericSetupFile = os.path.join(
+                    baseDir, 'OpenSimPipeline', 
+                    'InverseKinematics', 'Setup_InverseKinematics.xml')
+                pathScaledModel = os.path.join(sessionDir, 'OpenSimData', 'Model', modelName)        
+                runIKTool(pathGenericSetupFile, pathScaledModel, pathTRCFile_out, pathKinematicsFolder)
+            except Exception as e:
+                print(f"Error alignement trial {trial_id}: {e}")
+                continue
             
         # Data processing.
-        print('Processing data...')
-        legs = ['l']
+        print('Processing data...')        
         for leg in legs:
-
             if trial in trials_info_problems.keys():
                 if leg in trials_info_problems[trial]['leg']:
                     print('Skipping leg {} for trial {} because it is a problem trial.'.format(leg, trial))
@@ -130,55 +144,49 @@ for trial in trials_info:
             pathOutputJsonFile = os.path.join(pathKinematicsFolder, 'gaitResults_{}.json'.format(leg))
             # Do if not already done.
             if not os.path.exists(pathOutputJsonFile) or overwrite_gait_results:
-                gaitResults = {}
-                gait = gait_analysis(
-                    sessionDir, trialName_aligned, leg=leg,
-                    lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-                    n_gait_cycles=n_gait_cycles)
-                # Compute scalars.
-                gaitResults['scalars'] = gait.compute_scalars(scalar_names)
-                # Get gait events.
-                gaitResults['events'] = gait.get_gait_events()
-                # Support serialization for json
-                gaitResults['events']['ipsilateralTime'] = [float(i) for i in gaitResults['events']['ipsilateralTime'].flatten()]
-                gaitResults['events']['contralateralTime'] = [float(i) for i in gaitResults['events']['contralateralTime'].flatten()]
-                gaitResults['events']['contralateralIdx'] = [int(i) for i in gaitResults['events']['contralateralIdx'].flatten()]
-                gaitResults['events']['ipsilateralIdx'] = [int(i) for i in gaitResults['events']['ipsilateralIdx'].flatten()]
-
-                # Make sure there is a buffer of 0.3s after the last event, otherwise select the previous cycle.
-                coordinateValues = gait.coordinateValues
-                time = coordinateValues['time'].to_numpy()
-                if time[-1] - gaitResults['events']['ipsilateralTime'][-1] < 0.3:
-                    
+                try:
+                    gaitResults = {}
                     gait = gait_analysis(
                         sessionDir, trialName_aligned, leg=leg,
                         lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-                        n_gait_cycles=2)
+                        n_gait_cycles=n_gait_cycles)
                     # Compute scalars.
-                    # TODO: should we compute scalars for the previous cycle only
                     gaitResults['scalars'] = gait.compute_scalars(scalar_names)
                     # Get gait events.
                     gaitResults['events'] = gait.get_gait_events()
                     # Support serialization for json
-                    gaitResults['events']['ipsilateralTime'] = [float(i) for i in gaitResults['events']['ipsilateralTime'][1,:].flatten()]
-                    gaitResults['events']['contralateralTime'] = [float(i) for i in gaitResults['events']['contralateralTime'][1,:].flatten()]
-                    gaitResults['events']['contralateralIdx'] = [int(i) for i in gaitResults['events']['contralateralIdx'][1,:].flatten()]
-                    gaitResults['events']['ipsilateralIdx'] = [int(i) for i in gaitResults['events']['ipsilateralIdx'][1,:].flatten()]
-                    
-                    print('Buffer after the last event is less than 0.3s for the last gait cycle, selecting the previous cycle.')
-                    if time[-1] - gaitResults['events']['ipsilateralTime'][-1] < 0.3:
-                        raise ValueError('Buffer after the last event is less than 0.3s for the selected gait cycle, please check the data.')
-                    
-                # Creating mot files for visualization.
-                labels = coordinateValues.columns
-                data = coordinateValues.to_numpy()[gaitResults['events']['ipsilateralIdx'][0]:gaitResults['events']['ipsilateralIdx'][-1]+1, :]
-                pathResults = os.path.join(sessionDir, 'OpenSimData', 'Dynamics', trialName_aligned)
-                os.makedirs(pathResults, exist_ok=True)
-                numpy_to_storage(labels, data, os.path.join(pathResults, 'kinematics_to_track_{}.mot'.format(case_leg)), datatype='IK')
-                
-                # Dump gaitResults dict in Json file and save in pathKinematicsFolder.            
-                with open(pathOutputJsonFile, 'w') as outfile:
-                    json.dump(gaitResults, outfile)
+                    gaitResults['events']['ipsilateralTime'] = [float(i) for i in gaitResults['events']['ipsilateralTime'].flatten()]
+                    gaitResults['events']['contralateralTime'] = [float(i) for i in gaitResults['events']['contralateralTime'].flatten()]
+                    gaitResults['events']['contralateralIdx'] = [int(i) for i in gaitResults['events']['contralateralIdx'].flatten()]
+                    gaitResults['events']['ipsilateralIdx'] = [int(i) for i in gaitResults['events']['ipsilateralIdx'].flatten()]
+                    # Make sure there is a buffer after the last event, otherwise select the previous cycle.
+                    coordinateValues = gait.coordinateValues
+                    time = coordinateValues['time'].to_numpy()
+                    if time[-1] - gaitResults['events']['ipsilateralTime'][-1] < buffer_end:                    
+                        gait = gait_analysis(
+                            sessionDir, trialName_aligned, leg=leg,
+                            lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
+                            n_gait_cycles=2)
+                        # Compute scalars.
+                        # TODO: should we compute scalars for the previous cycle only
+                        gaitResults['scalars'] = gait.compute_scalars(scalar_names)
+                        # Get gait events.
+                        gaitResults['events'] = gait.get_gait_events()
+                        # Support serialization for json
+                        gaitResults['events']['ipsilateralTime'] = [float(i) for i in gaitResults['events']['ipsilateralTime'][1,:].flatten()]
+                        gaitResults['events']['contralateralTime'] = [float(i) for i in gaitResults['events']['contralateralTime'][1,:].flatten()]
+                        gaitResults['events']['contralateralIdx'] = [int(i) for i in gaitResults['events']['contralateralIdx'][1,:].flatten()]
+                        gaitResults['events']['ipsilateralIdx'] = [int(i) for i in gaitResults['events']['ipsilateralIdx'][1,:].flatten()]
+                        
+                        print('Buffer after the last event is less than 0.3s for the last gait cycle, selecting the previous cycle.')
+                        if time[-1] - gaitResults['events']['ipsilateralTime'][-1] < buffer_end:
+                            raise ValueError('Buffer after the last event is less than {}s for the selected gait cycle, please check the data.'.format(buffer_end))                
+                    # Dump gaitResults dict in Json file and save in pathKinematicsFolder.            
+                    with open(pathOutputJsonFile, 'w') as outfile:
+                        json.dump(gaitResults, outfile)
+                except Exception as e:
+                    print(f"Error gait analysis trial {trial_id}: {e}")
+                    continue
             else:
                 with open(pathOutputJsonFile) as json_file:
                     gaitResults = json.load(json_file)
@@ -188,23 +196,47 @@ for trial in trials_info:
                 gaitResults['events']['ipsilateralTime'][0],
                 gaitResults['events']['ipsilateralTime'][-1]]
             # Adjust time window to add buffers
-            time_window[0] = time_window[0] - 0.3
-            time_window[1] = time_window[1] + 0.3
+            time_window[0] = time_window[0] - buffer_start
+            time_window[1] = time_window[1] + buffer_end
+            
+            # Creating mot files for visualization.
+            pathTrackedMotionFile = os.path.join(pathResults, 'kinematics_to_track_{}.mot'.format(case_leg))            
+            if not os.path.exists(pathTrackedMotionFile) or overwrite_tracked_motion_file:
+                gait = gait_analysis(
+                    sessionDir, trialName_aligned, leg=leg,
+                    lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
+                    n_gait_cycles=n_gait_cycles)
+                coordinateValues = gait.coordinateValues
+                time = coordinateValues['time'].to_numpy()
+                labels = coordinateValues.columns
+                idx_start = (np.abs(time - time_window[0])).argmin()
+                idx_end = (np.abs(time - time_window[1])).argmin() + 1
+                data = coordinateValues.to_numpy()[idx_start:idx_end, :]
+                os.makedirs(pathResults, exist_ok=True)
+                numpy_to_storage(labels, data, pathTrackedMotionFile, datatype='IK')
 
             print('Processing data for dynamic simulation...')
-            settings = processInputsOpenSimAD(
-                baseDir, sessionDir, session_id, trialName_aligned, 
-                motion_type, time_window=time_window)
+            try:
+                settings = processInputsOpenSimAD(
+                    baseDir, sessionDir, session_id, trialName_aligned, 
+                    motion_type, time_window=time_window)
+            except Exception as e:
+                print(f"Error setting up dynamic optimization for trial {trial_id}: {e}")
+                continue
         
             # Simulation.
-            run_tracking(baseDir, sessionDir, settings, case=case_leg, 
-                        solveProblem=solveProblem, analyzeResults=analyzeResults)
+            try:
+                run_tracking(baseDir, sessionDir, settings, case=case_leg, 
+                            solveProblem=solveProblem, analyzeResults=analyzeResults)
+            except Exception as e:
+                print(f"Error during dynamic optimization for trial {trial_id}: {e}")
+                continue
             test=1
         
     else:
         suffixOutputFileName = 'aligned'
         trialName_aligned = trial_name + '_' + suffixOutputFileName
-        plotResultsOpenSimAD(dataFolder, session_id, trialName_aligned, cases=['39', '40'], mainPlots=False)
+        plotResultsOpenSimAD(sessionDir, trialName_aligned, cases=['0_r', '1_r'], mainPlots=True)
         test=1
 
 # # %% Print scalar results.
