@@ -41,6 +41,7 @@ import pandas as pd
 from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 import opensim
+import requests
 
 import utils as ut
 from utilsProcessing import lowPassFilter
@@ -49,17 +50,26 @@ import utilsKinematics
 
 # %% User-defined variables.
 
-# OpenCap session information
+# OpenCap session information from url.
+# View example at https://app.opencap.ai/session/9eea5bf0-a550-4fa5-bc69-f5f072765848
 session_id = '9eea5bf0-a550-4fa5-bc69-f5f072765848'
 trial_name = 'jump2'
 # Specify where to download the kinematic data. Make sure there are no spaces
 # in this path.
-data_folder = os.path.abspath(os.path.join(script_folder,'ExampleData','Data', session_id))
+data_folder = os.path.abspath(os.path.join(script_folder,'Data', session_id))
 
 # Path and filename for force data. Should be a *.mot file of forces applied
 # to right and left foot.
-force_dir = os.path.abspath(os.path.join(os.getcwd(),'ExampleData'))
-force_file_name = 'jump2_forces_filt30Hz.mot'
+force_dir = os.path.join(data_folder,'MeasuredForces',trial_name)
+force_path = os.path.join(force_dir,'jump2_forces_filt30Hz.mot')
+
+# Download force data from gdrive: this is only for this example. This section
+# can be deleted if your force_path points to a local file.
+os.makedirs(force_dir,exist_ok=True)
+force_gdrive_url = 'https://drive.google.com/uc?id=1Uppzkskn7OiJ5GncNT2sl35deX_U3FTN&export=download'
+response = requests.get(force_gdrive_url)
+with open(force_path, 'wb') as f:
+    f.write(response.content)      
 
 # Lowpass filter ground forces and kinematics 
 lowpass_filter_frequency = 30
@@ -102,7 +112,7 @@ run_ID = True
 
 def get_columns(list1,list2):
     inds = [i for i, item in enumerate(list2) if item in list1]
-    return inds
+    return inds           
 
 # %% Load and transform force data
 # We will transform the force data into the OpenCap reference frame. We will
@@ -111,7 +121,7 @@ def get_columns(list1,list2):
 
 # Download kinematics data if folder doesn't exist. If incomplete data in folder,
 # delete the folder and re-run.
-if not os.path.exists(data_folder):
+if not os.path.exists(os.path.join(data_folder,'MarkerData')):
     _,model_name = ut.download_kinematics(session_id, folder=data_folder)
 else:
     model_name,_ = os.path.splitext(ut.get_model_name_from_metadata(data_folder))
@@ -130,8 +140,7 @@ if 'verticalOffset' in opencap_settings.keys():
 else:
     vertical_offset = 0
 
-# Load force data
-forces_structure = ut.storage_to_numpy(os.path.join(force_dir,force_file_name))
+forces_structure = ut.storage_to_numpy(force_path)
 force_data = forces_structure.view(np.float64).reshape(forces_structure.shape + (-1,))
 force_headers = forces_structure.dtype.names
 
@@ -219,6 +228,7 @@ force_folder = os.path.join(data_folder,'MeasuredForces',trial_name)
 os.makedirs(force_folder,exist_ok=True)
 
 # Save force data
+_,force_file_name = os.path.split(force_path)
 root,ext = os.path.splitext(force_file_name)
 force_output_path = os.path.join(force_folder,trial_name + '_syncd_forces.mot')
 ut.numpy_to_storage(force_headers, force_data_new, force_output_path, datatype=None)
@@ -242,8 +252,8 @@ el_path = os.path.join(id_folder,'Setup_ExternalLoads.xml')
 id_path = os.path.join(id_folder,'Setup_ID.xml')
 
 # Generic setups
-id_path_generic = os.path.join(script_folder,'ID','Setup_ID.xml')
-el_path_generic = os.path.join(script_folder,'ID','Setup_ExternalLoads.xml')
+id_path_generic = os.path.join(script_folder,'ID_setup','Setup_ID.xml')
+el_path_generic = os.path.join(script_folder,'ID_setup','Setup_ExternalLoads.xml')
 
 if run_ID:
     # External loads
