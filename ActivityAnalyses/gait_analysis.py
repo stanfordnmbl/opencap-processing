@@ -122,6 +122,47 @@ class gait_analysis(kinematics):
         
         return strideLength, units
     
+    def compute_step_length(self,report_all=False):
+        leg, contLeg = self.get_leg()
+        step_lengths = {}
+        
+        step_lengths[contLeg.lower()] = (np.linalg.norm(
+            self.markerDict['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,:1]] - 
+            self.markerDict['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2]], axis=2) + 
+            self.treadmillSpeed * (self.gaitEvents['contralateralTime'][:,1:2] -
+                                   self.gaitEvents['ipsilateralTime'][:,:1]))
+        
+        step_lengths[leg.lower()]  = (np.linalg.norm(
+            self.markerDict['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,2:]] - 
+            self.markerDict['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2]], axis=2) + 
+            self.treadmillSpeed * (-self.gaitEvents['contralateralTime'][:,1:2] +
+                                   self.gaitEvents['ipsilateralTime'][:,2:]))
+               
+        # Average across all strides.
+        step_length = {key: np.mean(values) for key, values in step_lengths.items()}
+        
+        # Define units.
+        units = 'm'
+        
+        # some functions depend on having values for each step, otherwise return average
+        if report_all:
+            return step_lengths, units
+        else:
+            return step_length, units
+        
+    def compute_step_length_symmetry(self):
+        step_lengths,units = self.compute_step_length(report_all=True)
+        
+        step_length_symmetry = step_lengths['r'] / step_lengths['l'] * 100
+        
+        # Average across strides
+        step_length_symmetry = np.mean(step_length_symmetry)
+        
+        # define units 
+        units = '% (R/L)'
+        
+        return step_length_symmetry, units
+    
     def compute_gait_speed(self):
                            
         comValuesArray = np.vstack((self.comValues()['x'],self.comValues()['y'],self.comValues()['z'])).T
@@ -151,7 +192,7 @@ class gait_analysis(kinematics):
         units = 'steps/min'
         
         return cadence, units
-    
+        
     def compute_treadmill_speed(self, overground_speed_threshold=0.3):
         
         leg,_ = self.get_leg()
