@@ -233,7 +233,6 @@ def checkQsWithinPolynomialBounds(data, bounds, model_bounds, coordinates):
                     updated_bounds[coord]['min'] = new_bound
                 else:
                     updated_bounds[coord] = {'min': new_bound}
-<<<<<<< HEAD
     
     return updated_bounds
 
@@ -260,8 +259,6 @@ def getTrialPolynomialBounds(data, bounds, coordinates, margin=10):
                 updated_bounds[coord]['min'] =  bounds[coord]['min']
             else:
                 updated_bounds[coord]['min'] = np.round(np.min(c_data) * 180 / np.pi, 0) - margin
-=======
->>>>>>> upstream/main
     
     return updated_bounds
 
@@ -563,11 +560,7 @@ def generateExternalFunction(
 
     # %% Process settings.
     pathCWD = os.getcwd()
-<<<<<<< HEAD
     osDir = os.path.join(dataDir, 'OpenSimData')
-=======
-    osDir = os.path.join(dataDir, subject, 'OpenSimData')
->>>>>>> upstream/main
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
     if contact_configuration == 'generic':
