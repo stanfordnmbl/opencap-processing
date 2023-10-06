@@ -90,10 +90,10 @@ gait_scalars = gait[last_leg].compute_scalars(scalar_names)
 
 # %% Return gait metrics for scalar chart.
 # Instructions for the frontend will come later.
-# gait_metrics = {}
-# for scalar_name in scalar_names:
-#     gait_metrics[scalar_name] = np.round(gait_scalars[scalar_name]['value'], 2)
-#     print(scalar_name, gait_metrics[scalar_name])
+gait_metrics = {}
+for scalar_name in scalar_names:
+    gait_metrics[scalar_name] = np.round(gait_scalars[scalar_name]['value'], 2)
+    print(scalar_name, gait_metrics[scalar_name])
 
 # %% Example scalar plots.
 # Thesholds for scalar metrics.
@@ -141,13 +141,13 @@ for scalar_name in scalar_names:
     if scalar_name in scalar_reverse_colors:
         # Margin zone (orange) is 10% above threshold.
         metrics_out[scalar_name]['colors'] = ["green", "yellow", "red"]
-        metrics_out[scalar_name]['min_limit'] = thresholds[scalar_name]        
-        metrics_out[scalar_name]['max_limit'] = thresholds[scalar_name]        
+        metrics_out[scalar_name]['min_limit'] = float(np.round(thresholds[scalar_name],2))
+        metrics_out[scalar_name]['max_limit'] = float(np.round(1.10*thresholds[scalar_name],2))
     else:
         # Margin zone (orange) is 10% below threshold.
         metrics_out[scalar_name]['colors'] = ["red", "yellow", "green"]
-        metrics_out[scalar_name]['min_limit'] = 0.90*thresholds[scalar_name]
-        metrics_out[scalar_name]['max_limit'] = thresholds[scalar_name]
+        metrics_out[scalar_name]['min_limit'] = float(np.round(0.90*thresholds[scalar_name],2))
+        metrics_out[scalar_name]['max_limit'] = float(np.round(thresholds[scalar_name],2))
         
 # Datasets
 colNames = gait[last_leg].coordinateValues.columns
@@ -181,13 +181,13 @@ for scalar_name in scalar_names:
     }
     if scalar_name in scalar_reverse_colors:
         data_dict['reverse_colors'] = True
-        lower_bound = thresholds[scalar_name]
+        lower_bound = np.round(thresholds[scalar_name],2)
         # Margin zone (orange) is 10% above threshold.
-        upper_bound = 1.10*thresholds[scalar_name]        
+        upper_bound = np.round(1.10*thresholds[scalar_name],2)   
     else:
         # Margin zone (orange) is 10% below threshold.
-        lower_bound = 0.90*thresholds[scalar_name]
-        upper_bound = thresholds[scalar_name]
+        lower_bound = np.round(0.90*thresholds[scalar_name],2)
+        upper_bound = np.round(thresholds[scalar_name],2)
     data_dict['bounds'] = (lower_bound, upper_bound)
     data_dict_list.append(data_dict)
 
