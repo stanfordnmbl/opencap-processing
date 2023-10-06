@@ -207,7 +207,7 @@ def getColfromk(xk, d, N):
     return xj
 
 # %% Verify if within range used for fitting polynomials.
-def checkQsWithinPolynomialBounds(data, bounds, coordinates):
+def checkQsWithinPolynomialBounds(data, bounds, model_bounds, coordinates):
     
     updated_bounds = {}    
     for coord in coordinates:
@@ -216,14 +216,23 @@ def checkQsWithinPolynomialBounds(data, bounds, coordinates):
             c_data = data[c_idc, :]
             # Small margin to account for filtering.                
             if not np.all(c_data * 180 / np.pi <= bounds[coord]['max']):
-                print('WARNING: the {} coordinate values to track have values above the default upper bound ROM for polynomial fitting: {}deg >= {}deg'.format(coord, np.round(np.max(c_data) / np.pi * 180, 0), np.round(bounds[coord]['max'], 2)))
-                updated_bounds[coord] = {'max': np.round(np.max(c_data) * 180 / np.pi, 0)}
+                print('WARNING: the {} coordinate values to track have values above the default upper bound ROM for polynomial fitting: {}deg >= {}deg'.format(coord, np.round(np.max(c_data) * 180 / np.pi, 2), np.round(bounds[coord]['max'], 2)))
+                new_bound = np.ceil(np.max(c_data) * 180 / np.pi)
+                if new_bound > model_bounds[coord]['max']:
+                    print('The maximal value is above the model upper bound, this might happen when filtering data. The model upper bound will be used instead.')
+                    new_bound = model_bounds[coord]['max']
+                print('Upper bound set to: {}deg'.format(new_bound))
+                updated_bounds[coord] = {'max': new_bound}
             if not np.all(c_data * 180 / np.pi >= bounds[coord]['min']):
-                print('WARNING: the {} coordinate values to track have values below default lower bound ROM for polynomial fitting: {}deg <= {}deg'.format(coord, np.round(np.min(c_data) / np.pi * 180, 0), np.round(bounds[coord]['min'], 2)))
-                if 'max' in updated_bounds[coord]:
-                    updated_bounds[coord]['min'] = np.round(np.min(c_data) * 180 / np.pi, 0)
+                print('WARNING: the {} coordinate values to track have values below default lower bound ROM for polynomial fitting: {}deg <= {}deg'.format(coord, np.round(np.min(c_data) * 180 / np.pi, 2), np.round(bounds[coord]['min'], 2)))
+                new_bound = np.floor(np.min(c_data) * 180 / np.pi)
+                if new_bound < model_bounds[coord]['min']:
+                    print('The minimal value is below the model lower bound, this might happen when filtering data. The model lower bound will be used instead.')
+                    new_bound = model_bounds[coord]['min']                
+                if coord in updated_bounds and 'max' in updated_bounds[coord]:
+                    updated_bounds[coord]['min'] = new_bound
                 else:
-                    updated_bounds[coord] = {'min': np.round(np.min(c_data) * 180 / np.pi, 0)}
+                    updated_bounds[coord] = {'min': new_bound}
     
     return updated_bounds
 
