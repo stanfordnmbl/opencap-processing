@@ -49,7 +49,7 @@ elif example == 'overground':
     trial_name = 'gait_3'
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
-                'single_support_time','double_support_time'}
+                'single_support_time','double_support_time','step_length_symmetry'}
 
 # Select how many gait cycles you'd like to analyze. Select -1 for all gait
 # cycles detected in the trial.

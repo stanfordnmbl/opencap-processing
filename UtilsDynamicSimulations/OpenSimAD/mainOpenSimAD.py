@@ -731,7 +731,6 @@ def run_tracking(baseDir, dataDir, settings, case='0',
     from utilsOpenSimAD import checkQsWithinPolynomialBounds
     updated_bounds = checkQsWithinPolynomialBounds(
         dataToTrack_Qs_nsc, polynomial_bounds, model_bounds, coordinates_toTrack_l)
-    
     type_bounds_polynomials = 'default'
     if len(updated_bounds) > 0:
         # Modify the values of polynomial_bounds based on the values in
