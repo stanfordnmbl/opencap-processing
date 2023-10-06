@@ -152,16 +152,21 @@ for scalar_name in scalar_names:
 # Datasets
 colNames = gait[last_leg].coordinateValues.columns
 data = gait[last_leg].coordinateValues.to_numpy()
-coordValues = data[indices['start']:indices['end']]
+coordValues = data[indices['start']:indices['end']+1]
 datasets = []
 for i in range(coordValues.shape[0]):
     datasets.append({})
     for j in range(coordValues.shape[1]):
         datasets[i][colNames[j]] = coordValues[i,j]
+        
+# Available options for line curve chart.
+y_axes = list(colNames)
+y_axes.remove('time')
 
 # Dump data into json file.
 # Create results dictionnary with indices and gait_metrics.
-results = {'indices': times, 'metrics': metrics_out, 'datasets': datasets}
+results = {'indices': times, 'metrics': metrics_out, 'datasets': datasets,
+           'x_axis': 'time', 'y_axis': y_axes}
 with open('results.json', 'w') as outfile:
     json.dump(results, outfile)
     
