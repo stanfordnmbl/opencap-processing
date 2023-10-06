@@ -77,7 +77,7 @@ buffer_end = 0.3
 # analyzeResults = True
 motion_type = 'walking_periodic_formulation_0'
 case = '2'
-legs = ['l']
+legs = ['r', 'l']
 solveProblem = True
 analyzeResults = True
 runProblem = True
@@ -86,7 +86,7 @@ overwrite_gait_results = False
 overwrite_tracked_motion_file = False
 
 # %% Gait segmentation and kinematic analysis.
-trials_info = get_data_info(trial_indexes=[i for i in range(0,1)])
+trials_info = get_data_info(trial_indexes=[i for i in range(10,20)])
 trials_info_problems = get_data_info_problems()
 for trial in trials_info:
     # Get trial info.
@@ -215,28 +215,29 @@ for trial in trials_info:
                 os.makedirs(pathResults, exist_ok=True)
                 numpy_to_storage(labels, data, pathTrackedMotionFile, datatype='IK')
 
-            print('Processing data for dynamic simulation...')
-            try:
-                settings = processInputsOpenSimAD(
-                    baseDir, sessionDir, session_id, trialName_aligned, 
-                    motion_type, time_window=time_window)
-            except Exception as e:
-                print(f"Error setting up dynamic optimization for trial {trial_id}: {e}")
-                continue
+            # print('Processing data for dynamic simulation...')
+            # try:
+            #     settings = processInputsOpenSimAD(
+            #         baseDir, sessionDir, session_id, trialName_aligned, 
+            #         motion_type, time_window=time_window)
+            # except Exception as e:
+            #     print(f"Error setting up dynamic optimization for trial {trial_id}: {e}")
+            #     continue
         
-            # Simulation.
-            try:
-                run_tracking(baseDir, sessionDir, settings, case=case_leg, 
-                            solveProblem=solveProblem, analyzeResults=analyzeResults)
-            except Exception as e:
-                print(f"Error during dynamic optimization for trial {trial_id}: {e}")
-                continue
-            test=1
+            # # Simulation.
+            # try:
+            #     run_tracking(baseDir, sessionDir, settings, case=case_leg, 
+            #                 solveProblem=solveProblem, analyzeResults=analyzeResults)
+            #     test=1
+            # except Exception as e:
+            #     print(f"Error during dynamic optimization for trial {trial_id}: {e}")
+            #     continue
+            # test=1
         
     else:
         suffixOutputFileName = 'aligned'
         trialName_aligned = trial_name + '_' + suffixOutputFileName
-        plotResultsOpenSimAD(sessionDir, trialName_aligned, cases=['0_r', '1_r'], mainPlots=True)
+        plotResultsOpenSimAD(sessionDir, trialName_aligned, cases=['2_r', '2_l'], mainPlots=True)
         test=1
 
 # # %% Print scalar results.
