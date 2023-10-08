@@ -258,6 +258,7 @@ def create_custom_bar_subplots(data_dict_list):
         lower_bound, upper_bound = data_dict['bounds']
         vertical_values = data_dict['values']
         reverse_colors = data_dict.get('reverse_colors', False)
+        scalar_centered = data_dict.get('scalar_centered',False)
 
         middle_width = upper_bound - lower_bound
         green_width = 2 * middle_width  # Green segment is twice the width of the middle segment
@@ -265,6 +266,8 @@ def create_custom_bar_subplots(data_dict_list):
 
         if reverse_colors:
             colors = ['#06D6A0', '#FFD166', '#FF6B6B']  # Warm color palette
+        elif scalar_centered:
+            colors = ['#FF6B6B', '#06D6A0','#FF6B6B'] # red, green, red
         else:
             colors = ['#FF6B6B', '#FFD166', '#06D6A0']  # Warm color palette, reversed
 

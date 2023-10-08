@@ -45,14 +45,15 @@ session_id = 'd701862d-ec04-4ea8-9165-69cfbf21a041'
 trial_name = 'walking'
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
-                'single_support_time', 'double_support_time'}
+                'single_support_time', 'double_support_time','step_length_symmetry'}
 
 scalar_labels = {'gait_speed': "Gait speed (m/s)",
                  'stride_length':'Stride length (m)',
                  'step_width': 'Step width (m)',
                  'cadence': 'Cadence (steps/min)',
-                 'single_support_time': 'Single support time (s)', 
-                 'double_support_time': 'Double support time (s)'}
+                 'single_support_time': 'Single support time (% gait cycle)', 
+                 'double_support_time': 'Double support time (% gait cycle)',
+                 'step_length_symmetry': 'Step length symmetry (%, R/L)'}
 
 # Select how many gait cycles you'd like to analyze. Select -1 for all gait
 # cycles detected in the trial.
@@ -108,19 +109,22 @@ metadataPath = os.path.join(sessionDir, 'sessionMetadata.yaml')
 metadata = import_metadata(metadataPath)
 subject_height = metadata['height_m']
 gait_speed_threshold = 67/60
-step_width_threshold = 0.25
-stride_length_threshold = 1.4 # subject_height*0.4
+step_width_threshold = .14
+stride_length_threshold = subject_height*0.57
 cadence_threshold = 100
-single_support_time_threshold = 0.4
-double_support_time_threshold = 0.3
+single_support_time_threshold = 65
+double_support_time_threshold = 35
+step_length_symmetry_threshold = [90,110]
 thresholds = {'gait_speed': gait_speed_threshold,
               'step_width': step_width_threshold,
               'stride_length': stride_length_threshold,
               'cadence': cadence_threshold,
               'single_support_time': single_support_time_threshold,
-              'double_support_time': double_support_time_threshold}
+              'double_support_time': double_support_time_threshold,
+              'step_length_symmetry': step_length_symmetry_threshold}
 # Whether below-threshold values should be colored in red (default) or green (reverse).
 scalar_reverse_colors = ['step_width']
+scalar_centered = ['step_length_symmetry']
 
 # %% Create json for deployement.
 # Indices / Times
@@ -141,8 +145,13 @@ for scalar_name in scalar_names:
     if scalar_name in scalar_reverse_colors:
         # Margin zone (orange) is 10% above threshold.
         metrics_out[scalar_name]['colors'] = ["green", "yellow", "red"]
-        metrics_out[scalar_name]['min_limit'] = float(np.round(thresholds[scalar_name],2))
-        metrics_out[scalar_name]['max_limit'] = float(np.round(1.10*thresholds[scalar_name],2))
+        metrics_out[scalar_name]['min_limit'] = thresholds[scalar_name]        
+        metrics_out[scalar_name]['max_limit'] = thresholds[scalar_name]    
+    elif scalar_name in scalar_centered:
+        # Red, green, red
+        metrics_out[scalar_name]['colors'] = ["red", "green", "red"]
+        metrics_out[scalar_name]['min_limit'] = thresholds[scalar_name][0]        
+        metrics_out[scalar_name]['max_limit'] = thresholds[scalar_name][1]  
     else:
         # Margin zone (orange) is 10% below threshold.
         metrics_out[scalar_name]['colors'] = ["red", "yellow", "green"]
@@ -183,7 +192,11 @@ for scalar_name in scalar_names:
         data_dict['reverse_colors'] = True
         lower_bound = np.round(thresholds[scalar_name],2)
         # Margin zone (orange) is 10% above threshold.
-        upper_bound = np.round(1.10*thresholds[scalar_name],2)   
+        upper_bound = 1.10*thresholds[scalar_name] 
+    elif scalar_name in scalar_centered:
+        data_dict['scalar_centered'] = True
+        lower_bound = thresholds[scalar_name][0]
+        upper_bound = thresholds[scalar_name][1] 
     else:
         # Margin zone (orange) is 10% below threshold.
         lower_bound = np.round(0.90*thresholds[scalar_name],2)
