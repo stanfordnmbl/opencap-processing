@@ -123,7 +123,7 @@ thresholds = {'gait_speed': gait_speed_threshold,
               'double_support_time': double_support_time_threshold,
               'step_length_symmetry': step_length_symmetry_threshold}
 # Whether below-threshold values should be colored in red (default) or green (reverse).
-scalar_reverse_colors = ['step_width']
+scalar_reverse_colors = ['step_width','double_support_time']
 scalar_centered = ['step_length_symmetry']
 
 # %% Create json for deployement.
