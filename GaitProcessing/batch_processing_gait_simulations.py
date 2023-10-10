@@ -41,7 +41,7 @@ from gait_analysis import gait_analysis
 from utils import get_trial_id, download_trial, numpy_to_storage
 from utilsPlotting import plot_dataframe
 
-from utilsProcessing import align_markers_with_ground_2
+from utilsProcessing import align_markers_with_ground_3
 from utilsOpenSim import runIKTool
 
 from data_info import get_data_info, get_data_info_problems, get_data_alignment
@@ -78,15 +78,21 @@ buffer_end = 0.3
 motion_type = 'walking_periodic_formulation_0'
 case = '2'
 legs = ['r', 'l']
-solveProblem = True
-analyzeResults = True
+solveProblem = False
+analyzeResults = False
 runProblem = True
 overwrite_aligned_data = False
 overwrite_gait_results = False
 overwrite_tracked_motion_file = False
 
 # %% Gait segmentation and kinematic analysis.
-trials_info = get_data_info(trial_indexes=[i for i in range(15,30)])
+# ii = 29
+
+trials_to_run =  [2, 15, 18, 20, 22, 27, 30, 32, 37, 39, 40, 46, 47, 49, 50, 52, 55, 58]
+
+# trials_info = get_data_info(trial_indexes=[i for i in range(15,16)])
+trials_info = get_data_info(trial_indexes=trials_to_run)
+
 trials_info_problems = get_data_info_problems()
 trials_info_alignment = get_data_alignment()
 for trial in trials_info:
@@ -110,29 +116,29 @@ for trial in trials_info:
             continue
         
         if trial in trials_info_alignment:
-            print("Skipping trial {} because it is an alignment trial.".format(trial))
-            continue
-            # # Align markers with ground.
-            # suffixOutputFileName = 'aligned'
-            # trialName_aligned = trialName + '_' + suffixOutputFileName
-            # # Do if not already done or if overwrite_aligned_data is True.
-            # if not os.path.exists(os.path.join(sessionDir, 'OpenSimData', 'Kinematics', trialName_aligned + '.mot')) or overwrite_aligned_data:
-            #     print('Aligning markers with ground...')     
-            #     try:       
-            #         pathTRCFile_out = align_markers_with_ground_2(
-            #             sessionDir, trialName,
-            #             suffixOutputFileName=suffixOutputFileName,
-            #             lowpass_cutoff_frequency_for_marker_values=filter_frequency)
-            #         # Run inverse kinematics.
-            #         print('Running inverse kinematics...')
-            #         pathGenericSetupFile = os.path.join(
-            #             baseDir, 'OpenSimPipeline', 
-            #             'InverseKinematics', 'Setup_InverseKinematics.xml')
-            #         pathScaledModel = os.path.join(sessionDir, 'OpenSimData', 'Model', modelName)        
-            #         runIKTool(pathGenericSetupFile, pathScaledModel, pathTRCFile_out, pathKinematicsFolder)
-            #     except Exception as e:
-            #         print(f"Error alignement trial {trial_id}: {e}")
-            #         continue
+            # print("Skipping trial {} because it is an alignment trial.".format(trial))
+            # continue
+            # Align markers with ground.
+            suffixOutputFileName = 'aligned'
+            trialName_aligned = trialName + '_' + suffixOutputFileName
+            # Do if not already done or if overwrite_aligned_data is True.
+            if not os.path.exists(os.path.join(sessionDir, 'OpenSimData', 'Kinematics', trialName_aligned + '.mot')) or overwrite_aligned_data:
+                print('Aligning markers with ground...')     
+                try:       
+                    pathTRCFile_out = align_markers_with_ground_3(
+                        sessionDir, trialName,
+                        suffixOutputFileName=suffixOutputFileName,
+                        lowpass_cutoff_frequency_for_marker_values=filter_frequency)
+                    # Run inverse kinematics.
+                    print('Running inverse kinematics...')
+                    pathGenericSetupFile = os.path.join(
+                        baseDir, 'OpenSimPipeline', 
+                        'InverseKinematics', 'Setup_InverseKinematics.xml')
+                    pathScaledModel = os.path.join(sessionDir, 'OpenSimData', 'Model', modelName)        
+                    runIKTool(pathGenericSetupFile, pathScaledModel, pathTRCFile_out, pathKinematicsFolder)
+                except Exception as e:
+                    print(f"Error alignement trial {trial_id}: {e}")
+                    continue
         else:
             trialName_aligned = trialName
                     
@@ -241,8 +247,9 @@ for trial in trials_info:
             test=1
         
     else:
-        suffixOutputFileName = 'aligned'
-        trialName_aligned = trial_name + '_' + suffixOutputFileName
+        # suffixOutputFileName = 'aligned'
+        # trialName_aligned = trial_name + '_' + suffixOutputFileName
+        trialName_aligned = trial_name
         plotResultsOpenSimAD(sessionDir, trialName_aligned, cases=['2_r', '2_l'], mainPlots=True)
         test=1
 
