@@ -658,7 +658,7 @@ def align_markers_with_ground_3(sessionDir, trialName,
                                 referenceMarker='Neck',
                                 suffixOutputFileName='aligned',
                                 lowpass_cutoff_frequency_for_marker_values=-1,
-                                addOffset=True, visualize=False):
+                                addOffset=True, visualize=False, angle=None):
 
     pathTRCFile = os.path.join(sessionDir, 'MarkerData', trialName + '.trc')
     trc_file = TRCFile(pathTRCFile)
@@ -725,44 +725,50 @@ def align_markers_with_ground_3(sessionDir, trialName,
     # spline = interpolate.InterpolatedUnivariateSpline(time, mid_m[:,1], k=3)
     # splineD1 = spline.derivative(n=1)
     # mid_m_speed = splineD1(time)
+    
+    if angle is None:
 
-    # We assume peak vertical speeds should match across gait cycles.
-    peaks, _ = signal.find_peaks(m[:,1], distance=20, width=10, prominence=0.02)
+        # We assume peak vertical speeds should match across gait cycles.
+        peaks, _ = signal.find_peaks(m[:,1], distance=20, width=10, prominence=0.02)
+        
+        if peaks.shape[0] == 0:
+            raise ValueError("No peaks detected")
+        
+        # time[peaks]
+        
+        # The beginning of the trial is not always great, we here select the gait
+        # cycles that have similar durations (+/-20%).
+        # diff_peaks = np.diff([peaks])    
+        # for i in range(len(diff_peaks[0])-2, len(diff_peaks[0])-4, -1):
+        #     if np.abs(diff_peaks[0][i]-diff_peaks[0][i+1]) > 0.2*diff_peaks[0][i+1]:
+        #         break
+        
+        # Extract marker data at first and last peaks.
+        pos_start = m[peaks[0], :]
+        pos_end = m[peaks[-1], :]
+        
+        # Calculate the original vector.
+        original_vector = pos_end - pos_start
     
-    if peaks.shape[0] == 0:
-        raise ValueError("No peaks detected")
-    
-    time[peaks]
-    
-    # The beginning of the trial is not always great, we here select the gait
-    # cycles that have similar durations (+/-20%).
-    # diff_peaks = np.diff([peaks])    
-    # for i in range(len(diff_peaks[0])-2, len(diff_peaks[0])-4, -1):
-    #     if np.abs(diff_peaks[0][i]-diff_peaks[0][i+1]) > 0.2*diff_peaks[0][i+1]:
-    #         break
-    
-    # Extract marker data at first and last peaks.
-    pos_start = m[peaks[0], :]
-    pos_end = m[peaks[-1], :]
-    
-    # Calculate the original vector.
-    original_vector = pos_end - pos_start
-
-    # The reference vector is the vector along the x-axis.
-    reference_vector = np.array([1, 0, 0])
-    
-    # Calculate the dot product of the two vectors.
-    dot_product = np.dot(reference_vector, original_vector)
-    
-    # Calculate the magnitudes (lengths) of the vectors.
-    magnitude_A = np.linalg.norm(reference_vector)
-    magnitude_B = np.linalg.norm(original_vector)
-    
-    # Calculate the angle between the two vectors in radians.
-    angle_rad = np.arccos(dot_product / (magnitude_A * magnitude_B))
-    
-    # Convert the angle from radians to degrees if needed.
-    angle_deg = np.degrees(angle_rad)
+        # The reference vector is the vector along the x-axis.
+        reference_vector = np.array([1, 0, 0])
+        
+        # Calculate the dot product of the two vectors.
+        dot_product = np.dot(reference_vector, original_vector)
+        
+        # Calculate the magnitudes (lengths) of the vectors.
+        magnitude_A = np.linalg.norm(reference_vector)
+        magnitude_B = np.linalg.norm(original_vector)
+        
+        # Calculate the angle between the two vectors in radians.
+        angle_rad = np.arccos(dot_product / (magnitude_A * magnitude_B))
+        
+        # Convert the angle from radians to degrees if needed.
+        angle_deg = np.degrees(angle_rad)
+        
+    else:
+        
+        angle_deg = angle
     
     # Rotate marker data about the z-axis.
     trc_file.rotate('z', angle_deg)

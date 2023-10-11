@@ -44,7 +44,7 @@ from utilsPlotting import plot_dataframe
 from utilsProcessing import align_markers_with_ground_3
 from utilsOpenSim import runIKTool
 
-from data_info import get_data_info, get_data_info_problems, get_data_alignment
+from data_info import get_data_info, get_data_info_problems, get_data_alignment, get_data_select_previous_cycle, get_manual_alignment
 
 from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
@@ -86,15 +86,18 @@ overwrite_gait_results = False
 overwrite_tracked_motion_file = False
 
 # %% Gait segmentation and kinematic analysis.
-# ii = 29
+# ii = 39
+trials_to_run =  [21, 24, 31, 43, 51, 53, 57]
 
-trials_to_run =  [2, 15, 18, 20, 22, 27, 30, 32, 37, 39, 40, 46, 47, 49, 50, 52, 55, 58]
-
-# trials_info = get_data_info(trial_indexes=[i for i in range(15,16)])
+# trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
+# trials_info = get_data_info(trial_indexes=[i for i in range(60,92)])
 trials_info = get_data_info(trial_indexes=trials_to_run)
 
 trials_info_problems = get_data_info_problems()
 trials_info_alignment = get_data_alignment()
+trials_select_previous_cycle = get_data_select_previous_cycle()
+trials_manual_alignment = get_manual_alignment()
+
 for trial in trials_info:
     # Get trial info.
     session_id = trials_info[trial]['sid']
@@ -121,6 +124,12 @@ for trial in trials_info:
             # Align markers with ground.
             suffixOutputFileName = 'aligned'
             trialName_aligned = trialName + '_' + suffixOutputFileName
+            
+            angle = None
+            if trial in trials_manual_alignment:
+                angle = trials_manual_alignment[trial]['angle']
+            
+            
             # Do if not already done or if overwrite_aligned_data is True.
             if not os.path.exists(os.path.join(sessionDir, 'OpenSimData', 'Kinematics', trialName_aligned + '.mot')) or overwrite_aligned_data:
                 print('Aligning markers with ground...')     
@@ -128,7 +137,8 @@ for trial in trials_info:
                     pathTRCFile_out = align_markers_with_ground_3(
                         sessionDir, trialName,
                         suffixOutputFileName=suffixOutputFileName,
-                        lowpass_cutoff_frequency_for_marker_values=filter_frequency)
+                        lowpass_cutoff_frequency_for_marker_values=filter_frequency,
+                        angle=angle)
                     # Run inverse kinematics.
                     print('Running inverse kinematics...')
                     pathGenericSetupFile = os.path.join(
@@ -173,13 +183,19 @@ for trial in trials_info:
                     # Make sure there is a buffer after the last event, otherwise select the previous cycle.
                     coordinateValues = gait.coordinateValues
                     time = coordinateValues['time'].to_numpy()
-                    if time[-1] - gaitResults['events']['ipsilateralTime'][-1] < buffer_end:                    
+                    
+                    select_previous_cycle = False
+                    if trial in trials_select_previous_cycle:
+                        if leg in trials_select_previous_cycle[trial]['leg']:
+                            select_previous_cycle = True
+                    
+                    if time[-1] - gaitResults['events']['ipsilateralTime'][-1] < buffer_end or select_previous_cycle:                    
                         gait = gait_analysis(
                             sessionDir, trialName_aligned, leg=leg,
                             lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
                             n_gait_cycles=2)
                         # Compute scalars.
-                        # TODO: should we compute scalars for the previous cycle only
+                        # TODO: should we compute scalars for the previous cycle only, now it is average of both I guess.
                         gaitResults['scalars'] = gait.compute_scalars(scalar_names)
                         # Get gait events.
                         gaitResults['events'] = gait.get_gait_events()
@@ -189,7 +205,7 @@ for trial in trials_info:
                         gaitResults['events']['contralateralIdx'] = [int(i) for i in gaitResults['events']['contralateralIdx'][1,:].flatten()]
                         gaitResults['events']['ipsilateralIdx'] = [int(i) for i in gaitResults['events']['ipsilateralIdx'][1,:].flatten()]
                         
-                        print('Buffer after the last event is less than 0.3s for the last gait cycle, selecting the previous cycle.')
+                        print('Buffer after the last event is less than 0.3s for the last gait cycle or bad data, selecting the previous cycle.')
                         if time[-1] - gaitResults['events']['ipsilateralTime'][-1] < buffer_end:
                             raise ValueError('Buffer after the last event is less than {}s for the selected gait cycle, please check the data.'.format(buffer_end))                
                     # Dump gaitResults dict in Json file and save in pathKinematicsFolder.            
@@ -247,9 +263,11 @@ for trial in trials_info:
             test=1
         
     else:
-        # suffixOutputFileName = 'aligned'
-        # trialName_aligned = trial_name + '_' + suffixOutputFileName
-        trialName_aligned = trial_name
+        if trial in trials_info_alignment:
+            suffixOutputFileName = 'aligned'
+            trialName_aligned = trial_name + '_' + suffixOutputFileName
+        else:
+            trialName_aligned = trial_name
         plotResultsOpenSimAD(sessionDir, trialName_aligned, cases=['2_r', '2_l'], mainPlots=True)
         test=1
 
