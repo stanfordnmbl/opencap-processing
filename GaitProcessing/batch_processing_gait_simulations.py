@@ -66,10 +66,6 @@ n_gait_cycles = 1
 # Select lowpass filter frequency for kinematics data.
 filter_frequency = 6
 
-# Buffers
-buffer_start = 0.5
-buffer_end = 0.3
-
 # Settings for dynamic simulation.
 # motion_type = 'walking_periodic_torque_driven'
 # case = '2'
@@ -77,21 +73,30 @@ buffer_end = 0.3
 # analyzeResults = True
 motion_type = 'walking_periodic_formulation_0'
 case = '2'
-legs = ['r', 'l']
-solveProblem = False
-analyzeResults = False
+legs = ['r']
+solveProblem = True
+analyzeResults = True
 runProblem = True
 overwrite_aligned_data = False
 overwrite_gait_results = False
 overwrite_tracked_motion_file = False
 
-# %% Gait segmentation and kinematic analysis.
-# ii = 39
-trials_to_run =  [21, 24, 31, 43, 51, 53, 57]
+# Buffers
+if case == '2':
+    buffer_start = 0.5
+    buffer_end = 0.3
+elif case == '3':
+    # Buffers
+    buffer_start = 0.5
+    buffer_end = 0.5
 
-# trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
+# %% Gait segmentation and kinematic analysis.
+ii = 33
+# trials_to_run =  [21, 24, 31, 43, 51, 53, 57]
+
+trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
 # trials_info = get_data_info(trial_indexes=[i for i in range(60,92)])
-trials_info = get_data_info(trial_indexes=trials_to_run)
+# trials_info = get_data_info(trial_indexes=trials_to_run)
 
 trials_info_problems = get_data_info_problems()
 trials_info_alignment = get_data_alignment()
