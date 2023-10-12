@@ -72,8 +72,8 @@ filter_frequency = 6
 # solveProblem = True
 # analyzeResults = True
 motion_type = 'walking_periodic_formulation_0'
-case = '2'
-legs = ['r']
+case = '3'
+legs = ['r', 'l']
 solveProblem = True
 analyzeResults = True
 runProblem = True
@@ -96,7 +96,7 @@ elif case == '4':
 
 # %% Gait segmentation and kinematic analysis.
 # ii = 55
-trials_to_run =  [3,4,41]
+trials_to_run =  [25]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
 # trials_info = get_data_info(trial_indexes=[i for i in range(60,92)])
@@ -252,7 +252,7 @@ for trial in trials_info:
                 os.makedirs(pathResults, exist_ok=True)
                 numpy_to_storage(labels, data, pathTrackedMotionFile, datatype='IK')
 
-            print('Processing data for dynamic simulation...')
+            # print('Processing data for dynamic simulation...')
             try:
                 settings = processInputsOpenSimAD(
                     baseDir, sessionDir, session_id, trialName_aligned, 
@@ -269,7 +269,7 @@ for trial in trials_info:
             except Exception as e:
                 print(f"Error during dynamic optimization for trial {trial_id}: {e}")
                 continue
-            test=1
+            # test=1
         
     else:
         if trial in trials_info_alignment:
