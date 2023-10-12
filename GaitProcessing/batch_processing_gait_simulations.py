@@ -89,14 +89,18 @@ elif case == '3':
     # Buffers
     buffer_start = 0.5
     buffer_end = 0.5
+elif case == '4':
+    # Buffers
+    buffer_start = 0.7
+    buffer_end = 0.5
 
 # %% Gait segmentation and kinematic analysis.
-ii = 33
-# trials_to_run =  [21, 24, 31, 43, 51, 53, 57]
+# ii = 55
+trials_to_run =  [3,4,41]
 
-trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
+# trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
 # trials_info = get_data_info(trial_indexes=[i for i in range(60,92)])
-# trials_info = get_data_info(trial_indexes=trials_to_run)
+trials_info = get_data_info(trial_indexes=trials_to_run)
 
 trials_info_problems = get_data_info_problems()
 trials_info_alignment = get_data_alignment()
