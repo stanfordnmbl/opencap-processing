@@ -67,6 +67,7 @@ def get_data_select_previous_cycle():
         66: {"leg": ['l']},
         67: {"leg": ['r']},
         83: {"leg": ['l']},
+        89: {"leg": ['l', 'r']},
         90: {"leg": ['r']},
         91: {"leg": ['l']},
         }

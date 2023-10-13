@@ -72,7 +72,7 @@ filter_frequency = 6
 # solveProblem = True
 # analyzeResults = True
 motion_type = 'walking_periodic_formulation_0'
-case = '3'
+case = '2'
 legs = ['r', 'l']
 solveProblem = True
 analyzeResults = True
@@ -96,7 +96,7 @@ elif case == '4':
 
 # %% Gait segmentation and kinematic analysis.
 # ii = 55
-trials_to_run =  [25]
+trials_to_run =  [89]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
 # trials_info = get_data_info(trial_indexes=[i for i in range(60,92)])
