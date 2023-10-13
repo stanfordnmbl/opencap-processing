@@ -36,11 +36,33 @@
 
 # %% Test
 
-def get_manual_alignment():
+def get_data_select_window():
+    
+    data = {
+        91: [-1, 7.2],
+        66: [-1, 13.7],
+        85: [-1, 6],
+        86: [-1, 7.2],
+        70: [-1, 8.6],
+        67: [-1, 7.1],
+        62: [11, 18.6],
+        48: [-1, 8],
+        35: [-1, 5.6],
+        13: [-1, 7.3],
+        3: [-1, 6.55],
+        0: [-1, 7.8]
+        }
+    
+    return data
+    
+    
+
+def get_data_manual_alignment():
     
     data = {
         89: {"angle": 4},
-        90: {"angle": 4},        
+        90: {"angle": 4},
+        91: {"angle": 0}, # not re-aligment but cutting end
         21: {"angle": 2.5},
         24: {"angle": 2},
         31: {"angle": 2},
@@ -49,6 +71,16 @@ def get_manual_alignment():
         53: {"angle": 1},
         57: {"angle": 1},
         4: {"angle": 1},
+        66: {"angle": 0.75},
+        85: {"angle": 2},
+        86: {"angle": 0.5},
+        70: {"angle": 1},
+        62: {"angle": 1},
+        48: {"angle": 1},
+        35: {"angle": 0},
+        13: {"angle": -0.25},
+        3: {"angle": 0},
+        0: {"angle": 0.5},
         }
     
     return data
@@ -58,18 +90,17 @@ def get_data_select_previous_cycle():
     
     data = {
         2: {"leg": ['r']},
-        3: {"leg": ['r', 'l']},
+        # 3: {"leg": ['r', 'l']},
         33: {"leg": ['r']},
         39: {"leg": ['r']},
         41: {"leg": ['r', 'l']},
         55: {"leg": ['l']},
         62: {"leg": ['r']},
-        66: {"leg": ['l']},
+        # 66: {"leg": ['l']},
         67: {"leg": ['r']},
         83: {"leg": ['l']},
         89: {"leg": ['l', 'r']},
         90: {"leg": ['r']},
-        91: {"leg": ['l']},
         }
     
     return data
@@ -78,8 +109,8 @@ def get_data_select_previous_cycle():
 def get_data_alignment():
 
     # Trials that need re-aligment
-    data = [2, 4, 15, 18, 20, 21, 22, 24, 26, 27, 30, 31, 32, 37, 39, 40, 43, 46, 47, 49, 50, 51, 52, 53, 55, 57, 58,
-            63, 64, 71, 72, 73, 75, 76, 83, 89, 90]
+    data = [0, 2, 3, 4, 13, 15, 18, 20, 21, 22, 24, 26, 27, 30, 31, 32, 35, 37, 39, 40, 43, 46, 47, 48, 49, 50, 51, 52, 53, 55, 57, 58,
+            62, 63, 64, 66, 67, 70, 71, 72, 73, 75, 76, 83, 85, 86, 89, 90, 91]
 
     return data
 

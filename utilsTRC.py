@@ -296,3 +296,46 @@ def trc_2_dict(pathFile, rotation=None):
         trc_dict['markers'][marker] = trc_file.marker(marker)
     
     return trc_dict
+
+def numpy2TRC(f, data, headers, fc=50.0, t_start=0.0, units="m"):
+    
+    header_mapping = {}
+    for count, header in enumerate(headers):
+        header_mapping[count+1] = header 
+        
+    # Line 1.
+    f.write('PathFileType  4\t(X/Y/Z) %s\n' % os.getcwd())
+    
+    # Line 2.
+    f.write('DataRate\tCameraRate\tNumFrames\tNumMarkers\t'
+                'Units\tOrigDataRate\tOrigDataStartFrame\tOrigNumFrames\n')
+    
+    num_frames=data.shape[0]
+    num_markers=len(header_mapping.keys())
+    
+    # Line 3.
+    f.write('%.1f\t%.1f\t%i\t%i\t%s\t%.1f\t%i\t%i\n' % (
+            fc, fc, num_frames,
+            num_markers, units, fc,
+            1, num_frames))
+    
+    # Line 4.
+    f.write("Frame#\tTime\t")
+    for key in sorted(header_mapping.keys()):
+        f.write("%s\t\t\t" % format(header_mapping[key]))
+
+    # Line 5.
+    f.write("\n\t\t")
+    for imark in np.arange(num_markers) + 1:
+        f.write('X%i\tY%s\tZ%s\t' % (imark, imark, imark))
+    f.write('\n')
+    
+    # Line 6.
+    f.write('\n')
+
+    for frame in range(data.shape[0]):
+        f.write("{}\t{:.8f}\t".format(frame,(frame)/fc+t_start))
+
+        for key in sorted(header_mapping.keys()):
+            f.write("{:.8f}\t{:.8f}\t{:.8f}\t".format(data[frame,0+(key-1)*3], data[frame,1+(key-1)*3], data[frame,2+(key-1)*3]))
+        f.write("\n")

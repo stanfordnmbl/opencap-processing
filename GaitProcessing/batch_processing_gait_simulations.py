@@ -44,7 +44,7 @@ from utilsPlotting import plot_dataframe
 from utilsProcessing import align_markers_with_ground_3
 from utilsOpenSim import runIKTool
 
-from data_info import get_data_info, get_data_info_problems, get_data_alignment, get_data_select_previous_cycle, get_manual_alignment
+from data_info import get_data_info, get_data_info_problems, get_data_alignment, get_data_select_previous_cycle, get_data_manual_alignment, get_data_select_window
 
 from utilsOpenSimAD import processInputsOpenSimAD, plotResultsOpenSimAD
 from mainOpenSimAD import run_tracking
@@ -73,7 +73,7 @@ filter_frequency = 6
 # analyzeResults = True
 motion_type = 'walking_periodic_formulation_0'
 case = '2'
-legs = ['r', 'l']
+legs = ['l']
 solveProblem = True
 analyzeResults = True
 runProblem = True
@@ -96,7 +96,7 @@ elif case == '4':
 
 # %% Gait segmentation and kinematic analysis.
 # ii = 55
-trials_to_run =  [89]
+trials_to_run = [66, 67, 70, 85, 86, 91] # [0, 3, 13, 35, 48, 62]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
 # trials_info = get_data_info(trial_indexes=[i for i in range(60,92)])
@@ -105,7 +105,8 @@ trials_info = get_data_info(trial_indexes=trials_to_run)
 trials_info_problems = get_data_info_problems()
 trials_info_alignment = get_data_alignment()
 trials_select_previous_cycle = get_data_select_previous_cycle()
-trials_manual_alignment = get_manual_alignment()
+trials_manual_alignment = get_data_manual_alignment()
+trials_select_window = get_data_select_window()
 
 for trial in trials_info:
     # Get trial info.
@@ -137,6 +138,11 @@ for trial in trials_info:
             angle = None
             if trial in trials_manual_alignment:
                 angle = trials_manual_alignment[trial]['angle']
+                
+            select_window = []
+            if trial in trials_select_window:
+                select_window = trials_select_window[trial]
+                
             
             
             # Do if not already done or if overwrite_aligned_data is True.
@@ -147,7 +153,7 @@ for trial in trials_info:
                         sessionDir, trialName,
                         suffixOutputFileName=suffixOutputFileName,
                         lowpass_cutoff_frequency_for_marker_values=filter_frequency,
-                        angle=angle)
+                        angle=angle, select_window=select_window)
                     # Run inverse kinematics.
                     print('Running inverse kinematics...')
                     pathGenericSetupFile = os.path.join(
@@ -252,7 +258,7 @@ for trial in trials_info:
                 os.makedirs(pathResults, exist_ok=True)
                 numpy_to_storage(labels, data, pathTrackedMotionFile, datatype='IK')
 
-            # print('Processing data for dynamic simulation...')
+            print('Processing data for dynamic simulation...')
             try:
                 settings = processInputsOpenSimAD(
                     baseDir, sessionDir, session_id, trialName_aligned, 
@@ -269,7 +275,7 @@ for trial in trials_info:
             except Exception as e:
                 print(f"Error during dynamic optimization for trial {trial_id}: {e}")
                 continue
-            # test=1
+            test=1
         
     else:
         if trial in trials_info_alignment:

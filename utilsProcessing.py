@@ -30,7 +30,7 @@ from scipy import signal
 import scipy.interpolate as interpolate
 import matplotlib.pyplot as plt
 from utils import storage_to_dataframe, download_trial, get_trial_id
-from utilsTRC import TRCFile
+from utilsTRC import TRCFile, numpy2TRC
 
 def lowPassFilter(time, data, lowpass_cutoff_frequency, order=4):
     
@@ -658,11 +658,46 @@ def align_markers_with_ground_3(sessionDir, trialName,
                                 referenceMarker='Neck',
                                 suffixOutputFileName='aligned',
                                 lowpass_cutoff_frequency_for_marker_values=-1,
-                                addOffset=True, visualize=False, angle=None):
+                                addOffset=True, visualize=False, angle=None,
+                                select_window=[]):
 
     pathTRCFile = os.path.join(sessionDir, 'MarkerData', trialName + '.trc')
     trc_file = TRCFile(pathTRCFile)
     time = trc_file.time
+
+    # Find index in time vector corresponding to the start and end of the trial
+    # as defined in select_window. Start is given by first entry in select_window
+    # and end is given by the second entry. If the entry is -1 then the start or
+    # end of the trial is used. If select_window is empty then skip this step.
+    use_select_window  = False
+    if len(select_window) > 0:
+        if select_window[0] == -1:
+            start = 0
+        else:
+            start = np.argmin(np.abs(time-select_window[0]))
+        if select_window[1] == -1:
+            end = len(time)
+        else:
+            end = np.argmin(np.abs(time-select_window[1]))+1
+
+        markers = trc_file.marker_names
+        marker_data = np.zeros((len(time), 3*len(markers)))
+        # marker_data[:,0] = time
+        for i, marker in enumerate(markers):
+            marker_data[:,3*i:3*i+3] = trc_file.marker(marker)
+        marker_data_adj = marker_data[start:end,:]
+
+        pathTRCFile_out = os.path.join(
+            sessionDir, 'MarkerData', 
+            trialName + '_{}.trc'.format('trimmed'))
+
+        with open(pathTRCFile_out,"w") as f:
+            numpy2TRC(f, marker_data_adj, markers, trc_file.camera_rate, time[start])
+            
+        trc_file = TRCFile(pathTRCFile_out)
+        time = trc_file.time
+        
+        use_select_window = True
 
     # Extract data from reference markers.
     m = trc_file.marker(referenceMarker)
@@ -673,7 +708,10 @@ def align_markers_with_ground_3(sessionDir, trialName,
     # splineD1 = spline.derivative(n=1)
     # mid_m_speed = splineD1(time)
         
-    cutEnd = True
+    if use_select_window:
+        cutEnd = False
+    else:
+        cutEnd = True
     if cutEnd:
         sf = trc_file.camera_rate
         end_offset = -int(0.3*sf)
