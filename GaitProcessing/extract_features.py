@@ -193,6 +193,6 @@ for trial in trials_info:
         # Save features in json file.
         pathFeaturesFolder = os.path.join(sessionDir, 'OpenSimData', 'Features')
         os.makedirs(pathFeaturesFolder, exist_ok=True)
-        pathOutputJsonFile = os.path.join(pathFeaturesFolder, 'features_{}.json'.format(case_leg))
+        pathOutputJsonFile = os.path.join(pathFeaturesFolder, 'features_{}.json'.format(leg))
         with open(pathOutputJsonFile, 'w') as outfile:
             json.dump(features, outfile)
