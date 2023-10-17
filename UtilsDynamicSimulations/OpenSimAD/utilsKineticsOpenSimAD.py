@@ -26,7 +26,7 @@ import opensim
 
 class kineticsOpenSimAD:
     
-    def __init__(self, data_dir, session_id, trial_name, case=None, 
+    def __init__(self, session_dir, trial_name, case=None, 
                  repetition=None, modelName=None):
         """
         Initializes the kineticsOpenSimAD class for extracting data from a
@@ -48,8 +48,7 @@ class kineticsOpenSimAD:
         """
         
         # Load optimal results.
-        sessionDir = os.path.join(data_dir, session_id)
-        opensimDir = os.path.join(sessionDir, 'OpenSimData')
+        opensimDir = os.path.join(session_dir, 'OpenSimData')
         repetitionSuffix = ''
         if not repetition is None:
             repetitionSuffix = '_rep' + str(repetition)
@@ -77,13 +76,13 @@ class kineticsOpenSimAD:
         modelBasePath = os.path.join(opensimDir, 'Model')
         # Load model if specified, otherwise load the one that was on server.
         if modelName is None:
-            modelName = utils.get_model_name_from_metadata(sessionDir)
+            modelName = utils.get_model_name_from_metadata(session_dir)
             # Use adjusted model with contact spheres as used for simulation.
             modelName = modelName[:-5] + '_adjusted_contacts.osim'
             modelPath = os.path.join(modelBasePath, modelName)
         else:
             modelPath = os.path.join(
-                modelBasePath, '{}_adjusted_contacts.osim'.format(modelName))            
+                modelBasePath, '{}_adjusted_contacts.osim'.format(modelName))
         if not os.path.exists(modelPath):
             raise Exception('Model path: ' + modelPath + ' does not exist.')
 

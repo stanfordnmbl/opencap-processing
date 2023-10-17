@@ -41,6 +41,16 @@ def lowPassFilter(time, data, lowpass_cutoff_frequency, order=4):
 
     return dataFilt
 
+def lowPassFilterDataframe(dataframe, lowpass_cutoff_frequency, order=4):
+
+    time = dataframe['time'].to_numpy()
+    data = dataframe.drop(columns=['time']).to_numpy()
+    dataFilt = lowPassFilter(time, data, lowpass_cutoff_frequency, order)
+    dataframeFilt = dataframe.copy()
+    dataframeFilt[dataframeFilt.columns[1:]] = dataFilt
+
+    return dataframeFilt
+
 # %% Segment gait
 def segment_gait(session_id, trial_name, data_folder, gait_cycles_from_end=0):
     

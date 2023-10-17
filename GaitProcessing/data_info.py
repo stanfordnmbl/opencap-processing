@@ -36,6 +36,15 @@
 
 # %% Test
 
+def get_data_case():
+
+    data = {
+        25: {"r": '3', "l": '3'},
+        86: {"l": '5'},
+    }
+
+    return data
+
 def get_data_select_window():
     
     data = {
@@ -90,13 +99,11 @@ def get_data_select_previous_cycle():
     
     data = {
         2: {"leg": ['r']},
-        # 3: {"leg": ['r', 'l']},
         33: {"leg": ['r']},
         39: {"leg": ['r']},
         41: {"leg": ['r', 'l']},
         55: {"leg": ['l']},
         62: {"leg": ['r']},
-        # 66: {"leg": ['l']},
         67: {"leg": ['r']},
         83: {"leg": ['l']},
         89: {"leg": ['l', 'r']},
@@ -123,6 +130,11 @@ def get_data_info_problems():
         77: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # Glitch
         87: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # Glitch
         88: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # Glitch
+
+        55: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # No decent simulations / Glitch
+        85: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r']},         # No decent simulations / Glitch
+        86: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r']},         # No decent simulations / Glitch
+        86: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['l']},         # No decent simulations / Glitch
     }   
 
     return data

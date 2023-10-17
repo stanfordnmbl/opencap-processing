@@ -53,7 +53,8 @@ from utilsKineticsOpenSimAD import kineticsOpenSimAD
 from utilsKinematics import kinematics
 
 # %% Paths.
-dataFolder = os.path.join(baseDir, 'Data', 'ParkerStudy')
+driveDir = 'C:/MyDriveSym/Projects/ParkerStudy'
+dataFolder = os.path.join(driveDir, 'Data')
 
 # %% User-defined variables.
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
@@ -73,10 +74,10 @@ filter_frequency = 6
 # analyzeResults = True
 motion_type = 'walking_periodic_formulation_0'
 case = '5'
-legs = ['l']
+legs = ['l', 'r']
 solveProblem = True
 analyzeResults = True
-runProblem = True
+runProblem = False
 overwrite_aligned_data = False
 overwrite_gait_results = False
 overwrite_tracked_motion_file = False
@@ -101,7 +102,7 @@ elif case == '5':
 
 # %% Gait segmentation and kinematic analysis.
 # ii = 91
-trials_to_run = [86, 91] # [0, 3, 13, 35, 48, 62]
+trials_to_run = [86] # [0, 3, 13, 35, 48, 62]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
 # trials_info = get_data_info(trial_indexes=[i for i in range(60,92)])
@@ -288,7 +289,7 @@ for trial in trials_info:
             trialName_aligned = trial_name + '_' + suffixOutputFileName
         else:
             trialName_aligned = trial_name
-        plotResultsOpenSimAD(sessionDir, trialName_aligned, cases=['2_r', '2_l'], mainPlots=True)
+        plotResultsOpenSimAD(sessionDir, trialName_aligned, cases=['5_r', '5_l'], mainPlots=True)
         test=1
 
 # # %% Print scalar results.
