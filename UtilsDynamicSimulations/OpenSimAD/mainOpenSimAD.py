@@ -647,27 +647,44 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # trial being processed. These are also the bounds used in the optimal
     # control problem.
     polynomial_bounds = {
-            'hip_flexion_l': {'max': 120, 'min': -30},
-            'hip_flexion_r': {'max': 120, 'min': -30},
-            'hip_adduction_l': {'max': 20, 'min': -50},
-            'hip_adduction_r': {'max': 20, 'min': -50},
-            'hip_rotation_l': {'max': 35, 'min': -40},
-            'hip_rotation_r': {'max': 35, 'min': -40},
-            'knee_angle_l': {'max': 138, 'min': 0},
-            'knee_angle_r': {'max': 138, 'min': 0},
-            'knee_adduction_l': {'max': 20, 'min': -30},
-            'knee_adduction_r': {'max': 20, 'min': -30},
-            'ankle_angle_l': {'max': 50, 'min': -50},
-            'ankle_angle_r': {'max': 50, 'min': -50},
-            'subtalar_angle_l': {'max': 35, 'min': -35},
-            'subtalar_angle_r': {'max': 35, 'min': -35},
-            'mtp_angle_l': {'max': 5, 'min': -45},
-            'mtp_angle_r': {'max': 5, 'min': -45}}
+        'hip_flexion_l': {'max': 120, 'min': -30},
+        'hip_flexion_r': {'max': 120, 'min': -30},
+        'hip_adduction_l': {'max': 20, 'min': -50},
+        'hip_adduction_r': {'max': 20, 'min': -50},
+        'hip_rotation_l': {'max': 35, 'min': -40},
+        'hip_rotation_r': {'max': 35, 'min': -40},
+        'knee_angle_l': {'max': 138, 'min': 0},
+        'knee_angle_r': {'max': 138, 'min': 0},
+        'knee_adduction_l': {'max': 20, 'min': -30},
+        'knee_adduction_r': {'max': 20, 'min': -30},
+        'ankle_angle_l': {'max': 50, 'min': -50},
+        'ankle_angle_r': {'max': 50, 'min': -50},
+        'subtalar_angle_l': {'max': 35, 'min': -35},
+        'subtalar_angle_r': {'max': 35, 'min': -35},
+        'mtp_angle_l': {'max': 5, 'min': -45},
+        'mtp_angle_r': {'max': 5, 'min': -45}}
+    model_bounds = {
+        'hip_flexion_l': {'max': 120, 'min': -30},
+        'hip_flexion_r': {'max': 120, 'min': -30},
+        'hip_adduction_l': {'max': 30, 'min': -50},
+        'hip_adduction_r': {'max': 30, 'min': -50},
+        'hip_rotation_l': {'max': 40, 'min': -40},
+        'hip_rotation_r': {'max': 40, 'min': -40},
+        'knee_angle_l': {'max': 140, 'min': 0},
+        'knee_angle_r': {'max': 140, 'min': 0},
+        'knee_adduction_l': {'max': 20, 'min': -30},
+        'knee_adduction_r': {'max': 20, 'min': -30},
+        'ankle_angle_l': {'max': 50, 'min': -50},
+        'ankle_angle_r': {'max': 50, 'min': -50},
+        'subtalar_angle_l': {'max': 35, 'min': -35},
+        'subtalar_angle_r': {'max': 35, 'min': -35},
+        'mtp_angle_l': {'max': 30, 'min': -45},
+        'mtp_angle_r': {'max': 30, 'min': -45}}
     # Check if the Qs (coordinate values) to track are within the bounds
     # used to define the polynomials. If not, adjust the polynomial bounds.
     from utilsOpenSimAD import checkQsWithinPolynomialBounds
     updated_bounds = checkQsWithinPolynomialBounds(
-        dataToTrack_Qs_nsc, polynomial_bounds, coordinates_toTrack_l)
+        dataToTrack_Qs_nsc, polynomial_bounds, model_bounds, coordinates_toTrack_l)
     type_bounds_polynomials = 'default'
     if len(updated_bounds) > 0:
         # Modify the values of polynomial_bounds based on the values in

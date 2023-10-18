@@ -304,6 +304,7 @@ class gait_analysis(kinematics):
         double_support_time,_ = self.compute_double_support_time(return_all=True) 
 
         singleSupportTimes = 100 - double_support_time    
+
         
         # Average across all strides.
         singleSupportTime = np.mean(singleSupportTimes)
