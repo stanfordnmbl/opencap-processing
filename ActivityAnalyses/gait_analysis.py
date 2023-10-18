@@ -17,10 +17,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 """
-
+ 
 import sys
 sys.path.append('../')
-                
+
 import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
@@ -73,9 +73,8 @@ class gait_analysis(kinematics):
     def get_gait_events(self):
         
         return self.gaitEvents
-        
     
-    def compute_scalars(self,scalarNames):
+    def compute_scalars(self,scalarNames,return_all=False):
                
         # Verify that scalarNames are methods in gait_analysis.
         method_names = [func for func in dir(self) if callable(getattr(self, func))]
@@ -96,11 +95,11 @@ class gait_analysis(kinematics):
             thisFunction = getattr(self, 'compute_' + scalarName)
             scalarDict[scalarName] = {}
             (scalarDict[scalarName]['value'],
-                scalarDict[scalarName]['units']) = thisFunction()
+                scalarDict[scalarName]['units']) = thisFunction(return_all=return_all)
         
         return scalarDict
     
-    def compute_stride_length(self):
+    def compute_stride_length(self,return_all=False):
         
         leg,_ = self.get_leg()
         
@@ -108,21 +107,24 @@ class gait_analysis(kinematics):
 
         # On treadmill, the stride length is the difference in ipsilateral
         # calcaneus position at heel strike + treadmill speed * time.
-        strideLength = (
+        strideLengths = (
             np.linalg.norm(
                 calc_position[self.gaitEvents['ipsilateralIdx'][:,:1]] - 
                 calc_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) + 
                 self.treadmillSpeed * np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]))
         
         # Average across all strides.
-        strideLength = np.mean(strideLength)
+        strideLength = np.mean(strideLengths)
         
         # Define units.
         units = 'm'
         
-        return strideLength, units
+        if return_all:
+            return strideLengths,units
+        else: 
+            return strideLength, units
     
-    def compute_step_length(self,report_all=False):
+    def compute_step_length(self,return_all=False):
         leg, contLeg = self.get_leg()
         step_lengths = {}
         
@@ -145,55 +147,64 @@ class gait_analysis(kinematics):
         units = 'm'
         
         # some functions depend on having values for each step, otherwise return average
-        if report_all:
+        if return_all:
             return step_lengths, units
         else:
             return step_length, units
         
-    def compute_step_length_symmetry(self):
-        step_lengths,units = self.compute_step_length(report_all=True)
+    def compute_step_length_symmetry(self,return_all=False):
+        step_lengths,units = self.compute_step_length(return_all=True)
         
-        step_length_symmetry = step_lengths['r'] / step_lengths['l'] * 100
+        step_length_symmetry_all = step_lengths['r'] / step_lengths['l'] * 100
         
         # Average across strides
-        step_length_symmetry = np.mean(step_length_symmetry)
+        step_length_symmetry = np.mean(step_length_symmetry_all)
         
         # define units 
         units = '% (R/L)'
         
-        return step_length_symmetry, units
+        if return_all:
+            return step_length_symmetry_all, units
+        else:
+            return step_length_symmetry, units
     
-    def compute_gait_speed(self):
+    def compute_gait_speed(self,return_all=False):
                            
         comValuesArray = np.vstack((self.comValues()['x'],self.comValues()['y'],self.comValues()['z'])).T
-        gait_speed = (
+        gait_speeds = (
             np.linalg.norm(
                 comValuesArray[self.gaitEvents['ipsilateralIdx'][:,:1]] -
                 comValuesArray[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) /
                 np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]) + self.treadmillSpeed) 
         
         # Average across all strides.
-        gait_speed = np.mean(gait_speed)
+        gait_speed = np.mean(gait_speeds)
         
         # Define units.
         units = 'm/s'
         
-        return gait_speed, units
+        if return_all:
+            return gait_speeds,units
+        else:
+            return gait_speed, units
     
-    def compute_cadence(self):
+    def compute_cadence(self,return_all=False):
         
         # In steps per minute.
-        cadence = 60*2/np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
+        cadence_all = 60*2/np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
         
         # Average across all strides.
-        cadence = np.mean(cadence)
+        cadence = np.mean(cadence_all)
         
         # Define units.
         units = 'steps/min'
         
-        return cadence, units
+        if return_all:
+            return cadence_all,units
+        else:
+            return cadence, units
         
-    def compute_treadmill_speed(self, overground_speed_threshold=0.3):
+    def compute_treadmill_speed(self, overground_speed_threshold=0.3,return_all=False):
         
         leg,_ = self.get_leg()
         
@@ -209,18 +220,23 @@ class gait_analysis(kinematics):
             footVel = np.linalg.norm(np.mean(np.diff(
                 foot_position[startIdx[i,0]:endIdx[i,0],:],axis=0),axis=0)/dt)
         
-        treadmillSpeed = np.mean(footVel)
+        treadmillSpeeds = footVel
+        treadmillSpeed = np.mean(treadmillSpeeds)
         
         # Overground.
         if treadmillSpeed < overground_speed_threshold:
             treadmillSpeed = 0
+            treadmillSpeeds = np.zeros(treadmillSpeeds.shape)
             
         # Define units.
         units = 'm/s'
                            
-        return treadmillSpeed, units
+        if return_all:
+            return treadmillSpeeds,units
+        else:
+            return treadmillSpeed, units
     
-    def compute_step_width(self):
+    def compute_step_width(self,return_all=False):
         
         leg,contLeg = self.get_leg()
         
@@ -240,67 +256,84 @@ class gait_analysis(kinematics):
              for i in range(self.nGaitCycles)])
         
         # Step width is z distance.
-        stepWidth = np.abs(ankleVector_inGaitFrame[:,2])
+        stepWidths = np.abs(ankleVector_inGaitFrame[:,2])
         
         # Average across all strides.
-        stepWidth = np.mean(stepWidth)
+        stepWidth = np.mean(stepWidths)
         
         # Define units.
         units = 'm'
         
-        return stepWidth, units
+        if return_all:
+            return stepWidths, units
+        else:
+            return stepWidth, units
     
-    def compute_stance_time(self):
+    def compute_stance_time(self, return_all=False):
         
-        stanceTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
+        stanceTimes = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
         
         # Average across all strides.
-        stanceTime = np.mean(stanceTime)
+        stanceTime = np.mean(stanceTimes)
         
         # Define units.
         units = 's'
         
-        return stanceTime, units
+        if return_all:
+            return stanceTimes, units
+        else:
+            return stanceTime, units
     
-    def compute_swing_time(self):
+    def compute_swing_time(self, return_all=False):
         
-        swingTime = np.diff(self.gaitEvents['ipsilateralTime'][:,1:])
+        swingTimes = np.diff(self.gaitEvents['ipsilateralTime'][:,1:])
         
         # Average across all strides.
-        swingTime = np.mean(swingTime)
+        swingTime = np.mean(swingTimes)
         
         # Define units.
         units = 's'
         
-        return swingTime, units
+        if return_all:
+            return swingTimes, units
+        else:  
+            return swingTime, units
     
-    def compute_single_support_time(self):
+    def compute_single_support_time(self,return_all=False):
         
-        # Contralateral swing time
-        singleSupportTime = np.diff(self.gaitEvents['contralateralTime'][:,:2])        
+        double_support_time,_ = self.compute_double_support_time(return_all=True) 
+
+        singleSupportTimes = 100 - double_support_time    
         
         # Average across all strides.
-        singleSupportTime = np.mean(singleSupportTime)
+        singleSupportTime = np.mean(singleSupportTimes)
         
         # Define units.
-        units = 's'
+        units = '%'
         
-        return singleSupportTime, units
+        if return_all:
+            return singleSupportTimes,units
+        else:
+            return singleSupportTime, units
         
-    def compute_double_support_time(self):
+    def compute_double_support_time(self,return_all=False):
         
         # Ipsilateral stance time - contralateral swing time.
-        doubleSupportTime = (
-            np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
-            np.diff(self.gaitEvents['contralateralTime'][:,:2]))
+        doubleSupportTimes = (
+            (np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
+            np.diff(self.gaitEvents['contralateralTime'][:,:2])) /
+            np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])) * 100
                             
         # Average across all strides.
-        doubleSupportTime = np.mean(doubleSupportTime)
+        doubleSupportTime = np.mean(doubleSupportTimes)
         
         # Define units.
-        units = 's'
+        units = '%'
         
-        return doubleSupportTime, units
+        if return_all:
+            return doubleSupportTimes, units
+        else:
+            return doubleSupportTime, units
             
     def compute_gait_frame(self):
 
