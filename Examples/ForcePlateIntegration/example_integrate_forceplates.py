@@ -101,8 +101,8 @@ r_C0_to_forceOrigin_exp_C = {'R': [0,-.191,.083],
 # scipy.spatial.transform.Rotation object. 
 # docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html
 
-R_forcePlates_to_C = {'R':R.from_euler('y',90,degrees=True),
-                      'L':R.from_euler('y',90,degrees=True)}
+R_forcePlates_to_C = {'R':R.from_euler('y',-90,degrees=True),
+                      'L':R.from_euler('y',-90,degrees=True)}
 
 # Flags
 visualize_synchronization = False # visualize kinematic/force synchronization
@@ -160,7 +160,8 @@ for q in quantity:
     for leg in ['R','L']:
         force_columns= get_columns([leg + '_' + q + d for d in directions],force_headers)
         rot = R_forcePlates_to_C[leg]
-        force_data[:,force_columns] = rot.apply(force_data[:,force_columns])                                      
+        # we want r_expFP * R_FP_to_C, but rot.apply does R*r, so need to invert
+        force_data[:,force_columns] = rot.inv().apply(force_data[:,force_columns])                                      
        
 ## Transform COP from force plates to G
 r_G0_to_C0_expC = np.array((0,-vertical_offset,0))

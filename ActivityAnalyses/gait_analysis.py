@@ -276,31 +276,36 @@ class gait_analysis(kinematics):
     
     def compute_single_support_time(self):
         
-        # Contralateral swing time
-        singleSupportTime = np.diff(self.gaitEvents['contralateralTime'][:,:2])        
+        double_support_time,_ = self.compute_double_support_time(return_all_trials=True) 
+
+        singleSupportTime = 100 - double_support_time    
         
         # Average across all strides.
         singleSupportTime = np.mean(singleSupportTime)
         
         # Define units.
-        units = 's'
+        units = '%'
         
         return singleSupportTime, units
         
-    def compute_double_support_time(self):
+    def compute_double_support_time(self,return_all_trials=False):
         
         # Ipsilateral stance time - contralateral swing time.
-        doubleSupportTime = (
-            np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
-            np.diff(self.gaitEvents['contralateralTime'][:,:2]))
+        doubleSupportTimes = (
+            (np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
+            np.diff(self.gaitEvents['contralateralTime'][:,:2])) /
+            np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])) * 100
                             
         # Average across all strides.
-        doubleSupportTime = np.mean(doubleSupportTime)
+        doubleSupportTime = np.mean(doubleSupportTimes)
         
         # Define units.
-        units = 's'
+        units = '%'
         
-        return doubleSupportTime, units
+        if return_all_trials:
+            return doubleSupportTimes, units
+        else:
+            return doubleSupportTime, units
             
     def compute_gait_frame(self):
 
