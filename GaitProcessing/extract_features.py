@@ -32,7 +32,9 @@ sys.path.append(baseDir)
 opensimADDir = os.path.join(baseDir, 'UtilsDynamicSimulations', 'OpenSimAD')
 sys.path.append(opensimADDir)
 import json
+import copy
 import numpy as np
+from matplotlib import pyplot as plt
 
 from scipy.integrate import cumtrapz
 
@@ -44,7 +46,8 @@ from data_info import get_data_manual_alignment, get_data_case
 from utilsKineticsOpenSimAD import kineticsOpenSimAD
 
 # %% Paths.
-driveDir = 'C:/MyDriveSym/Projects/ParkerStudy'
+# driveDir = 'C:/MyDriveSym/Projects/ParkerStudy'
+driveDir = 'G:/.shortcut-targets-by-id/1PsjYe9HAdckqeTmAhxFd6F7Oad1qgZNy/ParkerStudy'
 dataFolder = os.path.join(driveDir, 'Data')
 
 # %% User-defined variables.
@@ -54,6 +57,7 @@ filter_frequency = 6
 legs = ['l', 'r']
 suffixOutputFileName = 'aligned'
 coordinates = ['hip_flexion', 'hip_adduction', 'hip_rotation', 'knee_angle', 'ankle_angle']
+coordinates_gaitCycle = ['arm_flex']
 
 # %% Gait segmentation and kinematic analysis.
 trials_info = get_data_info(trial_indexes=[i for i in range(0,92)])
@@ -76,6 +80,10 @@ for trial in trials_info:
     else:
         trialName_aligned = trial_name
 
+    # initialize for between-leg comparisons
+    resultsBilateral = {}
+    features = {}
+    
     for leg in legs:
         if trial in trials_info_problems.keys():
             if leg in trials_info_problems[trial]['leg']:
@@ -108,9 +116,8 @@ for trial in trials_info:
         joint_moments = opt_sol_obj.get_joint_moments()
         joint_powers = opt_sol_obj.get_joint_powers()
         
-        # TODO: do we want to filter?
         # Filter
-        joint_angles_filt = lowPassFilterDataframe(joint_angles, filter_frequency)
+        joint_angles_filt = joint_angles # these were already filtered prior to simulation
         joint_moments_filt = lowPassFilterDataframe(joint_moments, filter_frequency)
         joint_powers_filt = lowPassFilterDataframe(joint_powers, filter_frequency)
         
@@ -121,6 +128,12 @@ for trial in trials_info:
         joint_angles_filt_sel = joint_angles_filt_sel.reset_index(drop=True)
         joint_moments_filt_sel = joint_moments_filt_sel.reset_index(drop=True)
         joint_powers_filt_sel = joint_powers_filt_sel.reset_index(drop=True)
+        
+        # for both sides
+        resultsBilateral[leg] = {}
+        resultsBilateral[leg]['joint_angles'] = copy.copy(joint_angles_filt_sel)
+        resultsBilateral[leg]['joint_moments'] = copy.copy(joint_moments_filt_sel)
+        resultsBilateral[leg]['joint_powers'] = copy.copy(joint_powers_filt_sel)
 
         # Stance and swing.
         # Times.
@@ -132,13 +145,15 @@ for trial in trials_info:
         to_1_idx = (np.abs(joint_angles_filt_sel['time'] - to_1_time)).argmin()
         hs_2_idx = (np.abs(joint_angles_filt_sel['time'] - hs_2_time)).argmin()
         
-        # Kinetic features
+        # Kinetic features (loosely defined...results that use simulation results)
         kinetic_features = {}
-        # Foot drop: peak dorsiflexion angle during swing.
-        peak_foot_drop_swing = np.max(joint_angles_filt_sel['ankle_angle_' + leg].to_numpy()[to_1_idx:hs_2_idx])
-        kinetic_features['peak_foot_drop_swing'] = {}
-        kinetic_features['peak_foot_drop_swing']['value'] = peak_foot_drop_swing
-        kinetic_features['peak_foot_drop_swing']['units'] = 'deg'
+        # Foot drop: dorsiflexion angle in mid-swing
+        idx_midSwing = np.arange(int(np.round(to_1_idx + 0.4 * (hs_2_idx - to_1_idx))),
+                        int(np.round(to_1_idx + 0.6 * (hs_2_idx - to_1_idx))))
+        dorsiflexion_angle_midswing = np.mean(joint_angles_filt_sel['ankle_angle_' + leg].to_numpy()[idx_midSwing])
+        kinetic_features['dorsiflexion_angle_midswing'] = {}
+        kinetic_features['dorsiflexion_angle_midswing']['value'] = dorsiflexion_angle_midswing
+        kinetic_features['dorsiflexion_angle_midswing']['units'] = 'deg'
         # Peak knee flexion angle during swing.
         peak_knee_flexion_swing = np.max(joint_angles_filt_sel['knee_angle_' + leg].to_numpy()[to_1_idx:hs_2_idx])
         kinetic_features['peak_knee_flexion_swing'] = {}
@@ -149,6 +164,11 @@ for trial in trials_info:
         kinetic_features['peak_knee_flexion_stance'] = {}
         kinetic_features['peak_knee_flexion_stance']['value'] = peak_knee_flexion_stance
         kinetic_features['peak_knee_flexion_stance']['units'] = 'deg'
+        # Shoulder flexion range during stance.
+        kinetic_features['arm_flexion_rom'] = {}
+        kinetic_features['arm_flexion_rom']['value'] = np.ptp(joint_angles_filt_sel['arm_flex_' + leg])
+        kinetic_features['arm_flexion_rom']['units'] = 'deg'
+        
         # Peak moments and impulses.
         peak_moment_stance, peak_moment_swing = {}, {}
         peak_power_stance, peak_power_swing = {}, {}
@@ -158,41 +178,184 @@ for trial in trials_info:
             moment_stance = joint_moments_filt_sel[coordinate + '_' + leg].to_numpy()[hs_1_idx:to_1_idx]
             moment_swing = joint_moments_filt_sel[coordinate + '_' + leg].to_numpy()[to_1_idx:hs_2_idx]
             # Peak moments.
-            peak_moment_stance[coordinate] = np.max(moment_stance)
-            kinetic_features['peak_moment_stance_' + coordinate] = {}
-            kinetic_features['peak_moment_stance_' + coordinate]['value'] = peak_moment_stance[coordinate]
-            kinetic_features['peak_moment_stance_' + coordinate]['units'] = 'Nm'
-            peak_moment_swing[coordinate] = np.max(moment_swing)
-            kinetic_features['peak_moment_swing_' + coordinate] = {}
-            kinetic_features['peak_moment_swing_' + coordinate]['value'] = peak_moment_swing[coordinate]
-            kinetic_features['peak_moment_swing_' + coordinate]['units'] = 'Nm'
+            peak_moment_stance[coordinate] = [np.min(moment_stance),np.max(moment_stance)]
+            kinetic_features['peak_moment_stance_positive_' + coordinate] = {}
+            kinetic_features['peak_moment_stance_positive_' + coordinate]['value'] = peak_moment_stance[coordinate][1]
+            kinetic_features['peak_moment_stance_positive_' + coordinate]['units'] = 'Nm'
+            kinetic_features['peak_moment_stance_negative_' + coordinate] = {}
+            kinetic_features['peak_moment_stance_negative_' + coordinate]['value'] = peak_moment_stance[coordinate][0]
+            kinetic_features['peak_moment_stance_negative_' + coordinate]['units'] = 'Nm'
+            
+            peak_moment_swing[coordinate] = [np.min(moment_swing), np.max(moment_swing)]
+            kinetic_features['peak_moment_swing_positive_' + coordinate] = {}
+            kinetic_features['peak_moment_swing_positive_' + coordinate]['value'] = peak_moment_swing[coordinate][1]
+            kinetic_features['peak_moment_swing_positive_' + coordinate]['units'] = 'Nm'
+            kinetic_features['peak_moment_swing_negative_' + coordinate] = {}
+            kinetic_features['peak_moment_swing_negative_' + coordinate]['value'] = peak_moment_swing[coordinate][0]
+            kinetic_features['peak_moment_swing_negative_' + coordinate]['units'] = 'Nm'           
+            
             # Inpulses.
             time_stance = joint_moments_filt_sel['time'].to_numpy()[hs_1_idx:to_1_idx]
-            # TODO: Scott, abs of sum?
-            impulse_stance[coordinate] = np.abs(np.sum(cumtrapz(moment_stance, time_stance, initial=0)))
-            kinetic_features['impulse_stance_' + coordinate] = {}
-            kinetic_features['impulse_stance_' + coordinate]['value'] = impulse_stance[coordinate]
-            kinetic_features['impulse_stance_' + coordinate]['units'] = 'Nm*s'
+            dt = np.diff(time_stance)[0]
+            impulse_stance[coordinate] = [np.abs(np.mean(moment_stance[moment_stance<0])) * dt*np.sum(moment_stance<0), 
+                np.abs(np.mean(moment_stance[moment_stance>0])) * dt*np.sum(moment_stance>0)]
+            kinetic_features['impulse_stance_positive_' + coordinate] = {}
+            kinetic_features['impulse_stance_positive_' + coordinate]['value'] = impulse_stance[coordinate][1]
+            kinetic_features['impulse_stance_positive_' + coordinate]['units'] = 'Nm*s'
+            kinetic_features['impulse_stance_negative_' + coordinate] = {}
+            kinetic_features['impulse_stance_negative_' + coordinate]['value'] = impulse_stance[coordinate][0]
+            kinetic_features['impulse_stance_negative_' + coordinate]['units'] = 'Nm*s'
+            
             # Powers.
             power_stance = joint_powers_filt_sel[coordinate + '_' + leg].to_numpy()[hs_1_idx:to_1_idx]
             power_swing = joint_powers_filt_sel[coordinate + '_' + leg].to_numpy()[to_1_idx:hs_2_idx]
             # Peak powers.
-            peak_power_stance[coordinate] = np.max(power_stance)
-            kinetic_features['peak_power_stance_' + coordinate] = {}
-            kinetic_features['peak_power_stance_' + coordinate]['value'] = peak_power_stance[coordinate]
-            kinetic_features['peak_power_stance_' + coordinate]['units'] = 'W'
-            peak_power_swing[coordinate] = np.max(power_swing)
-            kinetic_features['peak_power_swing_' + coordinate] = {}
-            kinetic_features['peak_power_swing_' + coordinate]['value'] = peak_power_swing[coordinate]
-            kinetic_features['peak_power_swing_' + coordinate]['units'] = 'W'
-        
-        features = {}
-        features.update(kinetic_features)
-        features.update(gaitResults['scalars'])
+            peak_power_stance[coordinate] = [np.min(power_stance), np.max(power_stance)]
+            kinetic_features['peak_power_stance_positive_' + coordinate] = {}
+            kinetic_features['peak_power_stance_positive_' + coordinate]['value'] = peak_power_stance[coordinate][1]
+            kinetic_features['peak_power_stance_positive_' + coordinate]['units'] = 'W'
+            kinetic_features['peak_power_stance_negative_' + coordinate] = {}
+            kinetic_features['peak_power_stance_negative_' + coordinate]['value'] = peak_power_stance[coordinate][0]
+            kinetic_features['peak_power_stance_negative_' + coordinate]['units'] = 'W'
+            peak_power_swing[coordinate] = [np.min(power_swing), np.max(power_swing)]
+            kinetic_features['peak_power_swing_positive_' + coordinate] = {}
+            kinetic_features['peak_power_swing_positive_' + coordinate]['value'] = peak_power_swing[coordinate][1]
+            kinetic_features['peak_power_swing_positive_' + coordinate]['units'] = 'W'
+            kinetic_features['peak_power_swing_negative_' + coordinate] = {}
+            kinetic_features['peak_power_swing_negative_' + coordinate]['value'] = peak_power_swing[coordinate][0]
+            kinetic_features['peak_power_swing_negative_' + coordinate]['units'] = 'W'
+            
+        peak_moment_gaitCycle, impulse_gaitCycle = {}, {}
 
-        # Save features in json file.
-        pathFeaturesFolder = os.path.join(sessionDir, 'OpenSimData', 'Features')
-        os.makedirs(pathFeaturesFolder, exist_ok=True)
-        pathOutputJsonFile = os.path.join(pathFeaturesFolder, 'features_{}.json'.format(leg))
-        with open(pathOutputJsonFile, 'w') as outfile:
-            json.dump(features, outfile)
+        for coordinate in coordinates_gaitCycle:
+            # Moments.
+            moment_gaitCycle = joint_moments_filt_sel[coordinate + '_' + leg].to_numpy()[hs_1_idx:hs_2_idx]
+            plt.plot(moment_gaitCycle,label=leg)
+
+            # Peak moments.
+            peak_moment_gaitCycle[coordinate] = [np.min(moment_gaitCycle),np.max(moment_gaitCycle)]
+            kinetic_features['peak_moment_gaitCycle_positive_' + coordinate] = {}
+            kinetic_features['peak_moment_gaitCycle_positive_' + coordinate]['value'] = peak_moment_gaitCycle[coordinate][1]
+            kinetic_features['peak_moment_gaitCycle_positive_' + coordinate]['units'] = 'Nm'
+            kinetic_features['peak_moment_gaitCycle_negative_' + coordinate] = {}
+            kinetic_features['peak_moment_gaitCycle_negative_' + coordinate]['value'] = peak_moment_gaitCycle[coordinate][0]
+            kinetic_features['peak_moment_gaitCycle_negative_' + coordinate]['units'] = 'Nm'
+            
+            # Inpulses.
+            time_gaitCycle = joint_moments_filt_sel['time'].to_numpy()[hs_1_idx:hs_2_idx]
+            dt = np.diff(time_stance)[0]
+            impulse_gaitCycle[coordinate] = [np.abs(np.mean(moment_gaitCycle[moment_gaitCycle<0])) * dt*np.sum(moment_gaitCycle<0), 
+                np.abs(np.mean(moment_gaitCycle[moment_gaitCycle>0])) * dt*np.sum(moment_gaitCycle>0)]
+            kinetic_features['impulse_gaitCycle_positive_' + coordinate] = {}
+            kinetic_features['impulse_gaitCycle_positive_' + coordinate]['value'] = impulse_gaitCycle[coordinate][1]
+            kinetic_features['impulse_gaitCycle_positive_' + coordinate]['units'] = 'Nm*s'
+            kinetic_features['impulse_gaitCycle_negative_' + coordinate] = {}
+            kinetic_features['impulse_gaitCycle_negative_' + coordinate]['value'] = impulse_gaitCycle[coordinate][0]
+            kinetic_features['impulse_gaitCycle_negative_' + coordinate]['units'] = 'Nm*s'
+        
+        features_leg = {}
+        features_leg.update(kinetic_features)
+        features_leg.update(gaitResults['scalars'])
+        features.update({key + '_' + leg: value for key, value in features_leg.items()})
+
+    # %% function that computes weighted correlations between related signals.
+    # ie left arm_flex angle from a left gait cycle vs a right arm_flex angle from
+    # a right gait cycle
+    
+    def compute_correlations(df1, df2, cols_to_compare=None, visualize=False):
+        if cols_to_compare is None:
+            cols_to_compare = df1.columns
+    
+        # Interpolating both dataframes to have 101 rows for each column
+        df1_interpolated = df1.interpolate(method='linear', limit_direction='both', limit_area='inside', limit=100)
+        df2_interpolated = df2.interpolate(method='linear', limit_direction='both', limit_area='inside', limit=100)
+    
+        # Computing the correlation between appropriate columns in both dataframes
+        correlations = {}
+        total_weighted_correlation = 0
+        total_weight = 0
+    
+        for col1 in df1_interpolated.columns:
+            if any(col1.startswith(col_compare) for col_compare in cols_to_compare) and col1.endswith('_r'):
+                corresponding_col = col1[:-2] + '_l'
+                if corresponding_col in df2_interpolated.columns:
+                    signal1 = df1_interpolated[col1]
+                    signal2 = df2_interpolated[corresponding_col]
+    
+                    max_range_signal1 = np.ptp(signal1)
+                    max_range_signal2 = np.ptp(signal2)
+                    max_range = max(max_range_signal1, max_range_signal2)
+    
+                    mean_abs_error = np.mean(np.abs(signal1 - signal2)) / max_range
+    
+                    correlation = signal1.corr(signal2)
+                    weight = 1 - mean_abs_error
+    
+                    weighted_correlation = correlation * weight
+                    correlations[col1] = weighted_correlation
+    
+                    total_weighted_correlation += weighted_correlation
+    
+                    # Plotting the signals if visualize is True
+                    if visualize:
+                        plt.figure(figsize=(8, 5))
+                        plt.plot(signal1, label='df1')
+                        plt.plot(signal2, label='df2')
+                        plt.title(f"Comparison between {col1} and {corresponding_col} with weighted correlation {weighted_correlation}")
+                        plt.legend()
+                        plt.show()
+    
+        for col2 in df2_interpolated.columns:
+            if any(col2.startswith(col_compare) for col_compare in cols_to_compare) and col2.endswith('_r'):
+                corresponding_col = col2[:-2] + '_l'
+                if corresponding_col in df1_interpolated.columns:
+                    signal1 = df1_interpolated[corresponding_col]
+                    signal2 = df2_interpolated[col2]
+    
+                    max_range_signal1 = np.ptp(signal1)
+                    max_range_signal2 = np.ptp(signal2)
+                    max_range = max(max_range_signal1, max_range_signal2)
+    
+                    mean_abs_error = np.mean(np.abs(signal1 - signal2)) / max_range
+    
+                    correlation = signal1.corr(signal2)
+                    weight = 1 - mean_abs_error
+    
+                    weighted_correlation = correlation * weight
+                    correlations[corresponding_col] = weighted_correlation
+    
+                    total_weighted_correlation += weighted_correlation
+    
+                    # Plotting the signals if visualize is True
+                    if visualize:
+                        plt.figure(figsize=(8, 5))
+                        plt.plot(signal1, label='df1')
+                        plt.plot(signal2, label='df2')
+                        plt.title(f"Comparison between {corresponding_col} and {col2} with weighted correlation {weighted_correlation}")
+                        plt.legend()
+                        plt.show()
+    
+        mean_weighted_correlation = total_weighted_correlation / len(correlations)
+        return correlations, mean_weighted_correlation
+            
+    combined_features = {}
+    
+    # Compute arm swing asymmetry   
+    dofs = ['arm_flex','elbow_flex']
+    correlations, meanCorrelation = compute_correlations(resultsBilateral['r']['joint_angles'],
+                                       resultsBilateral['l']['joint_angles'],
+                                       cols_to_compare=dofs)
+    
+    combined_features['arm_swing_symmetry'] = {}
+    combined_features['arm_swing_symmetry']['value'] = meanCorrelation
+    combined_features['arm_swing_symmetry']['units'] = 'unitless'
+    
+    # add to feature set
+    features.update(combined_features)
+
+    # Save features in json file.
+    pathFeaturesFolder = os.path.join(sessionDir, 'OpenSimData', 'Features')
+    os.makedirs(pathFeaturesFolder, exist_ok=True)
+    pathOutputJsonFile = os.path.join(pathFeaturesFolder, 'features.json')
+    with open(pathOutputJsonFile, 'w') as outfile:
+        json.dump(features, outfile)
