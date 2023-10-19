@@ -35,6 +35,7 @@ import json
 import copy
 import numpy as np
 from matplotlib import pyplot as plt
+import shutil
 
 from scipy.integrate import cumtrapz
 
@@ -46,8 +47,8 @@ from data_info import get_data_manual_alignment, get_data_case
 from utilsKineticsOpenSimAD import kineticsOpenSimAD
 
 # %% Paths.
-# driveDir = 'C:/MyDriveSym/Projects/ParkerStudy'
-driveDir = 'G:/.shortcut-targets-by-id/1PsjYe9HAdckqeTmAhxFd6F7Oad1qgZNy/ParkerStudy'
+driveDir = 'C:/MyDriveSym/Projects/ParkerStudy'
+# driveDir = 'G:/.shortcut-targets-by-id/1PsjYe9HAdckqeTmAhxFd6F7Oad1qgZNy/ParkerStudy'
 dataFolder = os.path.join(driveDir, 'Data')
 
 # %% User-defined variables.
@@ -72,7 +73,7 @@ for trial in trials_info:
     # Get trial info.
     session_id = trials_info[trial]['sid']
     trial_name = trials_info[trial]['trial']
-    print('Processing session {} - trial {}...'.format(session_id, trial_name))
+    print('Processing session {}_{} - trial {}...'.format(trial, session_id, trial_name))
     sessionDir = os.path.join(dataFolder, "{}_{}".format(trial, session_id))
 
     if trial in trials_info_alignment:        
@@ -90,6 +91,8 @@ for trial in trials_info:
                 print('Skipping leg {} for trial {} because it is a trial with problems.'.format(leg, trial))
                 continue
 
+
+
         case = '2' # default
         if trial in trials_case.keys():
             if leg in trials_case[trial].keys():
@@ -99,7 +102,8 @@ for trial in trials_info:
 
         # Load gait results (kinematic features).
         pathKinematicsFolder = os.path.join(sessionDir, 'OpenSimData', 'Kinematics')
-        pathOutputJsonFile = os.path.join(pathKinematicsFolder, 'gaitResults_{}.json'.format(leg))
+        # pathOutputJsonFile = os.path.join(pathKinematicsFolder, 'gaitResults_{}.json'.format(leg))
+        pathOutputJsonFile = os.path.join(pathKinematicsFolder, '{}_kinematic_features_{}.json'.format(trial_name, leg))
         with open(pathOutputJsonFile) as json_file:
             gaitResults = json.load(json_file)
 
@@ -197,8 +201,20 @@ for trial in trials_info:
             # Inpulses.
             time_stance = joint_moments_filt_sel['time'].to_numpy()[hs_1_idx:to_1_idx]
             dt = np.diff(time_stance)[0]
-            impulse_stance[coordinate] = [np.abs(np.mean(moment_stance[moment_stance<0])) * dt*np.sum(moment_stance<0), 
-                np.abs(np.mean(moment_stance[moment_stance>0])) * dt*np.sum(moment_stance>0)]
+            impulse_stance[coordinate] = []
+
+            moment_stance_negative = moment_stance[moment_stance < 0]
+            if len(moment_stance_negative) > 0:
+                impulse_stance[coordinate].append(np.abs(np.mean(moment_stance_negative)) * dt * np.sum(moment_stance_negative))
+            else:
+                impulse_stance[coordinate].append(0)
+            
+            moment_stance_positive = moment_stance[moment_stance > 0]
+            if len(moment_stance_positive) > 0:
+                impulse_stance[coordinate].append(np.abs(np.mean(moment_stance_positive)) * dt * np.sum(moment_stance_positive))
+            else:
+                impulse_stance[coordinate].append(0)
+
             kinetic_features['impulse_stance_positive_' + coordinate] = {}
             kinetic_features['impulse_stance_positive_' + coordinate]['value'] = impulse_stance[coordinate][1]
             kinetic_features['impulse_stance_positive_' + coordinate]['units'] = 'Nm*s'
@@ -230,7 +246,7 @@ for trial in trials_info:
         for coordinate in coordinates_gaitCycle:
             # Moments.
             moment_gaitCycle = joint_moments_filt_sel[coordinate + '_' + leg].to_numpy()[hs_1_idx:hs_2_idx]
-            plt.plot(moment_gaitCycle,label=leg)
+            # plt.plot(moment_gaitCycle,label=leg)
 
             # Peak moments.
             peak_moment_gaitCycle[coordinate] = [np.min(moment_gaitCycle),np.max(moment_gaitCycle)]
@@ -244,8 +260,20 @@ for trial in trials_info:
             # Inpulses.
             time_gaitCycle = joint_moments_filt_sel['time'].to_numpy()[hs_1_idx:hs_2_idx]
             dt = np.diff(time_stance)[0]
-            impulse_gaitCycle[coordinate] = [np.abs(np.mean(moment_gaitCycle[moment_gaitCycle<0])) * dt*np.sum(moment_gaitCycle<0), 
-                np.abs(np.mean(moment_gaitCycle[moment_gaitCycle>0])) * dt*np.sum(moment_gaitCycle>0)]
+            impulse_gaitCycle[coordinate] = []
+
+            moment_gaitCycle_negative = moment_gaitCycle[moment_gaitCycle < 0]
+            if len(moment_gaitCycle_negative) > 0:
+                impulse_gaitCycle[coordinate].append(np.abs(np.mean(moment_gaitCycle_negative)) * dt * np.sum(moment_gaitCycle_negative))
+            else:
+                impulse_gaitCycle[coordinate].append(0)
+            
+            moment_gaitCycle_positive = moment_gaitCycle[moment_gaitCycle > 0]
+            if len(moment_gaitCycle_positive) > 0:
+                impulse_gaitCycle[coordinate].append(np.abs(np.mean(moment_gaitCycle_positive)) * dt * np.sum(moment_gaitCycle_positive))
+            else:
+                impulse_gaitCycle[coordinate].append(0)
+
             kinetic_features['impulse_gaitCycle_positive_' + coordinate] = {}
             kinetic_features['impulse_gaitCycle_positive_' + coordinate]['value'] = impulse_gaitCycle[coordinate][1]
             kinetic_features['impulse_gaitCycle_positive_' + coordinate]['units'] = 'Nm*s'
@@ -273,7 +301,7 @@ for trial in trials_info:
         # Computing the correlation between appropriate columns in both dataframes
         correlations = {}
         total_weighted_correlation = 0
-        total_weight = 0
+        # total_weight = 0
     
         for col1 in df1_interpolated.columns:
             if any(col1.startswith(col_compare) for col_compare in cols_to_compare) and col1.endswith('_r'):
@@ -340,22 +368,22 @@ for trial in trials_info:
             
     combined_features = {}
     
-    # Compute arm swing asymmetry   
-    dofs = ['arm_flex','elbow_flex']
-    correlations, meanCorrelation = compute_correlations(resultsBilateral['r']['joint_angles'],
-                                       resultsBilateral['l']['joint_angles'],
-                                       cols_to_compare=dofs)
-    
-    combined_features['arm_swing_symmetry'] = {}
-    combined_features['arm_swing_symmetry']['value'] = meanCorrelation
-    combined_features['arm_swing_symmetry']['units'] = 'unitless'
-    
-    # add to feature set
-    features.update(combined_features)
+    # Compute arm swing asymmetry
+    if 'r' not in resultsBilateral or 'l' not in resultsBilateral:
+        print('Skipping arm swing symmetry because either right or left side is missing.')
+    else:
+        dofs = ['arm_flex','elbow_flex']
+        correlations, meanCorrelation = compute_correlations(resultsBilateral['r']['joint_angles'],
+                                        resultsBilateral['l']['joint_angles'],
+                                        cols_to_compare=dofs)    
+        combined_features['arm_swing_symmetry'] = {}
+        combined_features['arm_swing_symmetry']['value'] = meanCorrelation
+        combined_features['arm_swing_symmetry']['units'] = 'unitless'
+        features.update(combined_features)
 
     # Save features in json file.
     pathFeaturesFolder = os.path.join(sessionDir, 'OpenSimData', 'Features')
     os.makedirs(pathFeaturesFolder, exist_ok=True)
-    pathOutputJsonFile = os.path.join(pathFeaturesFolder, 'features.json')
+    pathOutputJsonFile = os.path.join(pathFeaturesFolder, '{}_features.json'.format(trial_name))
     with open(pathOutputJsonFile, 'w') as outfile:
         json.dump(features, outfile)

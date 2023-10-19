@@ -73,13 +73,13 @@ filter_frequency = 6
 # solveProblem = True
 # analyzeResults = True
 motion_type = 'walking_periodic_formulation_0'
-case = '5'
-legs = ['l', 'r']
+case = '2'
+legs = ['r', 'l']
 solveProblem = True
 analyzeResults = True
-runProblem = False
+runProblem = True
 overwrite_aligned_data = False
-overwrite_gait_results = False
+overwrite_gait_results = True
 overwrite_tracked_motion_file = False
 
 # Buffers
@@ -99,14 +99,13 @@ elif case == '5':
     buffer_start = 0.7
     buffer_end = 0.3
 
-
 # %% Gait segmentation and kinematic analysis.
 # ii = 91
-trials_to_run = [86] # [0, 3, 13, 35, 48, 62]
+# trials_to_run = [86] # [0, 3, 13, 35, 48, 62]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
-# trials_info = get_data_info(trial_indexes=[i for i in range(60,92)])
-trials_info = get_data_info(trial_indexes=trials_to_run)
+trials_info = get_data_info(trial_indexes=[i for i in range(86,87)])
+# trials_info = get_data_info(trial_indexes=trials_to_run)
 
 trials_info_problems = get_data_info_problems()
 trials_info_alignment = get_data_alignment()
@@ -180,10 +179,10 @@ for trial in trials_info:
                 if leg in trials_info_problems[trial]['leg']:
                     print('Skipping leg {} for trial {} because it is a problem trial.'.format(leg, trial))
                     continue
-
-            case_leg = '{}_{}'.format(case, leg)
+            
             # Gait segmentation and analysis.
-            pathOutputJsonFile = os.path.join(pathKinematicsFolder, 'gaitResults_{}.json'.format(leg))
+            # Purposefuly save with trialName and not trialName_aligned, since trialName is the trial actually being analysed.
+            pathOutputJsonFile = os.path.join(pathKinematicsFolder, '{}_kinematic_features_{}.json'.format(trialName, leg))
             # Do if not already done.
             if not os.path.exists(pathOutputJsonFile) or overwrite_gait_results:
                 try:
@@ -216,8 +215,13 @@ for trial in trials_info:
                             lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
                             n_gait_cycles=2)
                         # Compute scalars.
-                        # TODO: should we compute scalars for the previous cycle only, now it is average of both I guess.
-                        gaitResults['scalars'] = gait.compute_scalars(scalar_names)
+                        gaitResults['scalars'] = gait.compute_scalars(scalar_names, return_all=True)
+                        # Only extract last value (penultimate gait cycle)
+                        for scalar_name in scalar_names:
+                            gaitResults['scalars'][scalar_name]['value'] = gaitResults['scalars'][scalar_name]['value'][-1]
+                            # If array then only extract last value
+                            if isinstance(gaitResults['scalars'][scalar_name]['value'], np.ndarray):
+                                gaitResults['scalars'][scalar_name]['value'] = gaitResults['scalars'][scalar_name]['value'][-1]
                         # Get gait events.
                         gaitResults['events'] = gait.get_gait_events()
                         # Support serialization for json
@@ -239,6 +243,16 @@ for trial in trials_info:
                 with open(pathOutputJsonFile) as json_file:
                     gaitResults = json.load(json_file)
 
+            # Temporary check to see if something has changed
+            temp1 = gaitResults['events']['ipsilateralTime']
+            pathOutputJsonFile_old =  os.path.join(pathKinematicsFolder, 'gaitResults_{}.json'.format(leg))
+            with open(pathOutputJsonFile_old) as json_file:
+                gaitResults_old = json.load(json_file)
+            temp2 = gaitResults_old['events']['ipsilateralTime']
+            # Check that both lists are the same
+            if temp1 != temp2:
+                raise ValueError('Something has changed in the gait analysis, please check {}.'.format(session_id))            
+
             # Setup dynamic optimization problem.
             time_window = [
                 gaitResults['events']['ipsilateralTime'][0],
@@ -249,6 +263,7 @@ for trial in trials_info:
             
             # Creating mot files for visualization.
             pathResults = os.path.join(sessionDir, 'OpenSimData', 'Dynamics', trialName_aligned)
+            case_leg = '{}_{}'.format(case, leg)
             pathTrackedMotionFile = os.path.join(pathResults, 'kinematics_to_track_{}.mot'.format(case_leg))            
             if not os.path.exists(pathTrackedMotionFile) or overwrite_tracked_motion_file:
                 gait = gait_analysis(

@@ -86,6 +86,7 @@ class kineticsOpenSimAD:
         if not os.path.exists(modelPath):
             raise Exception('Model path: ' + modelPath + ' does not exist.')
 
+        opensim.Logger.setLevelString('error')
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
         
