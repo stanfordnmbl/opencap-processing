@@ -24,6 +24,7 @@ sys.path.append('../')
 import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
+from matplotlib import pyplot as plt
 
 from utilsKinematics import kinematics
 
@@ -125,16 +126,16 @@ class gait_analysis(kinematics):
             return strideLength, units
     
     def compute_step_length(self,return_all=False):
-        leg, contLeg = self.get_leg()
+        leg, contLeg = self.get_leg(lower=True)
         step_lengths = {}
         
-        step_lengths[contLeg.lower()] = (np.linalg.norm(
+        step_lengths[contLeg] = (np.linalg.norm(
             self.markerDict['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,:1]] - 
             self.markerDict['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2]], axis=2) + 
             self.treadmillSpeed * (self.gaitEvents['contralateralTime'][:,1:2] -
                                    self.gaitEvents['ipsilateralTime'][:,:1]))
         
-        step_lengths[leg.lower()]  = (np.linalg.norm(
+        step_lengths[leg]  = (np.linalg.norm(
             self.markerDict['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,2:]] - 
             self.markerDict['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2]], axis=2) + 
             self.treadmillSpeed * (-self.gaitEvents['contralateralTime'][:,1:2] +
@@ -488,6 +489,71 @@ class gait_analysis(kinematics):
             return roms, units
         else:
             return rom, units
+                
+    def compute_correlations(self, cols_to_compare=None, visualize=False):
+        # this computes a weighted correlation between either side's dofs. 
+        # the weighting is based on mean absolute percent error. In effect,
+        # this penalizes both shape and magnitude differences.
+        
+        leg,contLeg = self.get_leg(lower=True)
+        
+        for i in range(self.nGaitCycles):
+            df1 = pd.DataFrame()
+            df2 = pd.DataFrame()
+            
+            hs_ind_cont = self.gaitEvents['contralateralIdx'][i,1]
+            # create a dataframe of coords for this gait cycle
+            for col in self.coordinateValues.columns:
+                if col.endswith('_' + leg):
+                    df1[col] = self.coordinateValues[col]
+                elif col.endswith('_' + leg):
+                    df2[col] = np.concatenate((self.coordinateValues[col][hs_ind_cont:],
+                                               self.coordinateValues[col][:hs_ind_cont]))
+            
+            if cols_to_compare is None:
+                cols_to_compare = df1.columns
+        
+            # Interpolating both dataframes to have 101 rows for each column
+            df1_interpolated = df1.interpolate(method='linear', limit_direction='both', limit_area='inside', limit=100)
+            df2_interpolated = df2.interpolate(method='linear', limit_direction='both', limit_area='inside', limit=100)
+        
+            # Computing the correlation between appropriate columns in both dataframes
+            correlations = {}
+            total_weighted_correlation = 0
+            # total_weight = 0
+        
+            for col1 in df1_interpolated.columns:
+                if any(col1.startswith(col_compare) for col_compare in cols_to_compare) and col1.endswith('_r'):
+                    corresponding_col = col1[:-2] + '_l'
+                    if corresponding_col in df2_interpolated.columns:
+                        signal1 = df1_interpolated[col1]
+                        signal2 = df2_interpolated[corresponding_col]
+        
+                        max_range_signal1 = np.ptp(signal1)
+                        max_range_signal2 = np.ptp(signal2)
+                        max_range = max(max_range_signal1, max_range_signal2)
+        
+                        mean_abs_error = np.mean(np.abs(signal1 - signal2)) / max_range
+        
+                        correlation = signal1.corr(signal2)
+                        weight = 1 - mean_abs_error
+        
+                        weighted_correlation = correlation * weight
+                        correlations[col1] = weighted_correlation
+        
+                        total_weighted_correlation += weighted_correlation
+        
+                        # Plotting the signals if visualize is True
+                        if visualize:
+                            plt.figure(figsize=(8, 5))
+                            plt.plot(signal1, label='df1')
+                            plt.plot(signal2, label='df2')
+                            plt.title(f"Comparison between {col1} and {corresponding_col} with weighted correlation {weighted_correlation}")
+                            plt.legend()
+                            plt.show()
+        
+        mean_weighted_correlation = total_weighted_correlation / len(correlations)
+        return correlations, mean_weighted_correlation
 
     def compute_gait_frame(self):
 
@@ -536,7 +602,7 @@ class gait_analysis(kinematics):
         
         return R_lab_to_gait
     
-    def get_leg(self):
+    def get_leg(self,lower=False):
 
         if self.gaitEvents['ipsilateralLeg'] == 'r':
             leg = 'r'
@@ -544,8 +610,11 @@ class gait_analysis(kinematics):
         else:
             leg = 'L'
             contLeg = 'r'
-            
-        return leg, contLeg
+        
+        if lower:
+            return leg.lower(), contLeg.lower()
+        else:
+            return leg, contLeg
     
     def get_coordinates_normalized_time(self):
         
