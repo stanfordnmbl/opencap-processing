@@ -253,7 +253,7 @@ class gait_analysis(kinematics):
                       
         ankleVector_inGaitFrame = np.array(
             [np.dot(ankleVector[i,:], self.R_world_to_gait()[i,:,:]) 
-             for i in range(self.nGaitCycles)])
+            for i in range(self.nGaitCycles)])
         
         # Step width is z distance.
         stepWidths = np.abs(ankleVector_inGaitFrame[:,2])
@@ -304,7 +304,6 @@ class gait_analysis(kinematics):
         double_support_time,_ = self.compute_double_support_time(return_all=True) 
 
         singleSupportTimes = 100 - double_support_time    
-
         
         # Average across all strides.
         singleSupportTime = np.mean(singleSupportTimes)
@@ -335,7 +334,161 @@ class gait_analysis(kinematics):
             return doubleSupportTimes, units
         else:
             return doubleSupportTime, units
+        
+    def compute_midswing_dorsiflexion_angle(self,return_all=False):
+        # compute ankle dorsiflexion angle during midstance
+        to_1_idx = self.gaitEvents['ipsilateralIdx'][:,1]
+        hs_2_idx = self.gaitEvents['ipsilateralIdx'][:,2]
+        
+        # ankle markers
+        leg,contLeg = self.get_leg()
+        ankleVector = (self.markerDict['markers'][leg + '_ankle_study'] - 
+                       self.markerDict['markers'][contLeg + '_ankle_study'])
+        ankleVector_inGaitFrame = np.array(
+            [np.dot(ankleVector, self.R_world_to_gait()[i,:,:]) 
+              for i in range(self.nGaitCycles)])                                          
+        
+        swingDfAngles = np.zeros((to_1_idx.shape))
+        
+        for i in range(self.nGaitCycles):
+            # find index within a swing phase with the smallest z distance between ankles
+            idx_midSwing = np.argmin(np.abs(ankleVector_inGaitFrame[
+                                     i,to_1_idx[i]:hs_2_idx[i],0]))+to_1_idx[i]
             
+            swingDfAngles[i] = np.mean(self.coordinateValues['ankle_angle_' + 
+                                self.gaitEvents['ipsilateralLeg']].to_numpy()[idx_midSwing])          
+        
+        # Average across all strides.
+        swingDfAngle = np.mean(swingDfAngles)
+        
+        # Define units.
+        units = 'deg'
+        
+        if return_all:
+            return swingDfAngles, units
+        else:
+            return swingDfAngle, units
+        
+    def compute_midswing_ankle_heigh_dif(self,return_all=False):
+        # compute vertical clearance of the swing ankle above the stance ankle
+        # at the time when the ankles pass by one another
+        to_1_idx = self.gaitEvents['ipsilateralIdx'][:,1]
+        hs_2_idx = self.gaitEvents['ipsilateralIdx'][:,2]
+        
+        # ankle markers
+        leg,contLeg = self.get_leg()
+        ankleVector = (self.markerDict['markers'][leg + '_ankle_study'] - 
+                       self.markerDict['markers'][contLeg + '_ankle_study'])
+        ankleVector_inGaitFrame = np.array(
+            [np.dot(ankleVector, self.R_world_to_gait()[i,:,:]) 
+              for i in range(self.nGaitCycles)])                                          
+        
+        swingAnkleHeighDiffs = np.zeros((to_1_idx.shape))
+        
+        for i in range(self.nGaitCycles):
+            # find index within a swing phase with the smallest z distance between ankles
+            idx_midSwing = np.argmin(np.abs(ankleVector_inGaitFrame[
+                                     i,to_1_idx[i]:hs_2_idx[i],0]))+to_1_idx[i]
+            
+            swingAnkleHeighDiffs[i] = ankleVector_inGaitFrame[i,idx_midSwing,1]  
+        
+        # Average across all strides.
+        swingAnkleHeighDiff = np.mean(swingAnkleHeighDiffs)
+        
+        # Define units.
+        units = 'm'
+        
+        if return_all:
+            return swingAnkleHeighDiffs, units
+        else:
+            return swingAnkleHeighDiff, units
+        
+    def compute_peak_angle(self,dof,start_idx,end_idx,return_all=False):
+        # start_idx and end_idx are 1xnGaitCycles        
+        
+        peakAngles = np.zeros((self.nGaitCycles))
+        
+        for i in range(self.nGaitCycles):                       
+            peakAngles[i] = np.max(self.coordinateValues[dof + '_' +
+                                self.gaitEvents['ipsilateralLeg']][start_idx[i]:end_idx[i]])
+        
+        # Average across all strides.
+        peakAngle = np.mean(peakAngles)
+        
+        # Define units.
+        units = 'deg'
+        
+        if return_all:
+            return peakAngles, units
+        else:
+            return peakAngle, units
+        
+    def compute_rom(self,dof,start_idx,end_idx,return_all=False):
+        # start_idx and end_idx are 1xnGaitCycles        
+        
+        roms = np.zeros((self.nGaitCycles))
+        
+        for i in range(self.nGaitCycles):                       
+            roms[i] = np.ptp(self.coordinateValues[dof + '_' +
+                                self.gaitEvents['ipsilateralLeg']][start_idx[i]:end_idx[i]])
+        
+        # Average across all strides.
+        rom = np.mean(roms)
+        
+        # Define units.
+        units = 'deg'
+        
+        if return_all:
+            return roms, units
+        else:
+            return rom, units
+        
+    def compute_peak_knee_flexion_swing(self,return_all=False):
+        to_1_idx = self.gaitEvents['ipsilateralIdx'][:,1]
+        hs_2_idx = self.gaitEvents['ipsilateralIdx'][:,2]
+        
+        peakKFAs,units = self.compute_peak_angle('knee_angle', start_idx = to_1_idx,
+                                                 end_idx=hs_2_idx, return_all=True)
+        
+        # Average across all strides.
+        peakKFA = np.mean(peakKFAs)
+        
+        if return_all:
+            return peakKFAs, units
+        else:
+            return peakKFA, units
+        
+    def compute_peak_knee_flexion_stance(self,return_all=False):
+        hs_1_idx = self.gaitEvents['ipsilateralIdx'][:,0]
+        midstance_idx = self.gaitEvents['ipsilateralIdx'][:,0] + np.squeeze(np.round(
+            .5*np.diff(self.gaitEvents['ipsilateralIdx'][:,(0,2)]))).astype(int)
+        
+        peakKFAs,units = self.compute_peak_angle('knee_angle', start_idx = hs_1_idx,
+                                           end_idx=midstance_idx, return_all=True)
+        
+        # Average across all strides.
+        peakKFA = np.mean(peakKFAs)
+        
+        if return_all:
+            return peakKFAs, units
+        else:
+            return peakKFA, units
+    
+    def compute_arm_flexion_rom(self,return_all=False):
+        # rom over gait cycle
+        roms,units = self.compute_rom('arm_flex', 
+                        start_idx = self.gaitEvents['ipsilateralIdx'][:,0],
+                        end_idx=self.gaitEvents['ipsilateralIdx'][:,2], 
+                        return_all=True)
+        
+        # Average across all strides.
+        rom = np.mean(roms)
+        
+        if return_all:
+            return roms, units
+        else:
+            return rom, units
+
     def compute_gait_frame(self):
 
         # Create frame for each gait cycle with x: pelvis heading, 
