@@ -467,53 +467,7 @@ class gait_analysis(kinematics):
             return roms, units
         else:
             return rom, units
-        
-    def compute_peak_knee_flexion_swing(self,return_all=False):
-        to_1_idx = self.gaitEvents['ipsilateralIdx'][:,1]
-        hs_2_idx = self.gaitEvents['ipsilateralIdx'][:,2]
-        
-        peakKFAs,units = self.compute_peak_angle('knee_angle', start_idx = to_1_idx,
-                                                 end_idx=hs_2_idx, return_all=True)
-        
-        # Average across all strides.
-        peakKFA = np.mean(peakKFAs)
-        
-        if return_all:
-            return peakKFAs, units
-        else:
-            return peakKFA, units
-        
-    def compute_peak_knee_flexion_stance(self,return_all=False):
-        hs_1_idx = self.gaitEvents['ipsilateralIdx'][:,0]
-        midstance_idx = self.gaitEvents['ipsilateralIdx'][:,0] + np.squeeze(np.round(
-            .5*np.diff(self.gaitEvents['ipsilateralIdx'][:,(0,2)]))).astype(int)
-        
-        peakKFAs,units = self.compute_peak_angle('knee_angle', start_idx = hs_1_idx,
-                                           end_idx=midstance_idx, return_all=True)
-        
-        # Average across all strides.
-        peakKFA = np.mean(peakKFAs)
-        
-        if return_all:
-            return peakKFAs, units
-        else:
-            return peakKFA, units
-    
-    def compute_arm_flexion_rom(self,return_all=False):
-        # rom over gait cycle
-        roms,units = self.compute_rom('arm_flex', 
-                        start_idx = self.gaitEvents['ipsilateralIdx'][:,0],
-                        end_idx=self.gaitEvents['ipsilateralIdx'][:,2], 
-                        return_all=True)
-        
-        # Average across all strides.
-        rom = np.mean(roms)
-        
-        if return_all:
-            return roms, units
-        else:
-            return rom, units
-                
+                        
     def compute_correlations(self, cols_to_compare=None, visualize=False):
         # this computes a weighted correlation between either side's dofs. 
         # the weighting is based on mean absolute percent error. In effect,
