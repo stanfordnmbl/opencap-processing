@@ -126,16 +126,16 @@ class gait_analysis(kinematics):
             return strideLength, units
     
     def compute_step_length(self,return_all=False):
-        leg, contLeg = self.get_leg(lower=True)
+        leg, contLeg = self.get_leg()
         step_lengths = {}
         
-        step_lengths[contLeg] = (np.linalg.norm(
+        step_lengths[contLeg.lower()] = (np.linalg.norm(
             self.markerDict['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,:1]] - 
             self.markerDict['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2]], axis=2) + 
             self.treadmillSpeed * (self.gaitEvents['contralateralTime'][:,1:2] -
                                    self.gaitEvents['ipsilateralTime'][:,:1]))
         
-        step_lengths[leg]  = (np.linalg.norm(
+        step_lengths[leg.lower()]  = (np.linalg.norm(
             self.markerDict['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,2:]] - 
             self.markerDict['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2]], axis=2) + 
             self.treadmillSpeed * (-self.gaitEvents['contralateralTime'][:,1:2] +
@@ -248,10 +248,34 @@ class gait_analysis(kinematics):
         ankle_position_cont = (
             self.markerDict['markers'][contLeg + '_ankle_study'] + 
             self.markerDict['markers'][contLeg + '_mankle_study'])/2        
-        ankleVector = (
-            ankle_position_cont[self.gaitEvents['contralateralIdx'][:,1]] - 
-            ankle_position_ips[self.gaitEvents['ipsilateralIdx'][:,0]])
-                      
+        
+        # Find indices of 40-60% of the stance phase
+        ips_stance_length = np.diff(self.gaitEvents['ipsilateralIdx'][:,(0,1)])
+        cont_stance_length = (self.gaitEvents['contralateralIdx'][:,0] - 
+                              self.gaitEvents['ipsilateralIdx'][:,0] +
+                              self.gaitEvents['ipsilateralIdx'][:,2]-
+                              self.gaitEvents['contralateralIdx'][:,1])
+        
+        midstanceIdx_ips = [range(self.gaitEvents['ipsilateralIdx'][i,0] + 
+                                  int(np.round(.4*ips_stance_length[i])),
+                                  self.gaitEvents['ipsilateralIdx'][i,0] + 
+                                  int(np.round(.6*ips_stance_length[i]))) 
+                                  for i in range(self.nGaitCycles)]
+        
+        midstanceIdx_cont = [range(np.min((self.gaitEvents['contralateralIdx'][i,1] + 
+                                  int(np.round(.4*cont_stance_length[i])),
+                                  self.gaitEvents['ipsilateralIdx'][i,2]-1)),
+                                  np.min((self.gaitEvents['contralateralIdx'][i,1] + 
+                                  int(np.round(.6*cont_stance_length[i])),
+                                  self.gaitEvents['ipsilateralIdx'][i,2]))) 
+                                  for i in range(self.nGaitCycles)]   
+        
+        ankleVector = np.zeros((self.nGaitCycles,3))
+        for i in range(self.nGaitCycles):
+            ankleVector[i,:] = (
+                np.mean(ankle_position_cont[midstanceIdx_cont[i],:],axis=0) - 
+                np.mean(ankle_position_ips[midstanceIdx_ips[i],:],axis=0))
+                     
         ankleVector_inGaitFrame = np.array(
             [np.dot(ankleVector[i,:], self.R_world_to_gait()[i,:,:]) 
             for i in range(self.nGaitCycles)])
@@ -501,14 +525,19 @@ class gait_analysis(kinematics):
             df1 = pd.DataFrame()
             df2 = pd.DataFrame()
             
+            hs_ind_1 = self.gaitEvents['ipsilateralIdx'][i,0]
             hs_ind_cont = self.gaitEvents['contralateralIdx'][i,1]
+            hs_ind_2 = self.gaitEvents['ipsilateralIdx'][i,2]
+            
             # create a dataframe of coords for this gait cycle
             for col in self.coordinateValues.columns:
                 if col.endswith('_' + leg):
-                    df1[col] = self.coordinateValues[col]
-                elif col.endswith('_' + leg):
-                    df2[col] = np.concatenate((self.coordinateValues[col][hs_ind_cont:],
-                                               self.coordinateValues[col][:hs_ind_cont]))
+                    df1[col] = self.coordinateValues[col][hs_ind_1:hs_ind_2]
+                elif col.endswith('_' + contLeg):
+                    df2[col] = np.concatenate((self.coordinateValues[col][hs_ind_cont:hs_ind_2],
+                                               self.coordinateValues[col][hs_ind_1:hs_ind_cont]))
+            df1 = df1.reset_index(drop=True)
+            df2 = df2.reset_index(drop=True)
             
             if cols_to_compare is None:
                 cols_to_compare = df1.columns
@@ -523,8 +552,12 @@ class gait_analysis(kinematics):
             # total_weight = 0
         
             for col1 in df1_interpolated.columns:
-                if any(col1.startswith(col_compare) for col_compare in cols_to_compare) and col1.endswith('_r'):
-                    corresponding_col = col1[:-2] + '_l'
+                if any(col1.startswith(col_compare) for col_compare in cols_to_compare):
+                    if col1.endswith('_r'):   
+                        corresponding_col = col1[:-2] + '_l'
+                    elif col1.endswith('_l'):
+                        corresponding_col = col1[:-2] + '_r'
+                            
                     if corresponding_col in df2_interpolated.columns:
                         signal1 = df1_interpolated[col1]
                         signal2 = df2_interpolated[corresponding_col]
