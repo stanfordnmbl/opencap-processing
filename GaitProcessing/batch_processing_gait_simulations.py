@@ -104,7 +104,7 @@ elif case == '5':
 # trials_to_run = [137] # [0, 3, 13, 35, 48, 62]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
-trials_info = get_data_info(trial_indexes=[i for i in range(100,150)])
+trials_info = get_data_info(trial_indexes=[i for i in range(100,128)])
 # trials_info = get_data_info(trial_indexes=trials_to_run)
 
 trials_info_problems = get_data_info_problems()
@@ -277,14 +277,14 @@ for trial in trials_info:
                 os.makedirs(pathResults, exist_ok=True)
                 numpy_to_storage(labels, data, pathTrackedMotionFile, datatype='IK')
 
-            # print('Processing data for dynamic simulation...')
-            # try:
-            #     settings = processInputsOpenSimAD(
-            #         baseDir, sessionDir, session_id, trialName_aligned, 
-            #         motion_type, time_window=time_window)
-            # except Exception as e:
-            #     print(f"Error setting up dynamic optimization for trial {trial_id}: {e}")
-            #     continue
+            print('Processing data for dynamic simulation...')
+            try:
+                settings = processInputsOpenSimAD(
+                    baseDir, sessionDir, session_id, trialName_aligned, 
+                    motion_type, time_window=time_window)
+            except Exception as e:
+                print(f"Error setting up dynamic optimization for trial {trial_id}: {e}")
+                continue
         
             # # Simulation.
             # try:
