@@ -78,9 +78,9 @@ legs = ['r', 'l']
 solveProblem = True
 analyzeResults = True
 runProblem = True
-overwrite_aligned_data = False
+overwrite_aligned_data = True
 overwrite_gait_results = True
-overwrite_tracked_motion_file = False
+overwrite_tracked_motion_file = True
 
 # Buffers
 if case == '2':
@@ -101,10 +101,10 @@ elif case == '5':
 
 # %% Gait segmentation and kinematic analysis.
 # ii = 91
-# trials_to_run = [86] # [0, 3, 13, 35, 48, 62]
+# trials_to_run = [137] # [0, 3, 13, 35, 48, 62]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
-trials_info = get_data_info(trial_indexes=[i for i in range(86,87)])
+trials_info = get_data_info(trial_indexes=[i for i in range(143,150)])
 # trials_info = get_data_info(trial_indexes=trials_to_run)
 
 trials_info_problems = get_data_info_problems()
@@ -147,8 +147,6 @@ for trial in trials_info:
             select_window = []
             if trial in trials_select_window:
                 select_window = trials_select_window[trial]
-                
-            
             
             # Do if not already done or if overwrite_aligned_data is True.
             if not os.path.exists(os.path.join(sessionDir, 'OpenSimData', 'Kinematics', trialName_aligned + '.mot')) or overwrite_aligned_data:
@@ -243,15 +241,15 @@ for trial in trials_info:
                 with open(pathOutputJsonFile) as json_file:
                     gaitResults = json.load(json_file)
 
-            # Temporary check to see if something has changed
-            temp1 = gaitResults['events']['ipsilateralTime']
-            pathOutputJsonFile_old =  os.path.join(pathKinematicsFolder, 'gaitResults_{}.json'.format(leg))
-            with open(pathOutputJsonFile_old) as json_file:
-                gaitResults_old = json.load(json_file)
-            temp2 = gaitResults_old['events']['ipsilateralTime']
-            # Check that both lists are the same
-            if temp1 != temp2:
-                raise ValueError('Something has changed in the gait analysis, please check {}.'.format(session_id))            
+            # # Temporary check to see if something has changed
+            # temp1 = gaitResults['events']['ipsilateralTime']
+            # pathOutputJsonFile_old =  os.path.join(pathKinematicsFolder, 'gaitResults_{}.json'.format(leg))
+            # with open(pathOutputJsonFile_old) as json_file:
+            #     gaitResults_old = json.load(json_file)
+            # temp2 = gaitResults_old['events']['ipsilateralTime']
+            # # Check that both lists are the same
+            # if temp1 != temp2:
+            #     raise ValueError('Something has changed in the gait analysis, please check {}.'.format(session_id))            
 
             # Setup dynamic optimization problem.
             time_window = [
@@ -288,15 +286,15 @@ for trial in trials_info:
                 print(f"Error setting up dynamic optimization for trial {trial_id}: {e}")
                 continue
         
-            # Simulation.
-            try:
-                run_tracking(baseDir, sessionDir, settings, case=case_leg, 
-                            solveProblem=solveProblem, analyzeResults=analyzeResults)
-                test=1
-            except Exception as e:
-                print(f"Error during dynamic optimization for trial {trial_id}: {e}")
-                continue
-            test=1
+            # # Simulation.
+            # try:
+            #     run_tracking(baseDir, sessionDir, settings, case=case_leg, 
+            #                 solveProblem=solveProblem, analyzeResults=analyzeResults)
+            #     test=1
+            # except Exception as e:
+            #     print(f"Error during dynamic optimization for trial {trial_id}: {e}")
+            #     continue
+            # test=1
         
     else:
         if trial in trials_info_alignment:
