@@ -129,9 +129,9 @@ def get_data_info_problems():
         87: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # Glitch
         88: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # Glitch
 
-        55: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # No decent simulations / Glitch
+        55: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l'],"just_kinematics":['r','l']},    # No decent simulations / Glitch
         85: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r']},         # No decent simulations / Glitch
-        86: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r']},         # No decent simulations / Glitch
+        86: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r'],"just_kinematics":['r','l']},         # No decent simulations / Glitch
         91: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['l']},         # No decent simulations / Glitch
     }   
 
@@ -233,7 +233,14 @@ def get_data_info(trial_indexes=[]):
         88: {"pid": "p124", "sid": "e91690d8-1a0d-4031-a7ad-3fb1e23d7c36", "trial": "10mwt", "trial_clean": "10mwt"},
         89: {"pid": "p125", "sid": "dc497821-4eac-49e0-87ac-c088d1245edb", "trial": "10mwt_1", "trial_clean": "10mwt"},
         90: {"pid": "p126", "sid": "ca05bbca-dfab-4c19-8ceb-50173c57ff41", "trial": "10mwt", "trial_clean": "10mwt"},
-        91: {"pid": "p128", "sid": "6a0fbe94-23aa-4302-89bb-d878517f1cc8", "trial": "10mwt", "trial_clean": "10mwt"}
+        91: {"pid": "p128", "sid": "-", "trial": "10mwt", "trial_clean": "10mwt"},
+        # second batch
+        92: {"pid": "p024", "sid": "a118e69e-f652-42e0-9b4c-009ba60b4f86", "trial": "10mwt", "trial_clean": "10mwt"},
+        93: {"pid": "p026", "sid": "2e0b9298-4036-4fe6-ad88-cdbccc4cca57", "trial": "10mwt", "trial_clean": "10mwt"},
+        94: {"pid": "p068", "sid": "109eabdf-e50d-459e-8917-c856338a720b", "trial": "10mwt", "trial_clean": "10mwt"},
+        95: {"pid": "p070", "sid": "9c4666be-57f4-4a6b-9c51-7e394f4a53e1", "trial": "10mwt", "trial_clean": "10mwt"},
+        96: {"pid": "p091", "sid": "04cad9b0-796a-40ec-aa24-346c71e8ff37", "trial": "10mwt", "trial_clean": "10mwt"},
+        97: {"pid": "p098", "sid": "84aef447-6982-4842-8f95-e63459993fcf", "trial": "10mwt", "trial_clean": "10mwt"},        
     }
 
     if trial_indexes:
