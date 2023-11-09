@@ -17,13 +17,14 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 """
-
+ 
 import sys
 sys.path.append('../')
-                
+
 import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
+from matplotlib import pyplot as plt
 
 from utilsKinematics import kinematics
 
@@ -73,9 +74,8 @@ class gait_analysis(kinematics):
     def get_gait_events(self):
         
         return self.gaitEvents
-        
     
-    def compute_scalars(self,scalarNames):
+    def compute_scalars(self,scalarNames,return_all=False):
                
         # Verify that scalarNames are methods in gait_analysis.
         method_names = [func for func in dir(self) if callable(getattr(self, func))]
@@ -96,11 +96,11 @@ class gait_analysis(kinematics):
             thisFunction = getattr(self, 'compute_' + scalarName)
             scalarDict[scalarName] = {}
             (scalarDict[scalarName]['value'],
-                scalarDict[scalarName]['units']) = thisFunction()
+                scalarDict[scalarName]['units']) = thisFunction(return_all=return_all)
         
         return scalarDict
     
-    def compute_stride_length(self):
+    def compute_stride_length(self,return_all=False):
         
         leg,_ = self.get_leg()
         
@@ -108,21 +108,24 @@ class gait_analysis(kinematics):
 
         # On treadmill, the stride length is the difference in ipsilateral
         # calcaneus position at heel strike + treadmill speed * time.
-        strideLength = (
+        strideLengths = (
             np.linalg.norm(
                 calc_position[self.gaitEvents['ipsilateralIdx'][:,:1]] - 
                 calc_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) + 
                 self.treadmillSpeed * np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]))
         
         # Average across all strides.
-        strideLength = np.mean(strideLength)
+        strideLength = np.mean(strideLengths)
         
         # Define units.
         units = 'm'
         
-        return strideLength, units
+        if return_all:
+            return strideLengths,units
+        else: 
+            return strideLength, units
     
-    def compute_step_length(self,report_all=False):
+    def compute_step_length(self,return_all=False):
         leg, contLeg = self.get_leg()
         step_lengths = {}
         
@@ -145,55 +148,64 @@ class gait_analysis(kinematics):
         units = 'm'
         
         # some functions depend on having values for each step, otherwise return average
-        if report_all:
+        if return_all:
             return step_lengths, units
         else:
             return step_length, units
         
-    def compute_step_length_symmetry(self):
-        step_lengths,units = self.compute_step_length(report_all=True)
+    def compute_step_length_symmetry(self,return_all=False):
+        step_lengths,units = self.compute_step_length(return_all=True)
         
-        step_length_symmetry = step_lengths['r'] / step_lengths['l'] * 100
+        step_length_symmetry_all = step_lengths['r'] / step_lengths['l'] * 100
         
         # Average across strides
-        step_length_symmetry = np.mean(step_length_symmetry)
+        step_length_symmetry = np.mean(step_length_symmetry_all)
         
         # define units 
         units = '% (R/L)'
         
-        return step_length_symmetry, units
+        if return_all:
+            return step_length_symmetry_all, units
+        else:
+            return step_length_symmetry, units
     
-    def compute_gait_speed(self):
+    def compute_gait_speed(self,return_all=False):
                            
         comValuesArray = np.vstack((self.comValues()['x'],self.comValues()['y'],self.comValues()['z'])).T
-        gait_speed = (
+        gait_speeds = (
             np.linalg.norm(
                 comValuesArray[self.gaitEvents['ipsilateralIdx'][:,:1]] -
                 comValuesArray[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) /
                 np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]) + self.treadmillSpeed) 
         
         # Average across all strides.
-        gait_speed = np.mean(gait_speed)
+        gait_speed = np.mean(gait_speeds)
         
         # Define units.
         units = 'm/s'
         
-        return gait_speed, units
+        if return_all:
+            return gait_speeds,units
+        else:
+            return gait_speed, units
     
-    def compute_cadence(self):
+    def compute_cadence(self,return_all=False):
         
         # In steps per minute.
-        cadence = 60*2/np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
+        cadence_all = 60*2/np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])
         
         # Average across all strides.
-        cadence = np.mean(cadence)
+        cadence = np.mean(cadence_all)
         
         # Define units.
         units = 'steps/min'
         
-        return cadence, units
+        if return_all:
+            return cadence_all,units
+        else:
+            return cadence, units
         
-    def compute_treadmill_speed(self, overground_speed_threshold=0.3):
+    def compute_treadmill_speed(self, overground_speed_threshold=0.3,return_all=False):
         
         leg,_ = self.get_leg()
         
@@ -209,18 +221,23 @@ class gait_analysis(kinematics):
             footVel = np.linalg.norm(np.mean(np.diff(
                 foot_position[startIdx[i,0]:endIdx[i,0],:],axis=0),axis=0)/dt)
         
-        treadmillSpeed = np.mean(footVel)
+        treadmillSpeeds = footVel
+        treadmillSpeed = np.mean(treadmillSpeeds)
         
         # Overground.
         if treadmillSpeed < overground_speed_threshold:
             treadmillSpeed = 0
+            treadmillSpeeds = np.zeros(treadmillSpeeds.shape)
             
         # Define units.
         units = 'm/s'
                            
-        return treadmillSpeed, units
+        if return_all:
+            return treadmillSpeeds,units
+        else:
+            return treadmillSpeed, units
     
-    def compute_step_width(self):
+    def compute_step_width(self,return_all=False):
         
         leg,contLeg = self.get_leg()
         
@@ -231,69 +248,105 @@ class gait_analysis(kinematics):
         ankle_position_cont = (
             self.markerDict['markers'][contLeg + '_ankle_study'] + 
             self.markerDict['markers'][contLeg + '_mankle_study'])/2        
-        ankleVector = (
-            ankle_position_cont[self.gaitEvents['contralateralIdx'][:,1]] - 
-            ankle_position_ips[self.gaitEvents['ipsilateralIdx'][:,0]])
-                      
+        
+        # Find indices of 40-60% of the stance phase
+        ips_stance_length = np.diff(self.gaitEvents['ipsilateralIdx'][:,(0,1)])
+        cont_stance_length = (self.gaitEvents['contralateralIdx'][:,0] - 
+                              self.gaitEvents['ipsilateralIdx'][:,0] +
+                              self.gaitEvents['ipsilateralIdx'][:,2]-
+                              self.gaitEvents['contralateralIdx'][:,1])
+        
+        midstanceIdx_ips = [range(self.gaitEvents['ipsilateralIdx'][i,0] + 
+                                  int(np.round(.4*ips_stance_length[i])),
+                                  self.gaitEvents['ipsilateralIdx'][i,0] + 
+                                  int(np.round(.6*ips_stance_length[i]))) 
+                                  for i in range(self.nGaitCycles)]
+        
+        midstanceIdx_cont = [range(np.min((self.gaitEvents['contralateralIdx'][i,1] + 
+                                  int(np.round(.4*cont_stance_length[i])),
+                                  self.gaitEvents['ipsilateralIdx'][i,2]-1)),
+                                  np.min((self.gaitEvents['contralateralIdx'][i,1] + 
+                                  int(np.round(.6*cont_stance_length[i])),
+                                  self.gaitEvents['ipsilateralIdx'][i,2]))) 
+                                  for i in range(self.nGaitCycles)]   
+        
+        ankleVector = np.zeros((self.nGaitCycles,3))
+        for i in range(self.nGaitCycles):
+            ankleVector[i,:] = (
+                np.mean(ankle_position_cont[midstanceIdx_cont[i],:],axis=0) - 
+                np.mean(ankle_position_ips[midstanceIdx_ips[i],:],axis=0))
+                     
         ankleVector_inGaitFrame = np.array(
             [np.dot(ankleVector[i,:], self.R_world_to_gait()[i,:,:]) 
-             for i in range(self.nGaitCycles)])
+            for i in range(self.nGaitCycles)])
         
         # Step width is z distance.
-        stepWidth = np.abs(ankleVector_inGaitFrame[:,2])
+        stepWidths = np.abs(ankleVector_inGaitFrame[:,2])
         
         # Average across all strides.
-        stepWidth = np.mean(stepWidth)
+        stepWidth = np.mean(stepWidths)
         
         # Define units.
         units = 'm'
         
-        return stepWidth, units
+        if return_all:
+            return stepWidths, units
+        else:
+            return stepWidth, units
     
-    def compute_stance_time(self):
+    def compute_stance_time(self, return_all=False):
         
-        stanceTime = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
+        stanceTimes = np.diff(self.gaitEvents['ipsilateralTime'][:,:2])
         
         # Average across all strides.
-        stanceTime = np.mean(stanceTime)
+        stanceTime = np.mean(stanceTimes)
         
         # Define units.
         units = 's'
         
-        return stanceTime, units
+        if return_all:
+            return stanceTimes, units
+        else:
+            return stanceTime, units
     
-    def compute_swing_time(self):
+    def compute_swing_time(self, return_all=False):
         
-        swingTime = np.diff(self.gaitEvents['ipsilateralTime'][:,1:])
+        swingTimes = np.diff(self.gaitEvents['ipsilateralTime'][:,1:])
         
         # Average across all strides.
-        swingTime = np.mean(swingTime)
+        swingTime = np.mean(swingTimes)
         
         # Define units.
         units = 's'
         
-        return swingTime, units
+        if return_all:
+            return swingTimes, units
+        else:  
+            return swingTime, units
     
-    def compute_single_support_time(self):
+    def compute_single_support_time(self,return_all=False):
         
-        double_support_time,_ = self.compute_double_support_time(return_all_trials=True) 
+        double_support_time,_ = self.compute_double_support_time(return_all=True) 
 
-        singleSupportTime = 100 - double_support_time    
+        singleSupportTimes = 100 - double_support_time    
         
         # Average across all strides.
-        singleSupportTime = np.mean(singleSupportTime)
+        singleSupportTime = np.mean(singleSupportTimes)
         
         # Define units.
         units = '%'
         
-        return singleSupportTime, units
+        if return_all:
+            return singleSupportTimes,units
+        else:
+            return singleSupportTime, units
         
-    def compute_double_support_time(self,return_all_trials=False):
+    def compute_double_support_time(self,return_all=False):
         
         # Ipsilateral stance time - contralateral swing time.
         doubleSupportTimes = (
-            np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
-            np.diff(self.gaitEvents['contralateralTime'][:,:2]) /
+            (np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
+            np.diff(self.gaitEvents['contralateralTime'][:,:2])) /
             np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])) * 100
                             
         # Average across all strides.
@@ -302,11 +355,206 @@ class gait_analysis(kinematics):
         # Define units.
         units = '%'
         
-        if return_all_trials:
+        if return_all:
             return doubleSupportTimes, units
         else:
             return doubleSupportTime, units
+        
+    def compute_midswing_dorsiflexion_angle(self,return_all=False):
+        # compute ankle dorsiflexion angle during midstance
+        to_1_idx = self.gaitEvents['ipsilateralIdx'][:,1]
+        hs_2_idx = self.gaitEvents['ipsilateralIdx'][:,2]
+        
+        # ankle markers
+        leg,contLeg = self.get_leg()
+        ankleVector = (self.markerDict['markers'][leg + '_ankle_study'] - 
+                       self.markerDict['markers'][contLeg + '_ankle_study'])
+        ankleVector_inGaitFrame = np.array(
+            [np.dot(ankleVector, self.R_world_to_gait()[i,:,:]) 
+              for i in range(self.nGaitCycles)])                                          
+        
+        swingDfAngles = np.zeros((to_1_idx.shape))
+        
+        for i in range(self.nGaitCycles):
+            # find index within a swing phase with the smallest z distance between ankles
+            idx_midSwing = np.argmin(np.abs(ankleVector_inGaitFrame[
+                                     i,to_1_idx[i]:hs_2_idx[i],0]))+to_1_idx[i]
             
+            swingDfAngles[i] = np.mean(self.coordinateValues['ankle_angle_' + 
+                                self.gaitEvents['ipsilateralLeg']].to_numpy()[idx_midSwing])          
+        
+        # Average across all strides.
+        swingDfAngle = np.mean(swingDfAngles)
+        
+        # Define units.
+        units = 'deg'
+        
+        if return_all:
+            return swingDfAngles, units
+        else:
+            return swingDfAngle, units
+        
+    def compute_midswing_ankle_heigh_dif(self,return_all=False):
+        # compute vertical clearance of the swing ankle above the stance ankle
+        # at the time when the ankles pass by one another
+        to_1_idx = self.gaitEvents['ipsilateralIdx'][:,1]
+        hs_2_idx = self.gaitEvents['ipsilateralIdx'][:,2]
+        
+        # ankle markers
+        leg,contLeg = self.get_leg()
+        ankleVector = (self.markerDict['markers'][leg + '_ankle_study'] - 
+                       self.markerDict['markers'][contLeg + '_ankle_study'])
+        ankleVector_inGaitFrame = np.array(
+            [np.dot(ankleVector, self.R_world_to_gait()[i,:,:]) 
+              for i in range(self.nGaitCycles)])                                          
+        
+        swingAnkleHeighDiffs = np.zeros((to_1_idx.shape))
+        
+        for i in range(self.nGaitCycles):
+            # find index within a swing phase with the smallest z distance between ankles
+            idx_midSwing = np.argmin(np.abs(ankleVector_inGaitFrame[
+                                     i,to_1_idx[i]:hs_2_idx[i],0]))+to_1_idx[i]
+            
+            swingAnkleHeighDiffs[i] = ankleVector_inGaitFrame[i,idx_midSwing,1]  
+        
+        # Average across all strides.
+        swingAnkleHeighDiff = np.mean(swingAnkleHeighDiffs)
+        
+        # Define units.
+        units = 'm'
+        
+        if return_all:
+            return swingAnkleHeighDiffs, units
+        else:
+            return swingAnkleHeighDiff, units
+        
+    def compute_peak_angle(self,dof,start_idx,end_idx,return_all=False):
+        # start_idx and end_idx are 1xnGaitCycles        
+        
+        peakAngles = np.zeros((self.nGaitCycles))
+        
+        for i in range(self.nGaitCycles):                       
+            peakAngles[i] = np.max(self.coordinateValues[dof + '_' +
+                                self.gaitEvents['ipsilateralLeg']][start_idx[i]:end_idx[i]])
+        
+        # Average across all strides.
+        peakAngle = np.mean(peakAngles)
+        
+        # Define units.
+        units = 'deg'
+        
+        if return_all:
+            return peakAngles, units
+        else:
+            return peakAngle, units
+        
+    def compute_rom(self,dof,start_idx,end_idx,return_all=False):
+        # start_idx and end_idx are 1xnGaitCycles        
+        
+        roms = np.zeros((self.nGaitCycles))
+        
+        for i in range(self.nGaitCycles):                       
+            roms[i] = np.ptp(self.coordinateValues[dof + '_' +
+                                self.gaitEvents['ipsilateralLeg']][start_idx[i]:end_idx[i]])
+        
+        # Average across all strides.
+        rom = np.mean(roms)
+        
+        # Define units.
+        units = 'deg'
+        
+        if return_all:
+            return roms, units
+        else:
+            return rom, units
+                        
+    def compute_correlations(self, cols_to_compare=None, visualize=False,
+                             return_all=False):
+        # this computes a weighted correlation between either side's dofs. 
+        # the weighting is based on mean absolute percent error. In effect,
+        # this penalizes both shape and magnitude differences.
+        
+        leg,contLeg = self.get_leg(lower=True)
+               
+        correlations_all_cycles = []
+        mean_correlation_all_cycles = np.zeros((self.nGaitCycles,1))
+        
+        for i in range(self.nGaitCycles):
+
+            
+            hs_ind_1 = self.gaitEvents['ipsilateralIdx'][i,0]
+            hs_ind_cont = self.gaitEvents['contralateralIdx'][i,1]
+            hs_ind_2 = self.gaitEvents['ipsilateralIdx'][i,2]
+            
+            df1 = pd.DataFrame()
+            df2 = pd.DataFrame()
+            
+            if cols_to_compare is None:
+                cols_to_compare = df1.columns
+            
+            # create a dataframe of coords for this gait cycle
+            for col in self.coordinateValues.columns:
+                if col.endswith('_' + leg):
+                    df1[col] = self.coordinateValues[col][hs_ind_1:hs_ind_2]
+                elif col.endswith('_' + contLeg):
+                    df2[col] = np.concatenate((self.coordinateValues[col][hs_ind_cont:hs_ind_2],
+                                               self.coordinateValues[col][hs_ind_1:hs_ind_cont]))
+            df1 = df1.reset_index(drop=True)
+            df2 = df2.reset_index(drop=True)
+                    
+            # Interpolating both dataframes to have 101 rows for each column
+            df1_interpolated = df1.interpolate(method='linear', limit_direction='both', limit_area='inside', limit=100)
+            df2_interpolated = df2.interpolate(method='linear', limit_direction='both', limit_area='inside', limit=100)
+        
+            # Computing the correlation between appropriate columns in both dataframes
+            correlations = {}
+            total_weighted_correlation = 0
+            # total_weight = 0
+        
+            for col1 in df1_interpolated.columns:
+                if any(col1.startswith(col_compare) for col_compare in cols_to_compare):
+                    if col1.endswith('_r'):   
+                        corresponding_col = col1[:-2] + '_l'
+                    elif col1.endswith('_l'):
+                        corresponding_col = col1[:-2] + '_r'
+                            
+                    if corresponding_col in df2_interpolated.columns:
+                        signal1 = df1_interpolated[col1]
+                        signal2 = df2_interpolated[corresponding_col]
+        
+                        max_range_signal1 = np.ptp(signal1)
+                        max_range_signal2 = np.ptp(signal2)
+                        max_range = max(max_range_signal1, max_range_signal2)
+        
+                        mean_abs_error = np.mean(np.abs(signal1 - signal2)) / max_range
+        
+                        correlation = signal1.corr(signal2)
+                        weight = 1 - mean_abs_error
+        
+                        weighted_correlation = correlation * weight
+                        correlations[col1] = weighted_correlation
+        
+                        total_weighted_correlation += weighted_correlation
+        
+                        # Plotting the signals if visualize is True
+                        if visualize:
+                            plt.figure(figsize=(8, 5))
+                            plt.plot(signal1, label='df1')
+                            plt.plot(signal2, label='df2')
+                            plt.title(f"Comparison between {col1} and {corresponding_col} with weighted correlation {weighted_correlation}")
+                            plt.legend()
+                            plt.show()
+        
+            mean_correlation_all_cycles[i] = total_weighted_correlation / len(correlations)
+            correlations_all_cycles.append(correlations)
+            
+        if not return_all:
+            mean_correlation_all_cycles = np.mean(mean_correlation_all_cycles)
+            correlations_all_cycles =  {key: sum(d[key] for d in correlations_all_cycles) / 
+                                        len(correlations_all_cycles) for key in correlations_all_cycles[0]}
+            
+        return correlations_all_cycles, mean_correlation_all_cycles
+
     def compute_gait_frame(self):
 
         # Create frame for each gait cycle with x: pelvis heading, 
@@ -354,7 +602,7 @@ class gait_analysis(kinematics):
         
         return R_lab_to_gait
     
-    def get_leg(self):
+    def get_leg(self,lower=False):
 
         if self.gaitEvents['ipsilateralLeg'] == 'r':
             leg = 'r'
@@ -362,8 +610,11 @@ class gait_analysis(kinematics):
         else:
             leg = 'L'
             contLeg = 'r'
-            
-        return leg, contLeg
+        
+        if lower:
+            return leg.lower(), contLeg.lower()
+        else:
+            return leg, contLeg
     
     def get_coordinates_normalized_time(self):
         

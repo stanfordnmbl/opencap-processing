@@ -8,7 +8,7 @@
 # import pandas as pd
 
 # # Load the Excel sheet
-# excel_file_path = "data_info.xlsx"  # Replace with the path to your Excel file
+# excel_file_path = "trial_info.xlsx"  # Replace with the path to your Excel file
 # df = pd.read_excel(excel_file_path, engine="openpyxl")
 
 # # Initialize empty lists to store the results
@@ -21,18 +21,18 @@
 # count = 0
 # for index, row in df.iterrows():
 #     if "10mwt" in str(row["trial_clean"]).lower():
-#         if not "mdf" in str(row["pid"]).lower():
+#         if "mdf" in str(row["pid"]).lower():
 #             pid_list.append(row["pid"])
 #             sid_list.append(row["sid"])
 #             trial_list.append(row["trial"])
 #             trial_clean_list.append(row["trial_clean"])
             
-#             print('{}: {{"pid": "{}", "sid": "{}", "trial": "{}", "trial_clean": "{}"}},'.format(count, str(row["pid"]), str(row["sid"]), str(row["trial"]), str(row["trial_clean"])))
+#             print('{}: {{"pid": "{}", "sid": "{}", "trial": "{}", "trial_clean": "{}"}},'.format(100+count, str(row["pid"]), str(row["sid"]), str(row["trial"]), str(row["trial_clean"])))
 #             count += 1
-# # Print the lists
-# # print("PID List:", pid_list)
-# # print("SID List:", sid_list)
-# # print("Trial List:", trial_list)
+# Print the lists
+# print("PID List:", pid_list)
+# print("SID List:", sid_list)
+# print("Trial List:", trial_list)
 
 # %% Test
 
@@ -59,7 +59,50 @@ def get_data_select_window():
         35: [-1, 5.6],
         13: [-1, 7.3],
         3: [-1, 6.55],
-        0: [-1, 7.8]
+        0: [-1, 7.8],
+
+        100: [-1, 9.85],
+        101: [-1, 9.05],
+        102: [-1, 7.1],
+        103: [-1, 8.2],
+        104: [-1, 7.6],
+        106: [-1, 8.5],
+        107: [-1, 7.15],
+        108: [-1, 4.7],
+        109: [-1, 7.3],
+        110: [-1, 7.2],
+        111: [-1, 6.75],
+        112: [-1, 6.9],
+        113: [-1, 8.7],
+        115: [-1, 9.65],
+        116: [-1, 8.4],
+        117: [-1, 8.9],
+        118: [-1, 6.2],
+        119: [-1, 7.05],
+        120: [-1, 6.2],
+        121: [-1, 6.25],
+        122: [-1, 6.8],
+        123: [-1, 7.23],
+        124: [-1, 6.6],
+        125: [-1, 5.4],
+        126: [-1, 5.9],
+        127: [-1, 6.8],
+        132: [-1, 6.75],
+        133: [-1, 6.8],
+        134: [-1, 8.6],
+        135: [-1, 7.5],
+        136: [-1, 8.0],
+        138: [-1, 6.8],
+        139: [-1, 4.95],
+        140: [-1, 9.8],
+        141: [-1, 9.0],
+        142: [-1, 5.7],
+        143: [-1, 5.5],
+        145: [-1, 6.3],
+        146: [-1, 10.5],
+        147: [-1, 7.9],
+        148: [-1, 5.2],
+        149: [-1, 4.05],
         }
     
     return data
@@ -90,6 +133,61 @@ def get_data_manual_alignment():
         13: {"angle": -0.25},
         3: {"angle": 0},
         0: {"angle": 0.5},
+
+        100: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        101: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        103: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        105: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        107: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        109: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        111: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        113: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        115: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        116: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        117: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        118: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        120: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        122: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        124: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        126: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        129: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        131: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        133: {"angle": 1.75}, # session with calibration: "bf33bc40-d6e8-499e-b060-94b720133e3a"
+
+        102: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        104: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        106: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        108: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        110: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        112: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        114: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        119: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        121: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        123: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        125: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        127: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        128: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        130: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        132: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        134: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        136: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        139: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        141: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        143: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        145: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        146: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        147: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        148: {"angle": 1.25}, # session with calibration: "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        
+        135: {"angle": 0.5}, # session with calibration: "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        137: {"angle": 0.5}, # session with calibration: "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        138: {"angle": 0.5}, # session with calibration: "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        140: {"angle": 0.5}, # session with calibration: "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        142: {"angle": 0.5}, # session with calibration: "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        144: {"angle": 0.5}, # session with calibration: "9e22db8f-6356-46c0-a118-d8f2741f97be"
+    
+        149: {"angle": 2.5}, # session with calibration: "28811d60-1973-427c-8814-db521690c051"
+
         }
     
     return data
@@ -103,8 +201,6 @@ def get_data_select_previous_cycle():
         39: {"leg": ['r']},
         41: {"leg": ['r', 'l']},
         55: {"leg": ['l']},
-        62: {"leg": ['r']},
-        67: {"leg": ['r']},
         83: {"leg": ['l']},
         89: {"leg": ['l', 'r']},
         90: {"leg": ['r']},
@@ -117,7 +213,16 @@ def get_data_alignment():
 
     # Trials that need re-aligment
     data = [0, 2, 3, 4, 13, 15, 18, 20, 21, 22, 24, 26, 27, 30, 31, 32, 35, 37, 39, 40, 43, 46, 47, 48, 49, 50, 51, 52, 53, 55, 57, 58,
-            62, 63, 64, 66, 67, 70, 71, 72, 73, 75, 76, 83, 85, 86, 89, 90, 91]
+            62, 63, 64, 66, 67, 70, 71, 72, 73, 75, 76, 83, 85, 86, 89, 90, 91,
+            
+            100,101,103,105,107,109,111,113,115,116,117,118,120,122,124,126,129,131,133,            
+            102,104,106,108,110,112,114,119,121,123,125,127,128,130,132,134,136,139,141,143,145,146,147,148,
+            
+            135,137,138,140,142,144,
+
+            149
+            
+            ]
 
     return data
 
@@ -131,10 +236,10 @@ def get_data_info_problems():
         87: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # Glitch
         88: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # Glitch
 
-        55: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l']},    # No decent simulations / Glitch
+        55: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r', 'l'],"just_kinematics":['r','l']},    # No decent simulations / Glitch
         85: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r']},         # No decent simulations / Glitch
-        86: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r']},         # No decent simulations / Glitch
-        86: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['l']},         # No decent simulations / Glitch
+        86: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['r'],"just_kinematics":['r','l']},         # No decent simulations / Glitch
+        91: {"pid": "p044", "sid": "51003106-cdec-40f7-9204-0e21953bb4a7", "trial": "10mwt", "trial_clean": "10mwt", "leg": ['l']},         # No decent simulations / Glitch
     }   
 
     return data
@@ -235,7 +340,73 @@ def get_data_info(trial_indexes=[]):
         88: {"pid": "p124", "sid": "e91690d8-1a0d-4031-a7ad-3fb1e23d7c36", "trial": "10mwt", "trial_clean": "10mwt"},
         89: {"pid": "p125", "sid": "dc497821-4eac-49e0-87ac-c088d1245edb", "trial": "10mwt_1", "trial_clean": "10mwt"},
         90: {"pid": "p126", "sid": "ca05bbca-dfab-4c19-8ceb-50173c57ff41", "trial": "10mwt", "trial_clean": "10mwt"},
-        91: {"pid": "p128", "sid": "6a0fbe94-23aa-4302-89bb-d878517f1cc8", "trial": "10mwt", "trial_clean": "10mwt"}
+        91: {"pid": "p128", "sid": "6a0fbe94-23aa-4302-89bb-d878517f1cc8", "trial": "10mwt", "trial_clean": "10mwt"},
+        # second batch of dhd participants
+        92: {"pid": "p024", "sid": "a118e69e-f652-42e0-9b4c-009ba60b4f86", "trial": "10mwt", "trial_clean": "10mwt"},
+        93: {"pid": "p026", "sid": "2e0b9298-4036-4fe6-ad88-cdbccc4cca57", "trial": "10mwt", "trial_clean": "10mwt"},
+        94: {"pid": "p068", "sid": "109eabdf-e50d-459e-8917-c856338a720b", "trial": "10mwt", "trial_clean": "10mwt"},
+        95: {"pid": "p070", "sid": "9c4666be-57f4-4a6b-9c51-7e394f4a53e1", "trial": "10mwt", "trial_clean": "10mwt"},
+        96: {"pid": "p091", "sid": "04cad9b0-796a-40ec-aa24-346c71e8ff37", "trial": "10mwt", "trial_clean": "10mwt"},
+        97: {"pid": "p098", "sid": "84aef447-6982-4842-8f95-e63459993fcf", "trial": "10mwt", "trial_clean": "10mwt"},        
+
+
+        # MDF
+        # Sesssions w/ calibration trials:
+        #   "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        #   "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        #   "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        #   "28811d60-1973-427c-8814-db521690c051"
+
+        100: {"pid": "mdf_005", "sid": "dfa1c060-df8d-40e8-90e6-107078621c7c", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        101: {"pid": "mdf_006", "sid": "ce0fdd88-53b6-4974-92fb-a720b93d1623", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        102: {"pid": "mdf_006", "sid": "fa8c8348-4ceb-41ee-9c48-5f3701f84996", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        103: {"pid": "mdf_007", "sid": "9e5d7c34-d9fc-43f7-85e9-d3e5def7ef3a", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        104: {"pid": "mdf_007", "sid": "f5ec71e8-7898-4c51-993b-897014a3e8e3", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        105: {"pid": "mdf_008", "sid": "d939164d-341b-4b6b-bb1f-1ed775755046", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        106: {"pid": "mdf_008", "sid": "dddeeed1-1c25-4bf2-b642-ea46d0dc122b", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        107: {"pid": "mdf_009", "sid": "773c33cd-a12d-46d2-af17-35fa7b4e83bd", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        108: {"pid": "mdf_009", "sid": "ec004090-100c-4444-aa67-0613d3528b4e", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        109: {"pid": "mdf_010", "sid": "c3dd4efc-ecd9-486e-91df-69322608f070", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        110: {"pid": "mdf_010", "sid": "2928a9e3-db6a-44d1-8f97-de5a3a209403", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        111: {"pid": "mdf_011", "sid": "0cafccab-1003-4e78-aa51-b234acafa2ed", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        112: {"pid": "mdf_011", "sid": "b5624568-3c42-48e4-a2e3-b351418d4150", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        113: {"pid": "mdf_012", "sid": "62593b25-d05d-4880-ac71-d65a06e99a6d", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        114: {"pid": "mdf_012", "sid": "ee86be93-b1da-4080-b445-176f6071e734", "trial": "10mwt_1", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        115: {"pid": "mdf_013", "sid": "ce0d7ba4-2659-4324-a6ea-691a716f981f", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        116: {"pid": "mdf_014", "sid": "93636607-6e8c-4b04-9bab-e389bebc4430", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        117: {"pid": "mdf_015", "sid": "00faec9c-71e8-4051-8175-612c2488b0bb", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        118: {"pid": "mdf_016", "sid": "6d836009-5ef9-4c8d-9317-940258e18206", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        119: {"pid": "mdf_016", "sid": "009cf17d-298a-4e63-812b-0eaeac87eb95", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        120: {"pid": "mdf_017", "sid": "e2944d85-5737-4105-a317-b54115b80b6b", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        121: {"pid": "mdf_017", "sid": "4d0cfa49-baa9-4e49-8b34-2bc6727f6052", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        122: {"pid": "mdf_018", "sid": "8b2f6e69-d612-43ad-9824-15c1111b8b3c", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        123: {"pid": "mdf_018", "sid": "cda2db6e-b268-42ee-99d0-9cc358e893d1", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        124: {"pid": "mdf_019", "sid": "30ef567b-6485-447c-a5c8-b99ed84c17a4", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        125: {"pid": "mdf_019", "sid": "5a3dd4e7-7293-46e6-9c0c-b77e2511860d", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        126: {"pid": "mdf_020", "sid": "c7be4554-1925-4ec5-9372-072416d68ebf", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        127: {"pid": "mdf_020", "sid": "6c071107-3735-4c71-a03a-68cac9aa0546", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        128: {"pid": "mdf_021", "sid": "b9bb774e-2b9e-4755-928d-8e57eefe1ae7", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        129: {"pid": "mdf_022", "sid": "551a60a5-11cb-49a5-879b-477cf499af7a", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        130: {"pid": "mdf_022", "sid": "a384272c-bc90-4150-ab94-a2af8f5a9315", "trial": "10mwt_2", "trial_clean": "10mwt"}, #session with calibration: REFERENCE
+        131: {"pid": "mdf_023", "sid": "d7793a0f-1451-4e21-a2d2-3d3f1bd9c7de", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        132: {"pid": "mdf_023", "sid": "b9578e78-d717-49de-a226-7f797dcc43a3", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        133: {"pid": "mdf_024", "sid": "5e16a747-e5ca-4853-98f6-a449452c494d", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 0 "bf33bc40-d6e8-499e-b060-94b720133e3a"
+        134: {"pid": "mdf_026", "sid": "91ef0085-13a1-49fe-8bcf-91e37efc4d53", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        135: {"pid": "mdf_027", "sid": "9e22db8f-6356-46c0-a118-d8f2741f97be", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: REFERENCE
+        136: {"pid": "mdf_027", "sid": "57e48655-deab-447a-9d0c-c292b124fdbd", "trial": "10mwt_1", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        137: {"pid": "mdf_028", "sid": "c0bf6608-e35d-40a8-9ca2-2abc4a9c3590", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 3 "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        138: {"pid": "mdf_029", "sid": "513ec455-04ba-4bc4-b502-5f91d34c4ce6", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 3 "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        139: {"pid": "mdf_029", "sid": "0207a325-f5cb-4b26-8544-a93d9831552b", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        140: {"pid": "mdf_030", "sid": "6ff20ae9-7f99-4837-95e7-82cedb242522", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 3 "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        141: {"pid": "mdf_030", "sid": "f9a5c172-288a-4886-b3bb-417ab3f48b55", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        142: {"pid": "mdf_031", "sid": "78d9fbfe-04e0-4766-ba15-198e246d5e9c", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 3 "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        143: {"pid": "mdf_031", "sid": "e5e2f6ea-aac2-4d5f-b985-609f7209b747", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        144: {"pid": "mdf_031_db235", "sid": "fa856382-bf8d-411a-b086-a2d74fab9d1b", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 3 "9e22db8f-6356-46c0-a118-d8f2741f97be"
+        145: {"pid": "mdf_031_db235", "sid": "55566ced-e1be-4789-b265-b0168087a402", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        146: {"pid": "mdf_032", "sid": "36f5a719-b5fd-418f-a322-676a321510b3", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        147: {"pid": "mdf_033", "sid": "9871c398-0d02-450b-86a6-0d8c6b27b26d", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        148: {"pid": "mdf_034", "sid": "28ec73c6-025b-4ea4-b844-803e8205bf1a", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 1 "a384272c-bc90-4150-ab94-a2af8f5a9315"
+        149: {"pid": "mdf_035", "sid": "aca92056-3f67-403c-8d6a-513055274ffe", "trial": "10mwt", "trial_clean": "10mwt"}, #session with calibration: 4 "28811d60-1973-427c-8814-db521690c051"
     }
 
     if trial_indexes:

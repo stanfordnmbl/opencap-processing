@@ -22,12 +22,16 @@ import os
 import numpy as np
 import pandas as pd
 import utils
+from utilsTRC import trc_2_dict
+from utilsProcessing import lowPassFilter
+
+
 import opensim
 
 class kineticsOpenSimAD:
     
     def __init__(self, session_dir, trial_name, case=None, 
-                 repetition=None, modelName=None):
+                 repetition=None, modelName=None, lowpass_cutoff_frequency_markers = -1):
         """
         Initializes the kineticsOpenSimAD class for extracting data from a
         dynamic simulation.
@@ -42,6 +46,8 @@ class kineticsOpenSimAD:
             case is specified and only one case exists, it is returned.
             modelName (str, optional): The name of the OpenSim model used in the 
             simulation (ignore if default).
+            lowpass_cutoff_frequency_markers: if loading marker data, what frequency 
+            to filter it at.
 
         This class is designed to extract data from a dynamic simulation 
         conducted using OpenSimAD.
@@ -86,6 +92,7 @@ class kineticsOpenSimAD:
         if not os.path.exists(modelPath):
             raise Exception('Model path: ' + modelPath + ' does not exist.')
 
+        opensim.Logger.setLevelString('error')
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
         
@@ -115,6 +122,11 @@ class kineticsOpenSimAD:
         # We do not include the last time point control values are not specified
         # at the last time point.
         self.time = self.optimal_result['time'][0, :-1].flatten()
+        
+        # Markers
+        self.marker_dict = self.get_marker_dict(session_dir, trial_name, 
+                            lowpass_cutoff_frequency=lowpass_cutoff_frequency_markers,
+                            time_sim=self.time)
     
     def get_coordinate_values(self):
         """
@@ -180,6 +192,37 @@ class kineticsOpenSimAD:
         output.insert(0, 'time', self.time)
     
         return output
+    
+    def get_marker_dict(self, session_dir, trial_name, time = None,
+                        lowpass_cutoff_frequency=-1, time_sim = None):
+        
+        """
+        Retrieves the marker positions for the tracked trial.
+    
+        Returns:
+            dict: a dictionary of marker positions
+    
+        """
+        
+        trcFilePath = os.path.join(session_dir,
+                                   'MarkerData',
+                                   '{}.trc'.format(trial_name))
+        
+        markerDict = trc_2_dict(trcFilePath)
+        if lowpass_cutoff_frequency > 0:
+            markerDict['markers'] = {
+                marker_name: lowPassFilter(self.time, data, lowpass_cutoff_frequency) 
+                for marker_name, data in markerDict['markers'].items()}
+            
+        if time_sim is not None:
+            # Get the indices of elements in time within time_sim range
+            ind_time = [i for i, t in enumerate(markerDict['time']) if min(time_sim) < t < max(time_sim)] 
+            
+            markerDict['time'] = markerDict['time'][ind_time]
+            
+            markerDict['markers'] = {k:m[ind_time,:] for k,m in markerDict['markers'].items()}
+            
+        return markerDict
     
     def get_tracked_coordinate_speeds(self):
         """

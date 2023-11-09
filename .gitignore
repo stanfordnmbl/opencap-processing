@@ -5,6 +5,8 @@ __pycache__
 Data/*
 **/Data/
 
+GaitProcessing/trial_info.xlsx
+
 *DS_Store
 
 UtilsDynamicSimulations/OpenSimAD/build-ExpressionGraphF/*
