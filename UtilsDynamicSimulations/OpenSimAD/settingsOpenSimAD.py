@@ -252,6 +252,67 @@ def get_setup(motion_type):
         'cutoff_freq_Qs': 6,
         'meshDensity': 100}
     
+    # This is a non-periodic walking formulation. It helps to start .5s before
+    # and end .3 seconds after
+    setups['walking_formulation1'] = {
+    'ipopt_tolerance': 3,
+    'weights': {
+        'positionTrackingTerm': 10,
+        'velocityTrackingTerm': 1,
+        'accelerationTrackingTerm': 100,
+        'activationTerm': 10,
+        'armExcitationTerm': 0.001,
+        'lumbarExcitationTerm': 0.001,
+        'jointAccelerationTerm': 0.001,
+        'activationDtTerm': 0.001,
+        'forceDtTerm': 0.001},            
+    'coordinates_toTrack': {
+        'pelvis_tilt': {"weight": 50},
+        'pelvis_list': {"weight": 10},
+        'pelvis_rotation': {"weight": 10},
+        'pelvis_tx': {"weight": 50},
+        'pelvis_ty': {"weight": 5},
+        'pelvis_tz': {"weight": 50}, 
+        'hip_flexion_l': {"weight": 100},
+        'hip_adduction_l': {"weight": 50},
+        'hip_rotation_l': {"weight": 10},
+        'hip_flexion_r': {"weight": 100},
+        'hip_adduction_r': {"weight": 50},
+        'hip_rotation_r': {"weight": 10},
+        'knee_angle_l': {"weight": 100},
+        'knee_angle_r': {"weight": 100},
+        'ankle_angle_l': {"weight": 100},
+        'ankle_angle_r': {"weight": 100},
+        'subtalar_angle_l': {"weight": 5},
+        'subtalar_angle_r': {"weight": 5},
+        'lumbar_extension': {"weight": 50},
+        'lumbar_bending': {"weight": 10},
+        'lumbar_rotation': {"weight": 10},
+        'arm_flex_l': {"weight": 10},
+        'arm_add_l': {"weight": 10},
+        'arm_rot_l': {"weight": 10},
+        'arm_flex_r': {"weight": 10},
+        'arm_add_r': {"weight": 10},
+        'arm_rot_r': {"weight": 10},
+        'elbow_flex_l': {"weight": 10},
+        'elbow_flex_r': {"weight": 10},
+        'pro_sup_l': {"weight": 10},
+        'pro_sup_r': {"weight": 10}},            
+    'coordinate_constraints': {
+        'pelvis_ty': {"env_bound": 0.1},
+        'pelvis_tx': {"env_bound": 0.1}},
+    'enableLimitTorques': True,
+    'filter_Qs_toTrack': True,
+    'cutoff_freq_Qs': 6,
+    'filter_Qds_toTrack': True,
+    'cutoff_freq_Qds': 6,
+    'filter_Qdds_toTrack': True,
+    'cutoff_freq_Qdds': 6,
+    'splineQds': True,
+    'use_same_weight_individual_coordinate_value_acceleration': False,
+    'use_same_weight_individual_coordinate_value_speed': False,
+    'meshDensity': 100}
+    
     setups['drop_jump'] = {
         'weights': {
             'positionTrackingTerm': 50,
