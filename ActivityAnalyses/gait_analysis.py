@@ -720,9 +720,9 @@ class gait_analysis(kinematics):
             print('Processing {} gait cycles, leg: '.format(n_gait_cycles) + leg + '.')
             
         # Ipsilateral gait events: heel strike, toe-off, heel strike.
-        gaitEvents_ips = np.zeros((n_gait_cycles, 3),dtype=np.int)
+        gaitEvents_ips = np.zeros((n_gait_cycles, 3),dtype=int)
         # Contralateral gait events: toe-off, heel strike.
-        gaitEvents_cont = np.zeros((n_gait_cycles, 2),dtype=np.int)
+        gaitEvents_cont = np.zeros((n_gait_cycles, 2),dtype=int)
         if n_gait_cycles <1:
             raise Exception('Not enough gait cycles found.')
 

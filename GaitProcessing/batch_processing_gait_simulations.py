@@ -53,6 +53,7 @@ from utilsKineticsOpenSimAD import kineticsOpenSimAD
 from utilsKinematics import kinematics
 
 # %% Paths.
+# driveDir = 'G:/.shortcut-targets-by-id/1PsjYe9HAdckqeTmAhxFd6F7Oad1qgZNy/ParkerStudy/'
 driveDir = 'C:/MyDriveSym/Projects/ParkerStudy'
 dataFolder = os.path.join(driveDir, 'Data')
 
@@ -104,7 +105,7 @@ elif case == '5':
 # trials_to_run = [137] # [0, 3, 13, 35, 48, 62]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
-trials_info = get_data_info(trial_indexes=[i for i in range(143,150)])
+trials_info = get_data_info(trial_indexes=[i for i in range(92,98)])
 # trials_info = get_data_info(trial_indexes=trials_to_run)
 
 trials_info_problems = get_data_info_problems()
@@ -286,15 +287,15 @@ for trial in trials_info:
                 print(f"Error setting up dynamic optimization for trial {trial_id}: {e}")
                 continue
         
-            # # Simulation.
-            # try:
-            #     run_tracking(baseDir, sessionDir, settings, case=case_leg, 
-            #                 solveProblem=solveProblem, analyzeResults=analyzeResults)
-            #     test=1
-            # except Exception as e:
-            #     print(f"Error during dynamic optimization for trial {trial_id}: {e}")
-            #     continue
-            # test=1
+            # Simulation.
+            try:
+                run_tracking(baseDir, sessionDir, settings, case=case_leg, 
+                            solveProblem=solveProblem, analyzeResults=analyzeResults)
+                test=1
+            except Exception as e:
+                print(f"Error during dynamic optimization for trial {trial_id}: {e}")
+                continue
+            test=1
         
     else:
         if trial in trials_info_alignment:
