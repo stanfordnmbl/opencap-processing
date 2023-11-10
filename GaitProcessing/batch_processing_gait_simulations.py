@@ -53,7 +53,8 @@ from utilsKineticsOpenSimAD import kineticsOpenSimAD
 from utilsKinematics import kinematics
 
 # %% Paths.
-driveDir = 'G:/.shortcut-targets-by-id/1PsjYe9HAdckqeTmAhxFd6F7Oad1qgZNy/ParkerStudy/'
+# driveDir = 'G:/.shortcut-targets-by-id/1PsjYe9HAdckqeTmAhxFd6F7Oad1qgZNy/ParkerStudy/'
+driveDir = 'C:/MyDriveSym/Projects/ParkerStudy'
 dataFolder = os.path.join(driveDir, 'Data')
 
 # %% User-defined variables.
