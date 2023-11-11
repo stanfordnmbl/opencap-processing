@@ -292,8 +292,8 @@ class gait_analysis(kinematics):
         
         # Ipsilateral stance time - contralateral swing time.
         doubleSupportTimes = (
-            np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
-            np.diff(self.gaitEvents['contralateralTime'][:,:2]) /
+            (np.diff(self.gaitEvents['ipsilateralTime'][:,:2]) - 
+            np.diff(self.gaitEvents['contralateralTime'][:,:2])) /
             np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)])) * 100
                             
         # Average across all strides.
