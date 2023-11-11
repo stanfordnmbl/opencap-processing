@@ -157,11 +157,16 @@ datasets = []
 for i in range(coordValues.shape[0]):
     datasets.append({})
     for j in range(coordValues.shape[1]):
+        # continue if beta in  colNames[j]
+        if 'beta' in colNames[j]:
+            continue
         datasets[i][colNames[j]] = coordValues[i,j]
         
 # Available options for line curve chart.
 y_axes = list(colNames)
 y_axes.remove('time')
+y_axes.remove('knee_angle_r_beta')
+y_axes.remove('knee_angle_l_beta')
 
 # Dump data into json file.
 # Create results dictionnary with indices and gait_metrics.

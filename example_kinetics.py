@@ -125,14 +125,14 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 #       - Linux   (Ubuntu 20.04):  converged in 856 iterations 
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
-session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
+session_id = "cff23ffc-5c35-4ee9-9c16-63072a5ddaa2"
 case = '0' # Change this to compare across settings.
 # Options are 'squat', 'STS', and 'jump'.
 if session_type == 'overground': 
-    trial_name = 'STS'
-    if trial_name == 'squat': # Squat
-        motion_type = 'squats'
-        repetition = 1
+    trial_name = 'walk1'
+    if trial_name == 'walk1': # Squat
+        motion_type = 'walking'
+        time_window = [1.0, 2.0]
     elif trial_name == 'STS': # Sit-to-stand        
         motion_type = 'sit_to_stand'
         repetition = 1
