@@ -38,15 +38,15 @@ dataFolder = os.path.join(baseDir, 'Data')
 
 # %% User-defined variables.
 # Select example: options are treadmill and overground.
-example = 'treadmill'
+example = 'overground'
 
 if example == 'treadmill':
     session_id = '4d5c3eb1-1a59-4ea1-9178-d3634610561c' # 1.25m/s
     trial_name = 'walk_1_25ms'
 
 elif example == 'overground':
-    session_id = 'b39b10d1-17c7-4976-b06c-a6aaf33fead2'
-    trial_name = 'gait_3'
+    session_id = '642020a6-96fe-45a0-beae-a2dc8495f29b'
+    trial_name = '10mwt'
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
                 'single_support_time','double_support_time','step_length_symmetry'}
@@ -107,3 +107,5 @@ plot_dataframe_with_shading(
     xlabel = '% gait cycle',
     title = 'kinematics (m or deg)',
     legend_entries = ['right','left'])
+
+test = 1
