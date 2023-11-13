@@ -78,7 +78,7 @@ case = '2'
 legs = ['r']
 solveProblem = True
 analyzeResults = True  
-runProblem = True
+runProblem = False
 overwrite_aligned_data = False
 overwrite_gait_results = False
 overwrite_tracked_motion_file = False
@@ -105,7 +105,7 @@ elif case == '5':
 # trials_to_run = [137] # [0, 3, 13, 35, 48, 62]
 
 # trials_info = get_data_info(trial_indexes=[i for i in range(ii,ii+1)])
-trials_info = get_data_info(trial_indexes=[i for i in range(137,150)])
+trials_info = get_data_info(trial_indexes=[i for i in range(100,101)])
 # trials_info = get_data_info(trial_indexes=trials_to_run)
 
 trials_info_problems = get_data_info_problems()
