@@ -620,3 +620,189 @@ def generate_model_with_contacts(
     model.initSystem()
     model.printToXML(pathOutputModel)
 
+# %% Align marker data with ground.
+# When the checkerboard is not perfectly aligned with the ground, then it might
+# look like if the subject is going uphill or downhill. This function computes
+# the angle between the checkerboard and the ground, and then rotates the
+# marker data such that the checkerboard is aligned with the ground. 
+def align_markers_with_ground_3(sessionDir, trialName,
+                                referenceMarker='Neck',
+                                suffixOutputFileName='aligned',
+                                lowpass_cutoff_frequency_for_marker_values=-1,
+                                addOffset=True, visualize=False, angle=None,
+                                select_window=[]):
+
+    pathTRCFile = os.path.join(sessionDir, 'MarkerData', trialName + '.trc')
+    trc_file = TRCFile(pathTRCFile)
+    time = trc_file.time
+
+    # Find index in time vector corresponding to the start and end of the trial
+    # as defined in select_window. Start is given by first entry in select_window
+    # and end is given by the second entry. If the entry is -1 then the start or
+    # end of the trial is used. If select_window is empty then skip this step.
+    use_select_window  = False
+    if len(select_window) > 0:
+        if select_window[0] == -1:
+            start = 0
+        else:
+            start = np.argmin(np.abs(time-select_window[0]))
+        if select_window[1] == -1:
+            end = len(time)
+        else:
+            end = np.argmin(np.abs(time-select_window[1]))+1
+
+        markers = trc_file.marker_names
+        marker_data = np.zeros((len(time), 3*len(markers)))
+        # marker_data[:,0] = time
+        for i, marker in enumerate(markers):
+            marker_data[:,3*i:3*i+3] = trc_file.marker(marker)
+        marker_data_adj = marker_data[start:end,:]
+
+        pathTRCFile_out = os.path.join(
+            sessionDir, 'MarkerData', 
+            trialName + '_{}.trc'.format('trimmed'))
+
+        with open(pathTRCFile_out,"w") as f:
+            numpy2TRC(f, marker_data_adj, markers, trc_file.camera_rate, time[start])
+            
+        trc_file = TRCFile(pathTRCFile_out)
+        time = trc_file.time
+        
+        use_select_window = True
+
+    # Extract data from reference markers.
+    m = trc_file.marker(referenceMarker)
+    if lowpass_cutoff_frequency_for_marker_values > 0:
+        m = lowPassFilter(time, m, lowpass_cutoff_frequency_for_marker_values)
+        
+    # spline = interpolate.InterpolatedUnivariateSpline(time, m[:,1], k=3)
+    # splineD1 = spline.derivative(n=1)
+    # mid_m_speed = splineD1(time)
+        
+    if use_select_window:
+        cutEnd = False
+    else:
+        cutEnd = True
+    if cutEnd:
+        sf = trc_file.camera_rate
+        end_offset = -int(0.3*sf)
+    else:
+        end_offset = len(time)
+        
+    cutStart = True
+    if cutStart:
+        sf = trc_file.camera_rate
+        start_offset = -int(2.3*sf)
+    else:
+        start_offset = len(time)
+        
+    # trim m and time
+    m = m[start_offset:end_offset,:]
+    time = time[start_offset:end_offset]
+
+        
+    if visualize:
+        plt.figure()
+        plt.plot(time, m[:,1])
+        # plt.plot(time[:end_offset], mid_m_speed[:end_offset])
+        # plt.plot(time, center_of_mass_speeds['y'])
+        # plt.plot(time, mid_m_speed_filt)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Position (m)')
+        plt.title('Vertical position of {}'.format(referenceMarker))
+        plt.show()
+        
+        
+        # fig, ax1 = plt.subplots()
+        # plt.plot(time[:end_offset], m[:end_offset, 1], label='Position')
+        # ax1.set_xlabel('Time (s)')
+        # ax1.set_ylabel('Position (m)', color='tab:blue')
+        # plt.title('Vertical position of {}'.format(referenceMarker))
+        # ax1.tick_params(axis='y', labelcolor='tab:blue')
+        
+        # ax2 = ax1.twinx()
+        # plt.plot(time[:end_offset], mid_m_speed[:end_offset], 'r', label='Speed')
+        # ax2.set_ylabel('Speed', color='tab:red')
+        # ax2.tick_params(axis='y', labelcolor='tab:red')
+        
+        # fig.tight_layout()  # Ensures that the labels do not overlap
+        
+        # plt.show()
+        
+        
+        
+    # spline = interpolate.InterpolatedUnivariateSpline(time, mid_m[:,1], k=3)
+    # splineD1 = spline.derivative(n=1)
+    # mid_m_speed = splineD1(time)
+    
+    if angle is None:
+
+        # We assume peak vertical speeds should match across gait cycles.
+        peaks, _ = signal.find_peaks(m[:,1], distance=20, width=10, prominence=0.02)
+        
+        if peaks.shape[0] == 0:
+            raise ValueError("No peaks detected")
+        
+        # time[peaks]
+        
+        # The beginning of the trial is not always great, we here select the gait
+        # cycles that have similar durations (+/-20%).
+        # diff_peaks = np.diff([peaks])    
+        # for i in range(len(diff_peaks[0])-2, len(diff_peaks[0])-4, -1):
+        #     if np.abs(diff_peaks[0][i]-diff_peaks[0][i+1]) > 0.2*diff_peaks[0][i+1]:
+        #         break
+        
+        # Extract marker data at first and last peaks.
+        pos_start = m[peaks[0], :]
+        pos_end = m[peaks[-1], :]
+        
+        # Calculate the original vector.
+        original_vector = pos_end - pos_start
+    
+        # The reference vector is the vector along the x-axis.
+        reference_vector = np.array([1, 0, 0])
+        
+        # Calculate the dot product of the two vectors.
+        dot_product = np.dot(reference_vector, original_vector)
+        
+        # Calculate the magnitudes (lengths) of the vectors.
+        magnitude_A = np.linalg.norm(reference_vector)
+        magnitude_B = np.linalg.norm(original_vector)
+        
+        # Calculate the angle between the two vectors in radians.
+        angle_rad = np.arccos(dot_product / (magnitude_A * magnitude_B))
+        
+        # Convert the angle from radians to degrees if needed.
+        angle_deg = np.degrees(angle_rad)
+        
+    else:
+        
+        angle_deg = angle
+    
+    # Rotate marker data about the z-axis.
+    trc_file.rotate('z', angle_deg)
+    
+    print('Angle between reference vector and original vector: {:.2f} deg'.format(angle_deg))
+    
+    if addOffset:
+        # Compute offset
+        markers = trc_file.marker_names
+        offset = float('inf')
+        # Cut off last 0.5s to avoid issues with the end of the trial.
+        
+        for marker in markers:
+            if '_study' in marker:
+                min_y_pos = np.min(trc_file.marker(marker)[start_offset:end_offset,1])
+                if min_y_pos < offset:
+                    offset = min_y_pos                
+        # Subtract offset
+        trc_file.offset('y', -offset)
+    # trc_file.offset('y', -(pos_end[1]-0.03))       
+
+    # Print a new trc file.
+    pathTRCFile_out = os.path.join(
+        sessionDir, 'MarkerData', 
+        trialName + '_{}.trc'.format(suffixOutputFileName))
+    trc_file.write(pathTRCFile_out)
+
+    return pathTRCFile_out

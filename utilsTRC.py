@@ -296,3 +296,89 @@ def trc_2_dict(pathFile, rotation=None):
         trc_dict['markers'][marker] = trc_file.marker(marker)
     
     return trc_dict
+
+def numpy2TRC(f, data, headers, fc=50.0, t_start=0.0, units="m"):
+    # data -> nFrames x nMarkers*3 array
+    
+    header_mapping = {}
+    for count, header in enumerate(headers):
+        header_mapping[count+1] = header 
+        
+    # Line 1.
+    f.write('PathFileType  4\t(X/Y/Z) %s\n' % os.getcwd())
+    
+    # Line 2.
+    f.write('DataRate\tCameraRate\tNumFrames\tNumMarkers\t'
+                'Units\tOrigDataRate\tOrigDataStartFrame\tOrigNumFrames\n')
+    
+    num_frames=data.shape[0]
+    num_markers=len(header_mapping.keys())
+    
+    # Line 3.
+    f.write('%.1f\t%.1f\t%i\t%i\t%s\t%.1f\t%i\t%i\n' % (
+            fc, fc, num_frames,
+            num_markers, units, fc,
+            1, num_frames))
+    
+    # Line 4.
+    f.write("Frame#\tTime\t")
+    for key in sorted(header_mapping.keys()):
+        f.write("%s\t\t\t" % format(header_mapping[key]))
+
+    # Line 5.
+    f.write("\n\t\t")
+    for imark in np.arange(num_markers) + 1:
+        f.write('X%i\tY%s\tZ%s\t' % (imark, imark, imark))
+    f.write('\n')
+    
+    # Line 6.
+    f.write('\n')
+
+    for frame in range(data.shape[0]):
+        f.write("{}\t{:.8f}\t".format(frame+1,(frame)/fc+t_start)) # opensim frame labeling is 1 indexed
+
+        for key in sorted(header_mapping.keys()):
+            f.write("{:.5f}\t{:.5f}\t{:.5f}\t".format(data[frame,0+(key-1)*3], data[frame,1+(key-1)*3], data[frame,2+(key-1)*3]))
+        f.write("\n")
+
+def dict_to_trc(trc_dict, pathOutputFile, rotationAngles={},
+                offset_markers=None,offset_axis='y'):
+    
+    frameRate = int(np.round(1/np.diff(trc_dict['time'][:2])))   
+    markers = np.zeros((len(trc_dict['time']),len(trc_dict['marker_names'])*3))
+    for i,mkr in enumerate(trc_dict['marker_names']):
+        markers[:,i*3:i*3+3] = trc_dict['markers'][mkr]
+    
+    offset = write_trc(markers, pathOutputFile, trc_dict['marker_names'], frameRate,
+              rotationAngles=rotationAngles, offset_markers=offset_markers, offset_axis='y')
+    
+    return offset
+
+# write trc
+def write_trc(keypoints3D, pathOutputFile, keypointNames, 
+                            frameRate=60, rotationAngles={},
+                            offset_markers=None, offset_axis='y'):
+
+    with open(pathOutputFile,"w") as f:
+        numpy2TRC(f, keypoints3D, keypointNames, fc=frameRate, 
+                  units="m")
+    
+    # Rotate data to match OpenSim conventions; this assumes the chessboard
+    # is behind the subject and the chessboard axes are parallel to those of
+    # OpenSim.
+    trc_file = TRCFile(pathOutputFile)    
+    for axis,angle in rotationAngles.items():
+        trc_file.rotate(axis,angle)
+        
+    offset= 0
+    # Offset the markers by finding minimum position of some markers
+    if offset_markers is not None:
+        offset_idx = 'xyz'.find(offset_axis.lower())
+        offset = -np.min([np.min(trc_file.marker(mkr)[:,offset_idx])
+                         for mkr in offset_markers])
+        trc_file.offset(offset_axis,offset)          
+        
+
+    trc_file.write(pathOutputFile)   
+    
+    return offset

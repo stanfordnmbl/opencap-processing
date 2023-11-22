@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
 
+from constants import markerDict 
 
 from utilsProcessing import lowPassFilter
 from utilsTRC import trc_2_dict
@@ -34,7 +35,8 @@ class kinematics:
     
     def __init__(self, sessionDir, trialName, 
                  modelName=None,
-                 lowpass_cutoff_frequency_for_coordinate_values=-1):
+                 lowpass_cutoff_frequency_for_coordinate_values=-1,
+                 marker_set = 'opencap'):
         
         self.lowpass_cutoff_frequency_for_coordinate_values = (
             lowpass_cutoff_frequency_for_coordinate_values)
@@ -155,6 +157,9 @@ class kinematics:
                                'elbow_flex_r', 'pro_sup_r', 
                                'arm_flex_l', 'arm_add_l', 'arm_rot_l', 
                                'elbow_flex_l', 'pro_sup_l']
+        
+        # Marker dictionary
+        self.md = markerDict[marker_set]        
     
     # Only set the state trajectory when needed because it is slow.
     def stateTrajectory(self):
