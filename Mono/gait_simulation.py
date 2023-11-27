@@ -39,7 +39,8 @@ from utilsKinematics import kinematics
 
 #%% User inputs
 dataDir = 'C:/SharedGdrive/sparseIK/Data/'
-sessionDir = os.path.join(dataDir,'20231121_ScottWalking')
+sessionFolder = '20231121_ScottWalking'
+sessionDir = os.path.join(dataDir,sessionFolder)
 
 trialName = 'walk_fixedMarkers'
 
@@ -56,11 +57,11 @@ n_gait_cycles = 1
 filter_frequency = 6
 
 # Settings for dynamic simulation.
-motion_type = 'walking_periodic_formulation_0'
-case = '5'
+motion_type = 'walking_formulation1'
+case = '2'
 legs = ['r', 'l']
 runProblem = True
-overwrite_aligned_data = True
+overwrite_aligned_data = False
 overwrite_gait_results = False
 overwrite_tracked_motion_file = True
 processInputs = True
@@ -85,15 +86,6 @@ elif case == '5':
     buffer_start = 0.7
     buffer_end = 0.3
 
-
-
-# load IK 
-
-# compute re-alignment, write trc
-
-# re-run ik
-
-# setup problem
 
 if runProblem:
     opensimDir = os.path.join(sessionDir,'OpenSimData')
@@ -170,7 +162,11 @@ if runProblem:
     time_window[0] = time_window[0] - buffer_start
     time_window[1] = time_window[1] + buffer_end
     
-    
+    # TODO DELETE
+    print('OVERRIDING TIME WINDOW!')
+    time_window[0] = 1
+    time_window[1] = 2.5
+    case = '6'
     
     
     
@@ -305,7 +301,7 @@ if runProblem:
         gait = gait_analysis(
             sessionDir, trialName_aligned, leg=leg,
             lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-            n_gait_cycles=n_gait_cycles)
+            n_gait_cycles=n_gait_cycles,marker_set='mono')
         coordinateValues = gait.coordinateValues
         time = coordinateValues['time'].to_numpy()
         labels = coordinateValues.columns
@@ -317,24 +313,23 @@ if runProblem:
 
     print('Processing data for dynamic simulation...')
     if processInputs:
-        try:
-            session_id = None
-            settings = processInputsOpenSimAD(
-                baseDir, sessionDir, session_id, trialName_aligned, 
-                motion_type, time_window=time_window)
-        except Exception as e:
-            print(f"Error setting up dynamic optimization for trial {trialName}: {e}")
-            # continue
+        # try:
+        settings = processInputsOpenSimAD(
+            baseDir, dataDir, sessionFolder, trialName_aligned, 
+            motion_type, time_window=time_window)
+        # except Exception as e:
+        #     print(f"Error setting up dynamic optimization for trial {trialName}: {e}")
+        #     # continue
 
     # Simulation.
     if runSimulation:
-        try:
-            run_tracking(baseDir, sessionDir, settings, case=case_leg, 
-                        solveProblem=solveProblem, analyzeResults=analyzeResults)
-            test=1
-        except Exception as e:
-            print(f"Error during dynamic optimization for trial {trialName}: {e}")
-            # continue
+        # try:
+        run_tracking(baseDir, dataDir, sessionFolder, settings, case=case_leg, 
+                    solveProblem=solveProblem, analyzeResults=analyzeResults)
+        #     test=1
+        # except Exception as e:
+        #     print(f"Error during dynamic optimization for trial {trialName}: {e}")
+        #     # continue
     test=1
 
 # else:
