@@ -648,6 +648,65 @@ class gait_analysis(kinematics):
 
         # n_gait_cycles = -1 finds all accessible gait cycles. Otherwise, it 
         # finds that many gait cycles, working backwards from end of trial.
+               
+        # Helper functions
+        def detect_gait_peaks(r_calc_rel_x,
+                              l_calc_rel_x,
+                              r_toe_rel_x,
+                              l_toe_rel_x,
+                              prominence = 0.3):
+            # Find HS.
+            rHS, _ = find_peaks(r_calc_rel_x, prominence=prominence)
+            lHS, _ = find_peaks(l_calc_rel_x, prominence=prominence)
+            
+            # Find TO.
+            rTO, _ = find_peaks(-r_toe_rel_x, prominence=prominence)
+            lTO, _ = find_peaks(-l_toe_rel_x, prominence=prominence)
+            
+            return rHS,lHS,rTO,lTO
+        
+        def detect_correct_order(rHS, rTO, lHS, lTO):
+            # checks if the peaks are in the right order
+                    
+            expectedOrder = {'rHS': 'lTO',
+                             'lTO': 'lHS',
+                             'lHS': 'rTO',
+                             'rTO': 'rHS'}
+                    
+            # Identify vector that has the smallest value in it. Put this vector name
+            # in vName1
+            vectors = {'rHS': rHS, 'rTO': rTO, 'lHS': lHS, 'lTO': lTO}
+            non_empty_vectors = {k: v for k, v in vectors.items() if len(v) > 0}
+        
+            # Check if there are any non-empty vectors
+            if not non_empty_vectors:
+                return True  # All vectors are empty, consider it correct order
+        
+            vName1 = min(non_empty_vectors, key=lambda k: non_empty_vectors[k][0])
+        
+            # While there are any values in any of the vectors (rHS, rTO, lHS, or lTO)
+            while any([len(vName) > 0 for vName in vectors.values()]):
+                # Delete the smallest value from the vName1
+                vectors[vName1] = np.delete(vectors[vName1], 0)
+        
+                # Then find the vector with the next smallest value. Define vName2 as the
+                # name of this vector
+                non_empty_vectors = {k: v for k, v in vectors.items() if len(v) > 0}
+                
+                # Check if there are any non-empty vectors
+                if not non_empty_vectors:
+                    break  # All vectors are empty, consider it correct order
+        
+                vName2 = min(non_empty_vectors, key=lambda k: non_empty_vectors[k][0])
+        
+                # If vName2 != expectedOrder[vName1], return False
+                if vName2 != expectedOrder[vName1]:
+                    return False
+        
+                # Set vName1 equal to vName2 and clear vName2
+                vName1, vName2 = vName2, ''
+        
+            return True
         
         # Subtract sacrum from foot.
         # It looks like the position-based approach will be more robust.
@@ -665,14 +724,26 @@ class gait_analysis(kinematics):
         l_toe_rel_x = (
             self.markerDict['markers']['L_toe_study'] - 
             self.markerDict['markers']['L.PSIS_study'])[:,0]
+                       
+        # Detect peaks, check if they're in the right order, if not reduce prominence.
+        # the peaks can be less prominent with pathological or slower gait patterns
+        prominences = [0.3, 0.25, 0.2]
         
-        # Find HS.
-        rHS, _ = find_peaks(r_calc_rel_x, prominence=0.3)
-        lHS, _ = find_peaks(l_calc_rel_x, prominence=0.3)
-        
-        # Find TO.
-        rTO, _ = find_peaks(-r_toe_rel_x, prominence=0.3)
-        lTO, _ = find_peaks(-l_toe_rel_x, prominence=0.3)
+        for i,prom in enumerate(prominences):
+            rHS,lHS,rTO,lTO = detect_gait_peaks(r_calc_rel_x=r_calc_rel_x,
+                                  l_calc_rel_x=l_calc_rel_x,
+                                  r_toe_rel_x=r_toe_rel_x,
+                                  l_toe_rel_x=l_toe_rel_x,
+                                  prominence=prom)
+            if not detect_correct_order(rHS=rHS, rTO=rTO, lHS=lHS, lTO=lTO):
+                if prom == prominences[-1]:
+                    print('The ordering of gait events is not correct. Check results.')
+                else:
+                    print('The gait events were not in the correct order. Trying peak detection again ' +
+                      'with prominence = ' + str(prominences[i+1]) + '.')
+            else:
+                # everything was in the correct order. continue.
+                break
         
         if visualize:
             import matplotlib.pyplot as plt
