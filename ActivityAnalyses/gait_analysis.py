@@ -33,7 +33,7 @@ class gait_analysis(kinematics):
     
     def __init__(self, session_dir, trial_name, leg='auto',
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
-                 n_gait_cycles=-1):
+                 n_gait_cycles=-1, gait_style='auto'):
         
         # Inherit init from kinematics class.
         super().__init__(
@@ -53,7 +53,7 @@ class gait_analysis(kinematics):
         self.nGaitCycles = np.shape(self.gaitEvents['ipsilateralIdx'])[0]
         
         # Determine treadmill speed (0 if overground).
-        self.treadmillSpeed,_ = self.compute_treadmill_speed()
+        self.treadmillSpeed,_ = self.compute_treadmill_speed(gait_style=gait_style)
         
         # Initialize variables to be lazy loaded.
         self._comValues = None
@@ -205,29 +205,37 @@ class gait_analysis(kinematics):
         else:
             return cadence, units
         
-    def compute_treadmill_speed(self, overground_speed_threshold=0.3,return_all=False):
+    def compute_treadmill_speed(self, overground_speed_threshold=0.3,
+                                gait_style='auto', return_all=False):
         
-        leg,_ = self.get_leg()
-        
-        foot_position = self.markerDict['markers'][leg + '_ankle_study']
-        
-        stanceTimeLength = np.round(np.diff(self.gaitEvents['ipsilateralIdx'][:,:2]))
-        startIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,:1]+.1*stanceTimeLength).astype(int)
-        endIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,1:2]-.3*stanceTimeLength).astype(int)
+        # Heuristic to determine if overground or treadmill.
+        if gait_style == 'auto' or gait_style == 'treadmill':
+            leg,_ = self.get_leg()
             
-        # Average instantaneous velocities.
-        dt = np.diff(self.markerDict['time'][:2])[0]
-        for i in range(self.nGaitCycles):
-            footVel = np.linalg.norm(np.mean(np.diff(
-                foot_position[startIdx[i,0]:endIdx[i,0],:],axis=0),axis=0)/dt)
+            foot_position = self.markerDict['markers'][leg + '_ankle_study']
+            
+            stanceTimeLength = np.round(np.diff(self.gaitEvents['ipsilateralIdx'][:,:2]))
+            startIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,:1]+.1*stanceTimeLength).astype(int)
+            endIdx = np.round(self.gaitEvents['ipsilateralIdx'][:,1:2]-.3*stanceTimeLength).astype(int)
+                
+            # Average instantaneous velocities.
+            dt = np.diff(self.markerDict['time'][:2])[0]
+            treadmillSpeeds = np.zeros((self.nGaitCycles,))
+            for i in range(self.nGaitCycles):
+                treadmillSpeeds[i,] = np.linalg.norm(np.mean(np.diff(
+                    foot_position[startIdx[i,0]:endIdx[i,0],:],axis=0),axis=0)/dt)
+            
+            treadmillSpeed = np.mean(treadmillSpeeds)
+            
+            # Overground if treadmill speed is below threshold and gait style not set to treadmill.
+            if treadmillSpeed < overground_speed_threshold and not gait_style == 'treadmill':
+                treadmillSpeed = 0
+                treadmillSpeeds = np.zeros(self.nGaitCycles)
         
-        treadmillSpeeds = footVel
-        treadmillSpeed = np.mean(treadmillSpeeds)
-        
-        # Overground.
-        if treadmillSpeed < overground_speed_threshold:
+        # Overground if gait style set to overground.
+        elif gait_style == 'overground':
             treadmillSpeed = 0
-            treadmillSpeeds = np.zeros(treadmillSpeeds.shape)
+            treadmillSpeeds = np.zeros(self.nGaitCycles)
             
         # Define units.
         units = 'm/s'
