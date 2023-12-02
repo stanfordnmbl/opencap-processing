@@ -39,12 +39,12 @@ from utilsKinematics import kinematics
 
 #%% User inputs
 dataDir = 'C:/SharedGdrive/sparseIK/Data/'
-sessionFolder = '20231121_ScottWalking'
+sessionFolder = 'OpenCapSubject4'
 sessionDir = os.path.join(dataDir,sessionFolder)
 
-trialName = 'walk_fixedMarkers'
+trialName = 'walking4'
 
-leg = 'r'
+leg = 'l'
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
                 'single_support_time','double_support_time'}
@@ -58,8 +58,8 @@ filter_frequency = 6
 
 # Settings for dynamic simulation.
 motion_type = 'walking_formulation1'
-case = '2'
-legs = ['r', 'l']
+case = '101'
+# legs = ['r', 'l']
 runProblem = True
 overwrite_aligned_data = False
 overwrite_gait_results = False
@@ -85,6 +85,11 @@ elif case == '5':
     # Buffers
     buffer_start = 0.7
     buffer_end = 0.3
+elif case == '101':
+    buffer_start = 0
+    buffer_end = 0
+    motion_type = 'walking_formulation1_periodic'
+
 
 
 if runProblem:
