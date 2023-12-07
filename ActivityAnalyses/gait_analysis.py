@@ -32,7 +32,9 @@ class gait_analysis(kinematics):
     
     def __init__(self, session_dir, trial_name, leg='auto',
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
-                 n_gait_cycles=-1,marker_set='opencap'):
+                 n_gait_cycles=-1,marker_set='opencap',
+                 single_gait_cycle=False,
+                 manual_hs_times=None):
         
         # Inherit init from kinematics class.
         super().__init__(
@@ -49,7 +51,9 @@ class gait_analysis(kinematics):
         self.coordinateValues = self.get_coordinate_values()
         
         # Segment gait cycles.
-        self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg)
+        self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg,
+                                               single_gait_cycle=single_gait_cycle,
+                                               manual_hs_times=manual_hs_times)
         self.nGaitCycles = np.shape(self.gaitEvents['ipsilateralIdx'])[0]
         
         # Determine treadmill speed (0 if overground).
@@ -643,7 +647,8 @@ class gait_analysis(kinematics):
         
         return coordinateValuesTimeNormalized
 
-    def segment_walking(self, n_gait_cycles=-1, leg='auto', visualize=False):
+    def segment_walking(self, n_gait_cycles=-1, leg='auto', visualize=True,
+                        single_gait_cycle=False,manual_hs_times=None):
 
         # n_gait_cycles = -1 finds all accessible gait cycles. Otherwise, it 
         # finds that many gait cycles, working backwards from end of trial.
@@ -665,13 +670,18 @@ class gait_analysis(kinematics):
             self.markerDict['markers'][self.md['l_toe']] - 
             self.markerDict['markers'][self.md['l_PSIS']])[:,0]
         
+        if single_gait_cycle: # peaks are not prominent when only data from single gait cycle entered
+            prominence=0.01
+        else:
+            prominence=0.3
+        
         # Find HS.
-        rHS, _ = find_peaks(r_calc_rel_x, prominence=0.3)
-        lHS, _ = find_peaks(l_calc_rel_x, prominence=0.3)
+        rHS, _ = find_peaks(r_calc_rel_x, prominence=prominence)
+        lHS, _ = find_peaks(l_calc_rel_x, prominence=prominence)
         
         # Find TO.
-        rTO, _ = find_peaks(-r_toe_rel_x, prominence=0.3)
-        lTO, _ = find_peaks(-l_toe_rel_x, prominence=0.3)
+        rTO, _ = find_peaks(-r_toe_rel_x, prominence=prominence)
+        lTO, _ = find_peaks(-l_toe_rel_x, prominence=prominence)
         
         if visualize:
             import matplotlib.pyplot as plt
@@ -718,12 +728,22 @@ class gait_analysis(kinematics):
             n_gait_cycles = len(hsIps)-1
             print('Processing {} gait cycles, leg: '.format(n_gait_cycles) + leg + '.')
             
+        if n_gait_cycles <1:
+            if single_gait_cycle: # use entire duration (not great)
+                print('No gait cycle was detected, using manual HS times and'
+                      'assuming the gait cycle corresponds to ' + leg + ' leg.')
+                n_gait_cycles = 1
+                hsIps = [np.argmin(np.abs(self.markerDict['time']-manual_hs_times[0])),
+                         np.argmin(np.abs(self.markerDict['time']-manual_hs_times[1]))]
+            else:
+                raise Exception('Not enough gait cycles found.')
+        
+            
         # Ipsilateral gait events: heel strike, toe-off, heel strike.
         gaitEvents_ips = np.zeros((n_gait_cycles, 3),dtype=int)
         # Contralateral gait events: toe-off, heel strike.
         gaitEvents_cont = np.zeros((n_gait_cycles, 2),dtype=int)
-        if n_gait_cycles <1:
-            raise Exception('Not enough gait cycles found.')
+
 
         for i in range(n_gait_cycles):
             # Ipsilateral HS, TO, HS.

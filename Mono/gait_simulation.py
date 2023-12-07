@@ -39,12 +39,59 @@ from utilsKinematics import kinematics
 
 #%% User inputs
 dataDir = 'C:/SharedGdrive/sparseIK/Data/'
-sessionFolder = 'OpenCapSubject4'
-sessionDir = os.path.join(dataDir,sessionFolder)
 
-trialName = 'walking4'
 
+# # walkingTS2 OpenCapSubject4_ts
+# trialName = 'walkingTS2_frontal'
+# sessionFolder = 'OpenCapSubject4_ts_frontal'
+# timeOverride = True
+# time_window_override = [.30, 1.36] # walking4
+# case = '101'
+# single_gait_cycle = True
+# leg = 'l'
+# manual_align = 0
+
+# # walkingTS2 OpenCapSubject4_ts
+trialName = 'walkingTS2_sagittalRight'
+sessionFolder = 'OpenCapSubject4_ts_sagittalRight'
+timeOverride = True
+time_window_override = [.1 , 1.18] # walking4
+case = '101'
+single_gait_cycle = True
 leg = 'l'
+manual_align = 0
+
+
+# OpencapSubject4 'walking4'
+# trialName = 'walking4'
+# sessionFolder = 'OpenCapSubject4'
+# timeOverride = True
+# time_window_override = [.1, 1.28] # walking4
+# case = '101'
+# single_gait_cycle = True
+# leg = 'l'
+# manual_align = -.4
+
+
+# walkingTS2 OpenCapSubject4_ts
+# trialName = 'walkingTS2'
+# sessionFolder = 'OpenCapSubject4_ts'
+# timeOverride = True
+# time_window_override = [.127, 1.33] # walking4
+# case = '101'
+# single_gait_cycle = True
+# leg = 'l'
+# manual_align = -1.3
+
+# Scott walking
+# time_window_override = [1, 2.5] 
+# case = '102'
+# single_gait_cycle = False
+# leg = 'l'
+# manual_align = 0
+
+
+sessionDir = os.path.join(dataDir,sessionFolder)
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
                 'single_support_time','double_support_time'}
@@ -57,11 +104,11 @@ n_gait_cycles = 1
 filter_frequency = 6
 
 # Settings for dynamic simulation.
-motion_type = 'walking_formulation1'
-case = '101'
+# motion_type = 'walking_formulation1'
+# case = '101'
 # legs = ['r', 'l']
 runProblem = True
-overwrite_aligned_data = False
+overwrite_aligned_data = True
 overwrite_gait_results = False
 overwrite_tracked_motion_file = True
 processInputs = True
@@ -85,10 +132,15 @@ elif case == '5':
     # Buffers
     buffer_start = 0.7
     buffer_end = 0.3
-elif case == '101':
+elif case == '101': # for manual override periodic
     buffer_start = 0
     buffer_end = 0
     motion_type = 'walking_formulation1_periodic'
+elif case == 102:
+    buffer_start = 0
+    buffer_end = 0
+    motion_type = 'walking_formulation1'
+    
 
 
 
@@ -116,7 +168,8 @@ if runProblem:
     gait = gait_analysis(
         sessionDir, trialName, leg=leg,
         lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-        n_gait_cycles=3,marker_set='mono')
+        n_gait_cycles=3,marker_set='mono',single_gait_cycle=single_gait_cycle,
+        manual_hs_times = time_window_override)
     
     # assuming straight line walking
     gait_frame = np.mean(gait.compute_gait_frame(),axis=0)
@@ -131,9 +184,10 @@ if runProblem:
         trc_dict = trc_2_dict(trc_path)
         
         # Rotate by the inverse of the average gait frame -- just for overground walking
-        euler_world_to_gait =R.from_matrix(gait_frame.T).as_euler('YZX',degrees=True)
+        euler_world_to_gait =R.from_matrix(gait_frame.T).as_euler('YXZ',degrees=True)
         
-        rotationAngles = {ax:val for (ax,val) in zip(['Y','Z','X'],euler_world_to_gait)}
+        rotationAngles = {ax:val for (ax,val) in zip(['Y','X','Z'],euler_world_to_gait)}
+        rotationAngles['Z']+= manual_align
             
         offset_markers = ['r_calc','r_toe','l_calc','l_toe']
         offset = dict_to_trc(trc_dict, new_trc_path, rotationAngles = rotationAngles,
@@ -168,10 +222,9 @@ if runProblem:
     time_window[1] = time_window[1] + buffer_end
     
     # TODO DELETE
-    print('OVERRIDING TIME WINDOW!')
-    time_window[0] = 1
-    time_window[1] = 2.5
-    case = '6'
+    if timeOverride:
+        print('OVERRIDING TIME WINDOW!')
+        time_window = time_window_override
     
     
     
@@ -303,11 +356,9 @@ if runProblem:
     case_leg = '{}_{}'.format(case, leg)
     pathTrackedMotionFile = os.path.join(pathResults, 'kinematics_to_track_{}.mot'.format(case_leg))            
     if not os.path.exists(pathTrackedMotionFile) or overwrite_tracked_motion_file:
-        gait = gait_analysis(
-            sessionDir, trialName_aligned, leg=leg,
-            lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-            n_gait_cycles=n_gait_cycles,marker_set='mono')
-        coordinateValues = gait.coordinateValues
+        kinematics_forVis = kinematics(
+            sessionDir, trialName_aligned, lowpass_cutoff_frequency_for_coordinate_values=filter_frequency)
+        coordinateValues = kinematics_forVis.get_coordinate_values()
         time = coordinateValues['time'].to_numpy()
         labels = coordinateValues.columns
         idx_start = (np.abs(time - time_window[0])).argmin()

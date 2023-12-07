@@ -368,6 +368,7 @@ def write_trc(keypoints3D, pathOutputFile, keypointNames,
     # OpenSim.
     trc_file = TRCFile(pathOutputFile)    
     for axis,angle in rotationAngles.items():
+        print('Rotating about ' + axis)
         trc_file.rotate(axis,angle)
         
     offset= 0
