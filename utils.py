@@ -71,6 +71,15 @@ def get_user_sessions():
     
     return sessions
 
+# Returns a list of all sessions of the user.
+# TODO: this also contains public sessions of other users.
+def get_user_sessions_all(user_token=API_TOKEN):
+    sessions = requests.get(
+        API_URL + "sessions/", 
+        headers = {"Authorization": "Token {}".format(user_token)}).json()
+    
+    return sessions
+
 def get_trial_json(trial_id):
     trialJson = requests.get(
         API_URL + "trials/{}/".format(trial_id),
