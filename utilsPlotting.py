@@ -207,3 +207,96 @@ def plot_dataframe_with_shading(mean_dataframe, sd_dataframe=None, y=None,
 
     plt.tight_layout()
     plt.show()
+
+def plot_dataframe_xyz(dataframes, x=None, y=[], xlabel=None, ylabel=None, 
+                   labels=None, title=None, xrange=None, xyz_ind=0):
+    
+    # Handle case specific number of subplots.
+    if not x and not y:
+        nRow = int(np.ceil(np.sqrt(dataframes[0].shape[1]-1)))
+        nCol = int(np.ceil(np.sqrt(dataframes[0].shape[1]-1)))
+        if not xlabel:
+            xlabel = list(dataframes[0].columns)[0]
+        x = 'time'
+        y = list(dataframes[0].columns)[1:]        
+    elif not x and y:
+        nRow = int(np.ceil(np.sqrt(len(y))))
+        nCol = int(np.ceil(np.sqrt(len(y))))
+        if not xlabel:
+            xlabel = list(dataframes[0].columns)[0]
+        x = 'time'
+    else:
+        nRow = int(np.ceil(np.sqrt(len(y))))
+        nCol = int(np.ceil(np.sqrt(len(y))))
+        if not xlabel:
+            xlabel = x
+        if not ylabel:
+            ylabel = y[0]        
+    if nRow >= len(y):
+        nRow = 1
+    nAxs = len(y)
+        
+    # Labels for legend.
+    if not labels:
+        labels = ['dataframe_' + str(i) for i in range(len(dataframes))]
+    elif len(labels) != len(dataframes):
+        print("WARNING: The number of labels ({}) does not match the number of input dataframes ({})".format(len(labels), len(dataframes)))
+        labels = ['dataframe_' + str(i) for i in range(dataframes)]
+ 
+    if nCol == 1: # Single plot.
+        fig = plt.figure()
+        color=iter(plt.cm.rainbow(np.linspace(0,1,len(dataframes)))) 
+        for c, dataframe in enumerate(dataframes):
+            c_color = next(color)  
+            plt.plot(dataframe[x], dataframe[y[0]][:,xyz_ind], c=c_color, label=labels[c])
+            if xrange is not None:
+                plt.xlim(xrange)
+    else: # Multiple subplots.
+        fig, axs = plt.subplots(nRow, nCol, sharex=True)     
+        for i, ax in enumerate(axs.flat):
+            color=iter(plt.cm.rainbow(np.linspace(0,1,len(dataframes)))) 
+            if i < nAxs:
+                for c, dataframe in enumerate(dataframes):
+                    c_color = next(color)                
+                    ax.plot(dataframe[x], dataframe[y[i]][:,xyz_ind], c=c_color, label=labels[c])
+                    ax.set_title(y[i])
+                    if xrange is not None:
+                        plt.xlim(xrange)
+            if i == 0:
+                handles, labels = ax.get_legend_handles_labels()
+        
+    # Axis labels and legend.
+    if nRow > 1 and nCol > 1:
+        plt.setp(axs[-1, :], xlabel=xlabel)
+        plt.setp(axs[:, 0], ylabel=ylabel)
+        axs[0][0].legend(handles, labels)
+    elif nRow == 1 and nCol > 1:
+        plt.setp(axs[:,], xlabel=xlabel)
+        plt.setp(axs[0,], ylabel=ylabel)
+        axs[0,].legend(handles, labels)
+    else:
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.legend(labels)
+        
+    if nRow == 1 and nCol == 1:
+        # Add figure title.
+        if title:
+            plt.title(title)        
+    else:
+        # Add figure title.
+        if title:
+            fig.suptitle(title)
+        # Align labels.        
+        fig.align_ylabels()
+        # Hidde empty subplots.
+        nEmptySubplots = (nRow*nCol) - len(y)
+        axs_flat = axs.flat
+        for ax in (axs_flat[len(axs_flat)-nEmptySubplots:]):
+            ax.set_visible(False)
+                   
+    # Tight layout (should make figure big enough first).
+    # fig.tight_layout()
+    
+    # Show plot (needed if running through terminal).
+    return fig

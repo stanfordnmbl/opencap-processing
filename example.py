@@ -19,9 +19,9 @@
 '''
 
 import os
-import utilsKinematics
-from utils import download_kinematics
-from utilsPlotting import plot_dataframe
+import Utils.utilsKinematics
+from Utils.utils import download_kinematics
+from Utils.utilsPlotting import plot_dataframe
 
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.

@@ -288,6 +288,7 @@ def trc_2_dict(pathFile, rotation=None):
     trc_dict['time'] = trc_file.time
     trc_dict['marker_names'] = trc_file.marker_names
     trc_dict['markers'] = {}
+    trc_dict['units'] = trc_file.units
         
     if rotation != None:
         for axis,angle in rotation.items():

@@ -43,10 +43,10 @@ import matplotlib.pyplot as plt
 import opensim
 import requests
 
-import utils as ut
-from utilsProcessing import lowPassFilter
-from utilsPlotting import plot_dataframe
-import utilsKinematics
+import Utils.utils as ut
+from Utils.utilsProcessing import lowPassFilter
+from Utils.utilsPlotting import plot_dataframe
+import Utils.utilsKinematics
 
 # %% User-defined variables.
 

@@ -29,8 +29,8 @@ sys.path.append("../")
 sys.path.append("../ActivityAnalyses")
 
 from gait_analysis import gait_analysis
-from utils import get_trial_id, download_trial
-from utilsPlotting import plot_dataframe_with_shading
+from Utils.utils import get_trial_id, download_trial
+from Utils.utilsPlotting import plot_dataframe_with_shading
 
 # %% Paths.
 baseDir = os.path.join(os.getcwd(), '..')

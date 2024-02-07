@@ -63,7 +63,7 @@ from utilsAuthentication import get_token
 from utilsProcessing import segment_gait
 from utils import get_trial_id, download_trial
 from utilsKineticsOpenSimAD import kineticsOpenSimAD
-from utilsPlotting import plot_dataframe
+from Utils.utilsPlotting import plot_dataframe
 
 # %% OpenCap authentication. Visit https://app.opencap.ai/login to create an
 # account if you don't have one yet.
