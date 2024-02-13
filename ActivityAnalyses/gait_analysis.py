@@ -54,15 +54,13 @@ class gait_analysis(kinematics):
         # Marker data load and filter.
         self.markerDict = self.get_marker_dict(session_dir, trial_name, 
             lowpass_cutoff_frequency = lowpass_cutoff_frequency_for_coordinate_values)
-        temp = self.markerDict
 
         # Coordinate values.
         self.coordinateValues = self.get_coordinate_values()
-        temp1=self.coordinateValues
         
         # Trim marker data and coordinate values.
         if self.trimming_start > 0:
-            self.idx_trim_start = np.where(np.round(self.markerDict['time'],6) <= self.trimming_start)[0][-1]
+            self.idx_trim_start = np.where(np.round(self.markerDict['time'] - self.trimming_start,6) <= 0)[0][-1]
             self.markerDict['time'] = self.markerDict['time'][self.idx_trim_start:,]
             for marker in self.markerDict['markers']:
                 self.markerDict['markers'][marker] = self.markerDict['markers'][marker][self.idx_trim_start:,:]
@@ -90,12 +88,10 @@ class gait_analysis(kinematics):
     def comValues(self):
         if self._comValues is None:
             self._comValues = self.get_center_of_mass_values()
-            temp = self._comValues
             if self.trimming_start > 0:
                 self._comValues = self._comValues.iloc[self.idx_trim_start:]            
             if self.trimming_end > 0:
                 self._comValues = self._comValues.iloc[:self.idx_trim_end]
-            temp = self._comValues
         return self._comValues
     
     # Compute gait frame.
@@ -767,7 +763,7 @@ class gait_analysis(kinematics):
             self.markerDict['markers']['L.PSIS_study'])[:,0]
         
         # Identify which direction the subject is walking after 1s.
-        idx_1sec = np.where(np.round(self.markerDict['time'],6) <= 1)[0][-1]
+        idx_1sec = np.where(np.round(self.markerDict['time'] - 1 <= 0, 6))[0][-1]
         r_psis_1sec_x = self.markerDict['markers']['r.PSIS_study'][idx_1sec,0]
         l_psis_1sec_x = self.markerDict['markers']['L.PSIS_study'][idx_1sec,0]
         r_asis_1sec_x = self.markerDict['markers']['r.ASIS_study'][idx_1sec,0]
