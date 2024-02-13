@@ -45,15 +45,23 @@ if example == 'treadmill':
     trial_name = 'walk_1_25ms'
 
 elif example == 'overground':
-    session_id = 'C5c492d7-90af-417d-a80c-77f0a825ab07'
+    session_id = 'c5c492d7-90af-417d-a80c-77f0a825ab07'
     trial_name = 'Gait_01'
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
-                'single_support_time','double_support_time','step_length_symmetry'}
+                'double_support_time','step_length_symmetry'}
+
+scalar_labels = {
+                 'gait_speed': "Gait speed (m/s)",
+                 'stride_length':'Stride length (m)',
+                 'step_width': 'Step width (cm)',
+                 'cadence': 'Cadence (steps/min)',
+                 'double_support_time': 'Double support (% gait cycle)',
+                 'step_length_symmetry': 'Step length symmetry (%, R/L)'}
 
 # Select how many gait cycles you'd like to analyze. Select -1 for all gait
 # cycles detected in the trial.
-n_gait_cycles = -1 
+n_gait_cycles = 1
 
 # Select lowpass filter frequency for kinematics data.
 filter_frequency = 6
@@ -69,41 +77,46 @@ sessionDir = os.path.join(dataFolder, session_id)
 trialName = download_trial(trial_id,sessionDir,session_id=session_id) 
 
 # Init gait analysis.
-gait_r = gait_analysis(
-    sessionDir, trialName, leg='r',
-    lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-    n_gait_cycles=n_gait_cycles)
-gait_l = gait_analysis(
-    sessionDir, trialName, leg='l',
-    lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-    n_gait_cycles=n_gait_cycles)
-    
-# Compute scalars and get time-normalized kinematic curves.
-gaitResults = {}
-gaitResults['scalars_r'] = gait_r.compute_scalars(scalar_names)
-gaitResults['curves_r'] = gait_r.get_coordinates_normalized_time()
-gaitResults['scalars_l'] = gait_l.compute_scalars(scalar_names)
-gaitResults['curves_l'] = gait_l.get_coordinates_normalized_time()    
+legs = ['r','l']
+gait, gait_events, ipsilateral = {}, {}, {}
+for leg in legs:
+    gait[leg] = gait_analysis(
+        sessionDir, trial_name, leg=leg,
+        lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
+        n_gait_cycles=n_gait_cycles, gait_style='overground', trimming_end=0.5)
+    gait_events[leg] = gait[leg].get_gait_events()
+    ipsilateral[leg] = gait_events[leg]['ipsilateralTime'][0,-1]
 
-# %% Print scalar results.
-print('\nRight foot gait metrics:')
-print('-----------------')
-for key, value in gaitResults['scalars_r'].items():
-    rounded_value = round(value['value'], 2)
-    print(f"{key}: {rounded_value} {value['units']}")
-    
-print('\nLeft foot gait metrics:')
-print('-----------------')
-for key, value in gaitResults['scalars_l'].items():
-    rounded_value = round(value['value'], 2)
-    print(f"{key}: {rounded_value} {value['units']}")
+# Select last leg.
+last_leg = 'r' if ipsilateral['r'] > ipsilateral['l'] else 'l'
+other_leg = 'l' if last_leg == 'r' else 'r'
 
-    
+# Compute scalars.
+gait_scalars = gait[last_leg].compute_scalars(scalar_names)
+gait_scalars['gait_speed']['decimal'] = 2
+gait_scalars['step_width']['decimal'] = 1
+gait_scalars['stride_length']['decimal'] = 2
+gait_scalars['cadence']['decimal'] = 1
+gait_scalars['double_support_time']['decimal'] = 1
+gait_scalars['step_length_symmetry']['decimal'] = 1
+
+# Change units
+# Default = 1
+for key in gait_scalars:
+    gait_scalars[key]['multiplier'] = 1
+
+gait_scalars['step_width']['multiplier'] = 100 # cm
+
+# Curves
+gaitCurves = {}
+gaitCurves[last_leg] = gait[last_leg].get_coordinates_normalized_time()
+gaitCurves[other_leg] = gait[other_leg].get_coordinates_normalized_time()
+
 # %% You can plot multiple curves, in this case we compare right and left legs.
 plot_dataframe_with_shading(
-    [gaitResults['curves_r']['mean'], gaitResults['curves_l']['mean']],
-    [gaitResults['curves_r']['sd'], gaitResults['curves_l']['sd']],
-    leg = ['r','l'],
+    [gaitCurves[last_leg]['mean']],
+    [gaitCurves[last_leg]['sd']],
+    leg = [last_leg],
     xlabel = '% gait cycle',
     title = 'kinematics (m or deg)',
-    legend_entries = ['right','left'])
+    legend_entries = [last_leg])

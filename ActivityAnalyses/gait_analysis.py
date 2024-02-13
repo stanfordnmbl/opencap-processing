@@ -33,20 +33,36 @@ class gait_analysis(kinematics):
     
     def __init__(self, session_dir, trial_name, leg='auto',
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
-                 n_gait_cycles=-1, gait_style='auto'):
+                 n_gait_cycles=-1, gait_style='auto', trimming_end=0):
         
         # Inherit init from kinematics class.
         super().__init__(
             session_dir, 
             trial_name, 
             lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
+        
+        # We might want to trim the end of the trial to remove bad data. This
+        # might be need with HRNet during overground walking. At the end of the
+        # trial, the subject is leaving the field of view but HRNet returns
+        # relatively high confidence values. As a consequence, the trial is not
+        # automatically trimmed. Here, we provide the option to manually trim
+        # the end of the trial.
+        self.trimming_end = trimming_end
                         
         # Marker data load and filter.
-        self.markerDict= self.get_marker_dict(session_dir, trial_name, 
-                            lowpass_cutoff_frequency = lowpass_cutoff_frequency_for_coordinate_values)
+        self.markerDict = self.get_marker_dict(session_dir, trial_name, 
+            lowpass_cutoff_frequency = lowpass_cutoff_frequency_for_coordinate_values)
 
         # Coordinate values.
         self.coordinateValues = self.get_coordinate_values()
+        
+        # Trim marker data and coordinate values.
+        if self.trimming_end > 0:
+            self.idx_trim = np.where(np.round(self.markerDict['time'],6) <= np.round(self.markerDict['time'][-1],6) - self.trimming_end)[0][-1] + 1
+            self.markerDict['time'] = self.markerDict['time'][:self.idx_trim,]
+            for marker in self.markerDict['markers']:
+                self.markerDict['markers'][marker] = self.markerDict['markers'][marker][:self.idx_trim,:]
+            self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim]
         
         # Segment gait cycles.
         self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg)
@@ -63,6 +79,8 @@ class gait_analysis(kinematics):
     def comValues(self):
         if self._comValues is None:
             self._comValues = self.get_center_of_mass_values()
+            if self.trimming_end > 0:
+                self._comValues = self._comValues.iloc[:self.idx_trim]
         return self._comValues
     
     # Compute gait frame.
@@ -630,7 +648,7 @@ class gait_analysis(kinematics):
         data = self.coordinateValues.to_numpy(copy=True)
         coordValuesNorm = []
         for i in range(self.nGaitCycles):
-            coordValues = data[self.gaitEvents['ipsilateralIdx'][i,0]:self.gaitEvents['ipsilateralIdx'][i,2]]
+            coordValues = data[self.gaitEvents['ipsilateralIdx'][i,0]:self.gaitEvents['ipsilateralIdx'][i,2]+1]
             coordValuesNorm.append(np.stack([np.interp(np.linspace(0,100,101),
                                    np.linspace(0,100,len(coordValues)),coordValues[:,i]) \
                                    for i in range(coordValues.shape[1])],axis=1))
