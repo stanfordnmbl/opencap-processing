@@ -762,27 +762,16 @@ class gait_analysis(kinematics):
             self.markerDict['markers']['L_toe_study'] - 
             self.markerDict['markers']['L.PSIS_study'])[:,0]
         
-        # Identify which direction the subject is walking after 1s.
-        idx_1sec = np.where(np.round(self.markerDict['time'] - 1, 6) <= 0)[0][-1]
-        r_psis_1sec_x = self.markerDict['markers']['r.PSIS_study'][idx_1sec,0]
-        l_psis_1sec_x = self.markerDict['markers']['L.PSIS_study'][idx_1sec,0]
-        r_asis_1sec_x = self.markerDict['markers']['r.ASIS_study'][idx_1sec,0]
-        l_asis_1sec_x = self.markerDict['markers']['L.ASIS_study'][idx_1sec,0]
-        
+        # Identify which direction the subject is walking.
+        r_psis_1sec_x = self.markerDict['markers']['r.PSIS_study'][:,0]
+        r_asis_1sec_x = self.markerDict['markers']['r.ASIS_study'][:,0]
         r_dir_1sec_x = r_asis_1sec_x-r_psis_1sec_x
-        l_dir_1sec_x = l_asis_1sec_x-l_psis_1sec_x
-        # If different signs, throw warning.
-        if r_dir_1sec_x*l_dir_1sec_x < 0:
-            print('Ambiguous walking direction. Consider trimming your trial using the trimming_start and trimming_end options.')
-        else:
-            if r_dir_1sec_x > 0:
-                position_approach_scaling = 1
-            else:
-                position_approach_scaling = -1
-            r_calc_rel_x *= position_approach_scaling
-            r_toe_rel_x *= position_approach_scaling
-            l_calc_rel_x *= position_approach_scaling
-            l_toe_rel_x *= position_approach_scaling
+        position_approach_scaling = np.where(r_dir_1sec_x > 0, 1, -1)
+        # Adjust relative positions accordingly.
+        r_calc_rel_x *= position_approach_scaling
+        r_toe_rel_x *= position_approach_scaling
+        l_calc_rel_x *= position_approach_scaling
+        l_toe_rel_x *= position_approach_scaling
                        
         # Detect peaks, check if they're in the right order, if not reduce prominence.
         # the peaks can be less prominent with pathological or slower gait patterns
