@@ -763,7 +763,7 @@ class gait_analysis(kinematics):
             self.markerDict['markers']['L.PSIS_study'])[:,0]
         
         # Identify which direction the subject is walking after 1s.
-        idx_1sec = np.where(np.round(self.markerDict['time'] - 1 <= 0, 6))[0][-1]
+        idx_1sec = np.where(np.round(self.markerDict['time'] - 1, 6) <= 0)[0][-1]
         r_psis_1sec_x = self.markerDict['markers']['r.PSIS_study'][idx_1sec,0]
         l_psis_1sec_x = self.markerDict['markers']['L.PSIS_study'][idx_1sec,0]
         r_asis_1sec_x = self.markerDict['markers']['r.ASIS_study'][idx_1sec,0]
