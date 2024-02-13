@@ -45,10 +45,16 @@ if example == 'treadmill':
     trial_name = 'walk_1_25ms'
 
 elif example == 'overground':
-    session_id = 'c5c492d7-90af-417d-a80c-77f0a825ab07'
+    # session_id = 'c5c492d7-90af-417d-a80c-77f0a825ab07'
     # trial_name = 'Gait_01'
-    trial_name = 'Gait_Valgo_Rodilla'
+    # trial_name = 'Gait_Valgo_Rodilla'
     # trial_name = 'Gait_Valgo_Rodilla_02'
+    
+    session_id = '9d384602-25a6-4d9e-8936-c766215c52e5'
+    trial_name = 'Gait_Assessment1'
+    # trial_name = 'Gait_Assessment1_1'
+    # trial_name = 'Gait_Assessment1_2'
+    
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
                 'double_support_time','step_length_symmetry'}
@@ -79,19 +85,19 @@ sessionDir = os.path.join(dataFolder, session_id)
 trialName = download_trial(trial_id,sessionDir,session_id=session_id) 
 
 # Init gait analysis.
-legs = ['r','r']
+legs = ['r','l']
 gait, gait_events, ipsilateral = {}, {}, {}
 for leg in legs:
     gait[leg] = gait_analysis(
-        sessionDir, trial_name, leg='r',
+        sessionDir, trial_name, leg=leg,
         lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
-        n_gait_cycles=n_gait_cycles, gait_style='overground', trimming_end=0.3)
+        n_gait_cycles=n_gait_cycles, gait_style='overground', trimming_start=0, trimming_end=7)
     gait_events[leg] = gait[leg].get_gait_events()
     ipsilateral[leg] = gait_events[leg]['ipsilateralTime'][0,-1]
 
 # Select last leg.
-# last_leg = 'r' if ipsilateral['r'] > ipsilateral['l'] else 'l'
-# other_leg = 'l' if last_leg == 'r' else 'r'
+last_leg = 'r' if ipsilateral['r'] > ipsilateral['l'] else 'l'
+other_leg = 'l' if last_leg == 'r' else 'r'
 last_leg = 'r'
 
 # Compute scalars.

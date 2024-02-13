@@ -33,7 +33,8 @@ class gait_analysis(kinematics):
     
     def __init__(self, session_dir, trial_name, leg='auto',
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
-                 n_gait_cycles=-1, gait_style='auto', trimming_end=0):
+                 n_gait_cycles=-1, gait_style='auto', trimming_start=0, 
+                 trimming_end=0):
         
         # Inherit init from kinematics class.
         super().__init__(
@@ -41,28 +42,38 @@ class gait_analysis(kinematics):
             trial_name, 
             lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
         
-        # We might want to trim the end of the trial to remove bad data. This
-        # might be need with HRNet during overground walking. At the end of the
-        # trial, the subject is leaving the field of view but HRNet returns
-        # relatively high confidence values. As a consequence, the trial is not
-        # automatically trimmed. Here, we provide the option to manually trim
-        # the end of the trial.
+        # We might want to trim the start/end of the trial to remove bad data. 
+        # For example, this might be needed with HRNet during overground 
+        # walking, where, at the end, the subject is leaving the field of view 
+        # but HRNet returns relatively high confidence values. As a result,
+        # the trial is not well trimmed. Here, we provide the option to
+        # manually trim the start and end of the trial.
+        self.trimming_start = trimming_start
         self.trimming_end = trimming_end
                         
         # Marker data load and filter.
         self.markerDict = self.get_marker_dict(session_dir, trial_name, 
             lowpass_cutoff_frequency = lowpass_cutoff_frequency_for_coordinate_values)
+        temp = self.markerDict
 
         # Coordinate values.
         self.coordinateValues = self.get_coordinate_values()
+        temp1=self.coordinateValues
         
         # Trim marker data and coordinate values.
-        if self.trimming_end > 0:
-            self.idx_trim = np.where(np.round(self.markerDict['time'],6) <= np.round(self.markerDict['time'][-1],6) - self.trimming_end)[0][-1] + 1
-            self.markerDict['time'] = self.markerDict['time'][:self.idx_trim,]
+        if self.trimming_start > 0:
+            self.idx_trim_start = np.where(np.round(self.markerDict['time'],6) <= self.trimming_start)[0][-1]
+            self.markerDict['time'] = self.markerDict['time'][self.idx_trim_start:,]
             for marker in self.markerDict['markers']:
-                self.markerDict['markers'][marker] = self.markerDict['markers'][marker][:self.idx_trim,:]
-            self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim]
+                self.markerDict['markers'][marker] = self.markerDict['markers'][marker][self.idx_trim_start:,:]
+            self.coordinateValues = self.coordinateValues.iloc[self.idx_trim_start:]
+        
+        if self.trimming_end > 0:
+            self.idx_trim_end = np.where(np.round(self.markerDict['time'],6) <= np.round(self.markerDict['time'][-1] - self.trimming_end,6))[0][-1] + 1
+            self.markerDict['time'] = self.markerDict['time'][:self.idx_trim_end,]
+            for marker in self.markerDict['markers']:
+                self.markerDict['markers'][marker] = self.markerDict['markers'][marker][:self.idx_trim_end,:]
+            self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
         # Segment gait cycles.
         self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg)
@@ -79,8 +90,12 @@ class gait_analysis(kinematics):
     def comValues(self):
         if self._comValues is None:
             self._comValues = self.get_center_of_mass_values()
+            temp = self._comValues
+            if self.trimming_start > 0:
+                self._comValues = self._comValues.iloc[self.idx_trim_start:]            
             if self.trimming_end > 0:
-                self._comValues = self._comValues.iloc[:self.idx_trim]
+                self._comValues = self._comValues.iloc[:self.idx_trim_end]
+            temp = self._comValues
         return self._comValues
     
     # Compute gait frame.
@@ -750,6 +765,28 @@ class gait_analysis(kinematics):
         l_toe_rel_x = (
             self.markerDict['markers']['L_toe_study'] - 
             self.markerDict['markers']['L.PSIS_study'])[:,0]
+        
+        # Identify which direction the subject is walking after 1s.
+        idx_1sec = np.where(np.round(self.markerDict['time'],6) <= 1)[0][-1]
+        r_psis_1sec_x = self.markerDict['markers']['r.PSIS_study'][idx_1sec,0]
+        l_psis_1sec_x = self.markerDict['markers']['L.PSIS_study'][idx_1sec,0]
+        r_asis_1sec_x = self.markerDict['markers']['r.ASIS_study'][idx_1sec,0]
+        l_asis_1sec_x = self.markerDict['markers']['L.ASIS_study'][idx_1sec,0]
+        
+        r_dir_1sec_x = r_asis_1sec_x-r_psis_1sec_x
+        l_dir_1sec_x = l_asis_1sec_x-l_psis_1sec_x
+        # If different signs, throw warning.
+        if r_dir_1sec_x*l_dir_1sec_x < 0:
+            print('Ambiguous walking direction. Consider trimming your trial using the trimming_start and trimming_end options.')
+        else:
+            if r_dir_1sec_x > 0:
+                position_approach_scaling = 1
+            else:
+                position_approach_scaling = -1
+            r_calc_rel_x *= position_approach_scaling
+            r_toe_rel_x *= position_approach_scaling
+            l_calc_rel_x *= position_approach_scaling
+            l_toe_rel_x *= position_approach_scaling
                        
         # Detect peaks, check if they're in the right order, if not reduce prominence.
         # the peaks can be less prominent with pathological or slower gait patterns
@@ -763,7 +800,7 @@ class gait_analysis(kinematics):
                                   prominence=prom)
             if not detect_correct_order(rHS=rHS, rTO=rTO, lHS=lHS, lTO=lTO):
                 if prom == prominences[-1]:
-                    print('The ordering of gait events is not correct. Check results.')
+                    raise ValueError('The ordering of gait events is not correct. Consider trimming your trial using the trimming_start and trimming_end options.')
                 else:
                     print('The gait events were not in the correct order. Trying peak detection again ' +
                       'with prominence = ' + str(prominences[i+1]) + '.')
