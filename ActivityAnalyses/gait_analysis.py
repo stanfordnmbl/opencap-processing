@@ -763,10 +763,10 @@ class gait_analysis(kinematics):
             self.markerDict['markers']['L.PSIS_study'])[:,0]
         
         # Identify which direction the subject is walking.
-        r_psis_1sec_x = self.markerDict['markers']['r.PSIS_study'][:,0]
-        r_asis_1sec_x = self.markerDict['markers']['r.ASIS_study'][:,0]
-        r_dir_1sec_x = r_asis_1sec_x-r_psis_1sec_x
-        position_approach_scaling = np.where(r_dir_1sec_x > 0, 1, -1)
+        r_psis_x = self.markerDict['markers']['r.PSIS_study'][:,0]
+        r_asis_x = self.markerDict['markers']['r.ASIS_study'][:,0]
+        r_dir_x = r_asis_x-r_psis_x
+        position_approach_scaling = np.where(r_dir_x > 0, 1, -1)
         # Adjust relative positions accordingly.
         r_calc_rel_x *= position_approach_scaling
         r_toe_rel_x *= position_approach_scaling
