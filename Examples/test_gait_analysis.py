@@ -46,7 +46,9 @@ if example == 'treadmill':
 
 elif example == 'overground':
     session_id = 'c5c492d7-90af-417d-a80c-77f0a825ab07'
-    trial_name = 'Gait_01'
+    # trial_name = 'Gait_01'
+    trial_name = 'Gait_Valgo_Rodilla'
+    # trial_name = 'Gait_Valgo_Rodilla_02'
 
 scalar_names = {'gait_speed','stride_length','step_width','cadence',
                 'double_support_time','step_length_symmetry'}
@@ -77,19 +79,20 @@ sessionDir = os.path.join(dataFolder, session_id)
 trialName = download_trial(trial_id,sessionDir,session_id=session_id) 
 
 # Init gait analysis.
-legs = ['r','l']
+legs = ['r','r']
 gait, gait_events, ipsilateral = {}, {}, {}
 for leg in legs:
     gait[leg] = gait_analysis(
-        sessionDir, trial_name, leg=leg,
+        sessionDir, trial_name, leg='r',
         lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
         n_gait_cycles=n_gait_cycles, gait_style='overground', trimming_end=0.5)
     gait_events[leg] = gait[leg].get_gait_events()
     ipsilateral[leg] = gait_events[leg]['ipsilateralTime'][0,-1]
 
 # Select last leg.
-last_leg = 'r' if ipsilateral['r'] > ipsilateral['l'] else 'l'
-other_leg = 'l' if last_leg == 'r' else 'r'
+# last_leg = 'r' if ipsilateral['r'] > ipsilateral['l'] else 'l'
+# other_leg = 'l' if last_leg == 'r' else 'r'
+last_leg = 'r'
 
 # Compute scalars.
 gait_scalars = gait[last_leg].compute_scalars(scalar_names)
@@ -110,13 +113,35 @@ gait_scalars['step_width']['multiplier'] = 100 # cm
 # Curves
 gaitCurves = {}
 gaitCurves[last_leg] = gait[last_leg].get_coordinates_normalized_time()
-gaitCurves[other_leg] = gait[other_leg].get_coordinates_normalized_time()
+# gaitCurves[other_leg] = gait[other_leg].get_coordinates_normalized_time()
+print('last leg {}'.format(last_leg))
+
+
+# REFERENCE
+# Gait01: right leg
+# Gait_Valgo_Rodilla_01: right leg
+# Gait_Valgo_Rodilla_02: left leg
+# step_length_symmetry':    107.06(Gait_01),    125.90(Gait_Valgo_Rodilla_02),  123.34(Gait_Valgo_Rodilla_01)
+# stride_length':           1.08(Gait_01),      1.20(Gait_Valgo_Rodilla_02),    1.29(Gait_Valgo_Rodilla_01)
+# cadence':                 91.1(Gait_01),      84.7 (Gait_Valgo_Rodilla_02),   86.74(Gait_Valgo_Rodilla_01)
+# step_width':              0.23(Gait_01),      0.17 (Gait_Valgo_Rodilla_02),   0.20(Gait_Valgo_Rodilla_01)
+# gait_speed':              0.78(Gait_01),      0.81 (Gait_Valgo_Rodilla_02),   0.93(Gait_Valgo_Rodilla_01)
+# double_support_time':     39.24(Gait_01),     34.11(Gait_Valgo_Rodilla_02),   30.12(Gait_Valgo_Rodilla_01)
+
+# AFTER TRIMMING AND RIGHT LEG FORCED SELECTION.
+# step_length_symmetry':    120.90(Gait_01),    112.38(Gait_Valgo_Rodilla_02),  /(Gait_Valgo_Rodilla_01)
+# stride_length':           1.03(Gait_01),      1.09(Gait_Valgo_Rodilla_02),    /(Gait_Valgo_Rodilla_01)
+# cadence':                 90.00(Gait_01),     87.80(Gait_Valgo_Rodilla_02),   /(Gait_Valgo_Rodilla_01)
+# step_width':              0.17(Gait_01),      0.20(Gait_Valgo_Rodilla_02),    /(Gait_Valgo_Rodilla_01)
+# gait_speed':              0.78(Gait_01),      0.77(Gait_Valgo_Rodilla_02),    /(Gait_Valgo_Rodilla_01)
+# double_support_time':     37.50(Gait_01),     41.46(Gait_Valgo_Rodilla_02),   /(Gait_Valgo_Rodilla_01)
+
 
 # %% You can plot multiple curves, in this case we compare right and left legs.
-plot_dataframe_with_shading(
-    [gaitCurves[last_leg]['mean']],
-    [gaitCurves[last_leg]['sd']],
-    leg = [last_leg],
-    xlabel = '% gait cycle',
-    title = 'kinematics (m or deg)',
-    legend_entries = [last_leg])
+# plot_dataframe_with_shading(
+#     [gaitCurves[last_leg]['mean']],
+#     [gaitCurves[last_leg]['sd']],
+#     leg = [last_leg],
+#     xlabel = '% gait cycle',
+#     title = 'kinematics (m or deg)',
+#     legend_entries = [last_leg])
