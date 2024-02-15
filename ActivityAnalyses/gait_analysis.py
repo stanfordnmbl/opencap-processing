@@ -746,32 +746,46 @@ class gait_analysis(kinematics):
             return True
         
         # Subtract sacrum from foot.
-        # It looks like the position-based approach will be more robust.
-        r_calc_rel_x = (
+        # It looks like the position-based approach will be more robust.        
+        r_calc_rel = (
             self.markerDict['markers']['r_calc_study'] - 
-            self.markerDict['markers']['r.PSIS_study'])[:,0]
-        r_toe_rel_x = (
+            self.markerDict['markers']['r.PSIS_study'])
+        
+        r_toe_rel = (
             self.markerDict['markers']['r_toe_study'] - 
-            self.markerDict['markers']['r.PSIS_study'])[:,0]
-
+            self.markerDict['markers']['r.PSIS_study'])
+        r_toe_rel_x = r_toe_rel[:,0]
         # Repeat for left.
-        l_calc_rel_x = (
+        l_calc_rel = (
             self.markerDict['markers']['L_calc_study'] - 
-            self.markerDict['markers']['L.PSIS_study'])[:,0]
-        l_toe_rel_x = (
+            self.markerDict['markers']['L.PSIS_study'])
+        l_toe_rel = (
             self.markerDict['markers']['L_toe_study'] - 
-            self.markerDict['markers']['L.PSIS_study'])[:,0]
+            self.markerDict['markers']['L.PSIS_study'])
         
         # Identify which direction the subject is walking.
-        r_psis_x = self.markerDict['markers']['r.PSIS_study'][:,0]
-        r_asis_x = self.markerDict['markers']['r.ASIS_study'][:,0]
-        r_dir_x = r_asis_x-r_psis_x
-        position_approach_scaling = np.where(r_dir_x > 0, 1, -1)
-        # Adjust relative positions accordingly.
-        r_calc_rel_x *= position_approach_scaling
-        r_toe_rel_x *= position_approach_scaling
-        l_calc_rel_x *= position_approach_scaling
-        l_toe_rel_x *= position_approach_scaling
+        mid_psis = (self.markerDict['markers']['r.PSIS_study'] + self.markerDict['markers']['L.PSIS_study'])/2
+        mid_asis = (self.markerDict['markers']['r.ASIS_study'] + self.markerDict['markers']['L.ASIS_study'])/2
+        mid_dir = mid_asis - mid_psis
+        mid_dir_floor = np.copy(mid_dir)
+        mid_dir_floor[:,1] = 0
+        mid_dir_floor = mid_dir_floor / np.linalg.norm(mid_dir_floor,axis=1,keepdims=True)
+        
+        # Dot product projections   
+        r_calc_rel_x = np.einsum('ij,ij->i', mid_dir_floor,r_calc_rel)
+        l_calc_rel_x = np.einsum('ij,ij->i', mid_dir_floor,l_calc_rel)
+        r_toe_rel_x = np.einsum('ij,ij->i', mid_dir_floor,r_toe_rel)
+        l_toe_rel_x = np.einsum('ij,ij->i', mid_dir_floor,l_toe_rel)
+        
+        # Old Approach that does not take the heading direction into account.
+        # r_psis_x = self.markerDict['markers']['r.PSIS_study'][:,0]
+        # r_asis_x = self.markerDict['markers']['r.ASIS_study'][:,0]
+        # r_dir_x = r_asis_x-r_psis_x
+        # position_approach_scaling = np.where(r_dir_x > 0, 1, -1)        
+        # r_calc_rel_x = r_calc_rel[:,0] * position_approach_scaling
+        # r_toe_rel_x = r_toe_rel[:,0] * position_approach_scaling
+        # l_calc_rel_x = l_calc_rel[:,0] * position_approach_scaling
+        # l_toe_rel_x = l_toe_rel[:,0] * position_approach_scaling
                        
         # Detect peaks, check if they're in the right order, if not reduce prominence.
         # the peaks can be less prominent with pathological or slower gait patterns
