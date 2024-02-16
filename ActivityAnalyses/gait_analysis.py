@@ -33,20 +33,45 @@ class gait_analysis(kinematics):
     
     def __init__(self, session_dir, trial_name, leg='auto',
                  lowpass_cutoff_frequency_for_coordinate_values=-1,
-                 n_gait_cycles=-1, gait_style='auto'):
+                 n_gait_cycles=-1, gait_style='auto', trimming_start=0, 
+                 trimming_end=0):
         
         # Inherit init from kinematics class.
         super().__init__(
             session_dir, 
             trial_name, 
             lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
+        
+        # We might want to trim the start/end of the trial to remove bad data. 
+        # For example, this might be needed with HRNet during overground 
+        # walking, where, at the end, the subject is leaving the field of view 
+        # but HRNet returns relatively high confidence values. As a result,
+        # the trial is not well trimmed. Here, we provide the option to
+        # manually trim the start and end of the trial.
+        self.trimming_start = trimming_start
+        self.trimming_end = trimming_end
                         
         # Marker data load and filter.
-        self.markerDict= self.get_marker_dict(session_dir, trial_name, 
-                            lowpass_cutoff_frequency = lowpass_cutoff_frequency_for_coordinate_values)
+        self.markerDict = self.get_marker_dict(session_dir, trial_name, 
+            lowpass_cutoff_frequency = lowpass_cutoff_frequency_for_coordinate_values)
 
         # Coordinate values.
         self.coordinateValues = self.get_coordinate_values()
+        
+        # Trim marker data and coordinate values.
+        if self.trimming_start > 0:
+            self.idx_trim_start = np.where(np.round(self.markerDict['time'] - self.trimming_start,6) <= 0)[0][-1]
+            self.markerDict['time'] = self.markerDict['time'][self.idx_trim_start:,]
+            for marker in self.markerDict['markers']:
+                self.markerDict['markers'][marker] = self.markerDict['markers'][marker][self.idx_trim_start:,:]
+            self.coordinateValues = self.coordinateValues.iloc[self.idx_trim_start:]
+        
+        if self.trimming_end > 0:
+            self.idx_trim_end = np.where(np.round(self.markerDict['time'],6) <= np.round(self.markerDict['time'][-1] - self.trimming_end,6))[0][-1] + 1
+            self.markerDict['time'] = self.markerDict['time'][:self.idx_trim_end,]
+            for marker in self.markerDict['markers']:
+                self.markerDict['markers'][marker] = self.markerDict['markers'][marker][:self.idx_trim_end,:]
+            self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
         # Segment gait cycles.
         self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg)
@@ -63,6 +88,10 @@ class gait_analysis(kinematics):
     def comValues(self):
         if self._comValues is None:
             self._comValues = self.get_center_of_mass_values()
+            if self.trimming_start > 0:
+                self._comValues = self._comValues.iloc[self.idx_trim_start:]            
+            if self.trimming_end > 0:
+                self._comValues = self._comValues.iloc[:self.idx_trim_end]
         return self._comValues
     
     # Compute gait frame.
@@ -630,7 +659,7 @@ class gait_analysis(kinematics):
         data = self.coordinateValues.to_numpy(copy=True)
         coordValuesNorm = []
         for i in range(self.nGaitCycles):
-            coordValues = data[self.gaitEvents['ipsilateralIdx'][i,0]:self.gaitEvents['ipsilateralIdx'][i,2]]
+            coordValues = data[self.gaitEvents['ipsilateralIdx'][i,0]:self.gaitEvents['ipsilateralIdx'][i,2]+1]
             coordValuesNorm.append(np.stack([np.interp(np.linspace(0,100,101),
                                    np.linspace(0,100,len(coordValues)),coordValues[:,i]) \
                                    for i in range(coordValues.shape[1])],axis=1))
@@ -717,21 +746,46 @@ class gait_analysis(kinematics):
             return True
         
         # Subtract sacrum from foot.
-        # It looks like the position-based approach will be more robust.
-        r_calc_rel_x = (
+        # It looks like the position-based approach will be more robust.        
+        r_calc_rel = (
             self.markerDict['markers']['r_calc_study'] - 
-            self.markerDict['markers']['r.PSIS_study'])[:,0]
-        r_toe_rel_x = (
+            self.markerDict['markers']['r.PSIS_study'])
+        
+        r_toe_rel = (
             self.markerDict['markers']['r_toe_study'] - 
-            self.markerDict['markers']['r.PSIS_study'])[:,0]
-
+            self.markerDict['markers']['r.PSIS_study'])
+        r_toe_rel_x = r_toe_rel[:,0]
         # Repeat for left.
-        l_calc_rel_x = (
+        l_calc_rel = (
             self.markerDict['markers']['L_calc_study'] - 
-            self.markerDict['markers']['L.PSIS_study'])[:,0]
-        l_toe_rel_x = (
+            self.markerDict['markers']['L.PSIS_study'])
+        l_toe_rel = (
             self.markerDict['markers']['L_toe_study'] - 
-            self.markerDict['markers']['L.PSIS_study'])[:,0]
+            self.markerDict['markers']['L.PSIS_study'])
+        
+        # Identify which direction the subject is walking.
+        mid_psis = (self.markerDict['markers']['r.PSIS_study'] + self.markerDict['markers']['L.PSIS_study'])/2
+        mid_asis = (self.markerDict['markers']['r.ASIS_study'] + self.markerDict['markers']['L.ASIS_study'])/2
+        mid_dir = mid_asis - mid_psis
+        mid_dir_floor = np.copy(mid_dir)
+        mid_dir_floor[:,1] = 0
+        mid_dir_floor = mid_dir_floor / np.linalg.norm(mid_dir_floor,axis=1,keepdims=True)
+        
+        # Dot product projections   
+        r_calc_rel_x = np.einsum('ij,ij->i', mid_dir_floor,r_calc_rel)
+        l_calc_rel_x = np.einsum('ij,ij->i', mid_dir_floor,l_calc_rel)
+        r_toe_rel_x = np.einsum('ij,ij->i', mid_dir_floor,r_toe_rel)
+        l_toe_rel_x = np.einsum('ij,ij->i', mid_dir_floor,l_toe_rel)
+        
+        # Old Approach that does not take the heading direction into account.
+        # r_psis_x = self.markerDict['markers']['r.PSIS_study'][:,0]
+        # r_asis_x = self.markerDict['markers']['r.ASIS_study'][:,0]
+        # r_dir_x = r_asis_x-r_psis_x
+        # position_approach_scaling = np.where(r_dir_x > 0, 1, -1)        
+        # r_calc_rel_x = r_calc_rel[:,0] * position_approach_scaling
+        # r_toe_rel_x = r_toe_rel[:,0] * position_approach_scaling
+        # l_calc_rel_x = l_calc_rel[:,0] * position_approach_scaling
+        # l_toe_rel_x = l_toe_rel[:,0] * position_approach_scaling
                        
         # Detect peaks, check if they're in the right order, if not reduce prominence.
         # the peaks can be less prominent with pathological or slower gait patterns
@@ -745,7 +799,7 @@ class gait_analysis(kinematics):
                                   prominence=prom)
             if not detect_correct_order(rHS=rHS, rTO=rTO, lHS=lHS, lTO=lTO):
                 if prom == prominences[-1]:
-                    print('The ordering of gait events is not correct. Check results.')
+                    raise ValueError('The ordering of gait events is not correct. Consider trimming your trial using the trimming_start and trimming_end options.')
                 else:
                     print('The gait events were not in the correct order. Trying peak detection again ' +
                       'with prominence = ' + str(prominences[i+1]) + '.')
