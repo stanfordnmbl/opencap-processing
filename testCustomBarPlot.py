@@ -63,6 +63,9 @@ def create_custom_bar_subplots(data_dict_list):
             axs[i].barh(0, left_width, left=0, color=colors[0], height=bar_height)
             axs[i].barh(0, middle_width, left=left_width, color=colors[1], height=bar_height)
             axs[i].barh(0, right_width, left=left_width+middle_width, color=colors[2], height=bar_height)
+            # Add transparent bar to cover the entire width
+            # axs[i].barh(0, 1, left=0, color='white', alpha=0)
+            
     
             # Place the value indicator
             value_pos = np.round((value - left_bound) / total_width, decimal)
@@ -76,6 +79,7 @@ def create_custom_bar_subplots(data_dict_list):
             axs[i].spines['bottom'].set_visible(False)
     
             # Set limits and labels
+            axs[i].set_ylim(-0.5, 0.5)   
             axs[i].set_xlim(0, 1)        
             axs[i].set_xticks([left_width, left_width+middle_width, value_pos])
             axs[i].set_xticklabels([min_limit, max_limit, value])

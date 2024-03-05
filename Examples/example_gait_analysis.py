@@ -38,11 +38,16 @@ dataFolder = os.path.join(baseDir, 'Data')
 
 # %% User-defined variables.
 # Select example: options are treadmill and overground.
-example = 'treadmill'
+example = 'overground'
 
 if example == 'treadmill':
-    session_id = '4d5c3eb1-1a59-4ea1-9178-d3634610561c' # 1.25m/s
-    trial_name = 'walk_1_25ms'
+    # session_id = '4d5c3eb1-1a59-4ea1-9178-d3634610561c' # 1.25m/s
+    # trial_name = 'walk_1_25ms'
+    
+    session_id = '9d384602-25a6-4d9e-8936-c766215c52e5'
+    trial_name = 'Gait_Assessment1'
+    # trial_name = 'Gait_Assessment1_1'
+    # trial_name = 'Gait_Assessment1_2'
 
 elif example == 'overground':
     session_id = 'b39b10d1-17c7-4976-b06c-a6aaf33fead2'
