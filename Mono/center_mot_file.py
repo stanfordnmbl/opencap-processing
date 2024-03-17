@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from utilsProcessing import lowPassFilter
 
 baseDir = 'C:/SharedGdrive/sparseIK/Data/'
-dofs_to_zero = ['pelvis_tx','pelvis_tz','pelvis_ty','time']
+dofs_to_zero = ['pelvis_tx','pelvis_tz','pelvis_ty','pelvis_rotation','time']
 
 rewriteMotFiles = True
 
