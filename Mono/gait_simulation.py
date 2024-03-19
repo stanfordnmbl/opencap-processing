@@ -38,7 +38,8 @@ from utilsKinematics import kinematics
 
 
 #%% User inputs
-dataDir = 'C:/SharedGdrive/sparseIK/Data/'
+# dataDir = 'C:/SharedGdrive/sparseIK/Data/'
+dataDir = 'C:/Users/hpl/Documents/MyRepositories/opencap-processing/Data/'
 
 
 # # walkingTS2 OpenCapSubject4_ts
@@ -52,10 +53,20 @@ dataDir = 'C:/SharedGdrive/sparseIK/Data/'
 # manual_align = 0
 
 # # walkingTS2 OpenCapSubject4_ts
-trialName = 'walkingTS2_sagittalRight'
-sessionFolder = 'OpenCapSubject4_ts_sagittalRight'
+# trialName = 'walkingTS2_sagittalRight'
+# sessionFolder = 'OpenCapSubject4_ts_sagittalRight'
+# timeOverride = True
+# time_window_override = [.1 , 1.18] # walking4
+# case = '101'
+# single_gait_cycle = True
+# leg = 'l'
+# manual_align = 0
+
+# # walkingTS2 OpenCapSubject4_ts
+trialName = 'walking4'
+sessionFolder = 'monosquats'
 timeOverride = True
-time_window_override = [.1 , 1.18] # walking4
+time_window_override = [0 , 1.5] # walking4
 case = '101'
 single_gait_cycle = True
 leg = 'l'
