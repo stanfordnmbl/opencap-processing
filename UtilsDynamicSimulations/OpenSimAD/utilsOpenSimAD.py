@@ -714,21 +714,24 @@ def generateExternalFunction(
                 cObj = opensim.CustomJoint.safeDownCast(c_joint)    
                 spatialtransform = cObj.get_SpatialTransform()
                 
+                # if c_joint_name == 'hip_r':
+                #     test=1
+                
                 # Transform axis.
                 # Rotation 1
                 rot1 = spatialtransform.get_rotation1()
                 rot1_axis = rot1.get_axis().to_numpy()
                 rot1_f = rot1.get_function()
-                coord = 0
+                coord = 0                
                 if rot1_f.getConcreteClassName() == 'LinearFunction':  
                     rot1_f_obj = opensim.LinearFunction.safeDownCast(rot1_f)                          
                     rot1_f_slope = rot1_f_obj.getSlope()
                     rot1_f_intercept = rot1_f_obj.getIntercept()                
-                    c_coord = c_joint.get_coordinates(coord)
-                    c_coord_name = c_coord.getName()
+                    c_coord_name = rot1.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     f.write('\tst_%s[%i].setFunction(new LinearFunction(%.4f, %.4f));\n' % (c_joint.getName(), coord, rot1_f_slope, rot1_f_intercept))                
                 elif rot1_f.getConcreteClassName() == 'PolynomialFunction':
+                    c_coord_name = rot1.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     rot1_f_obj = opensim.PolynomialFunction.safeDownCast(rot1_f)                
                     rot1_f_coeffs = rot1_f_obj.getCoefficients().to_numpy()
@@ -787,16 +790,16 @@ def generateExternalFunction(
                 rot2 = spatialtransform.get_rotation2()
                 rot2_axis = rot2.get_axis().to_numpy()
                 rot2_f = rot2.get_function()
-                coord = 1
+                coord = 1                
                 if rot2_f.getConcreteClassName() == 'LinearFunction':
                     rot2_f_obj = opensim.LinearFunction.safeDownCast(rot2_f)
                     rot2_f_slope = rot2_f_obj.getSlope()
                     rot2_f_intercept = rot2_f_obj.getIntercept()                
-                    c_coord = c_joint.get_coordinates(coord)
-                    c_coord_name = c_coord.getName()
+                    c_coord_name = rot2.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     f.write('\tst_%s[%i].setFunction(new LinearFunction(%.4f, %.4f));\n' % (c_joint.getName(), coord, rot2_f_slope, rot2_f_intercept))
                 elif rot2_f.getConcreteClassName() == 'PolynomialFunction':
+                    c_coord_name = rot2.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     rot2_f_obj = opensim.PolynomialFunction.safeDownCast(rot2_f)                
                     rot2_f_coeffs = rot2_f_obj.getCoefficients().to_numpy()
@@ -855,16 +858,16 @@ def generateExternalFunction(
                 rot3 = spatialtransform.get_rotation3()
                 rot3_axis = rot3.get_axis().to_numpy()
                 rot3_f = rot3.get_function()
-                coord = 2
+                coord = 2                
                 if rot3_f.getConcreteClassName() == 'LinearFunction': 
                     rot3_f_obj = opensim.LinearFunction.safeDownCast(rot3_f)
                     rot3_f_slope = rot3_f_obj.getSlope()
                     rot3_f_intercept = rot3_f_obj.getIntercept()                
-                    c_coord = c_joint.get_coordinates(coord)
-                    c_coord_name = c_coord.getName()
+                    c_coord_name = rot3.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     f.write('\tst_%s[%i].setFunction(new LinearFunction(%.4f, %.4f));\n' % (c_joint.getName(), coord, rot3_f_slope, rot3_f_intercept))
                 elif rot3_f.getConcreteClassName() == 'PolynomialFunction':
+                    c_coord_name = rot3.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     rot3_f_obj = opensim.PolynomialFunction.safeDownCast(rot3_f)                
                     rot3_f_coeffs = rot3_f_obj.getCoefficients().to_numpy()
@@ -923,20 +926,20 @@ def generateExternalFunction(
                 tr1 = spatialtransform.get_translation1()
                 tr1_axis = tr1.get_axis().to_numpy()
                 tr1_f = tr1.get_function()
-                coord = 3
+                coord = 3                
                 if tr1_f.getConcreteClassName() == 'LinearFunction':    
                     tr1_f_obj = opensim.LinearFunction.safeDownCast(tr1_f)
                     tr1_f_slope = tr1_f_obj.getSlope()
-                    tr1_f_intercept = tr1_f_obj.getIntercept()                
-                    c_coord = c_joint.get_coordinates(coord)
-                    c_coord_name = c_coord.getName()
+                    tr1_f_intercept = tr1_f_obj.getIntercept()
+                    c_coord_name = tr1.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     f.write('\tst_%s[%i].setFunction(new LinearFunction(%.4f, %.4f));\n' % (c_joint.getName(), coord, tr1_f_slope, tr1_f_intercept))
                 elif tr1_f.getConcreteClassName() == 'PolynomialFunction':
+                    c_coord_name = tr1.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     tr1_f_obj = opensim.PolynomialFunction.safeDownCast(tr1_f)                
                     tr1_f_coeffs = tr1_f_obj.getCoefficients().to_numpy()
-                    c_nCoeffs = tr1_f_coeffs.shape[0]                
+                    c_nCoeffs = tr1_f_coeffs.shape[0]   
                     if c_nCoeffs == 2:
                         f.write('\tosim_double_adouble st_%s_%i_coeffs[%i] = {%.20f, %.20f}; \n' % (c_joint.getName(), coord, c_nCoeffs, tr1_f_coeffs[0], tr1_f_coeffs[1]))
                     elif c_nCoeffs == 3:
@@ -991,16 +994,16 @@ def generateExternalFunction(
                 tr2 = spatialtransform.get_translation2()
                 tr2_axis = tr2.get_axis().to_numpy()
                 tr2_f = tr2.get_function()
-                coord = 4
+                coord = 4                
                 if tr2_f.getConcreteClassName() == 'LinearFunction': 
                     tr2_f_obj = opensim.LinearFunction.safeDownCast(tr2_f)
                     tr2_f_slope = tr2_f_obj.getSlope()
                     tr2_f_intercept = tr2_f_obj.getIntercept()                
-                    c_coord = c_joint.get_coordinates(coord)
-                    c_coord_name = c_coord.getName()
+                    c_coord_name = tr2.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     f.write('\tst_%s[%i].setFunction(new LinearFunction(%.4f, %.4f));\n' % (c_joint.getName(), coord, tr2_f_slope, tr2_f_intercept))
                 elif tr2_f.getConcreteClassName() == 'PolynomialFunction':
+                    c_coord_name = tr2.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     tr2_f_obj = opensim.PolynomialFunction.safeDownCast(tr2_f)                
                     tr2_f_coeffs = tr2_f_obj.getCoefficients().to_numpy()
@@ -1059,16 +1062,16 @@ def generateExternalFunction(
                 tr3 = spatialtransform.get_translation3()
                 tr3_axis = tr3.get_axis().to_numpy()
                 tr3_f = tr3.get_function()
-                coord = 5
+                coord = 5                
                 if tr3_f.getConcreteClassName() == 'LinearFunction':     
                     tr3_f_obj = opensim.LinearFunction.safeDownCast(tr3_f)
                     tr3_f_slope = tr3_f_obj.getSlope()
                     tr3_f_intercept = tr3_f_obj.getIntercept()                
-                    c_coord = c_joint.get_coordinates(coord)
-                    c_coord_name = c_coord.getName()
+                    c_coord_name = tr3.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     f.write('\tst_%s[%i].setFunction(new LinearFunction(%.4f, %.4f));\n' % (c_joint.getName(), coord, tr3_f_slope, tr3_f_intercept))
                 elif tr3_f.getConcreteClassName() == 'PolynomialFunction':
+                    c_coord_name = tr3.get_coordinates(0)
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     tr3_f_obj = opensim.PolynomialFunction.safeDownCast(tr3_f)                
                     tr3_f_coeffs = tr3_f_obj.getCoefficients().to_numpy()
