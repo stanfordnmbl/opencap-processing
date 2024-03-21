@@ -936,7 +936,7 @@ def generateExternalFunction(
                     f.write('\tst_%s[%i].setCoordinateNames(OpenSim::Array<std::string>(\"%s\", 1, 1));\n' % (c_joint.getName(), coord, c_coord_name))
                     tr1_f_obj = opensim.PolynomialFunction.safeDownCast(tr1_f)                
                     tr1_f_coeffs = tr1_f_obj.getCoefficients().to_numpy()
-                    c_nCoeffs = tr1_f_coeffs.shape[0]   
+                    c_nCoeffs = tr1_f_coeffs.shape[0]
                     if c_nCoeffs == 2:
                         f.write('\tosim_double_adouble st_%s_%i_coeffs[%i] = {%.20f, %.20f}; \n' % (c_joint.getName(), coord, c_nCoeffs, tr1_f_coeffs[0], tr1_f_coeffs[1]))
                     elif c_nCoeffs == 3:
