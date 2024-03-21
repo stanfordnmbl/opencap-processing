@@ -129,7 +129,7 @@ session_id = "94cfc971-1167-419d-9474-bed0b96e5206"
 case = '0' # Change this to compare across settings.
 # Options are 'squat', 'STS', and 'jump'.
 if session_type == 'overground': 
-    trial_name = 'DLDJ2'
+    trial_name = 'SLDJ_R2'
     if trial_name == 'squat': # Squat
         motion_type = 'squats'
         repetition = 1
@@ -139,9 +139,9 @@ if session_type == 'overground':
     elif trial_name == 'jump': # Jump  
         motion_type = 'jumping'
         time_window = [1.3, 2.2]
-    elif trial_name == 'DLDJ2': # Jump  
-        motion_type = 'drop_jump'
-        time_window = [1.75, 3.0]
+    elif trial_name == 'SLDJ_R2': # Jump  
+        motion_type = 'drop_jump_knee_adduction'
+        time_window = [1.7, 2.7]
 # Options are 'walk_1_25ms', 'run_2_5ms', and 'run_4ms'.
 elif session_type == 'treadmill': 
     trial_name = 'walk_1_25ms'
@@ -185,10 +185,13 @@ settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                                   motion_type, time_window, repetition,
                                   treadmill_speed)
 
+if case == '1':
+    settings['meshDensity'] = 100
+
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 
               solveProblem=solveProblem, analyzeResults=analyzeResults)
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
-plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, cases=[case])
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, cases=['0', '1'], mainPlots=False)
