@@ -714,15 +714,12 @@ def generateExternalFunction(
                 cObj = opensim.CustomJoint.safeDownCast(c_joint)    
                 spatialtransform = cObj.get_SpatialTransform()
                 
-                # if c_joint_name == 'hip_r':
-                #     test=1
-                
                 # Transform axis.
                 # Rotation 1
                 rot1 = spatialtransform.get_rotation1()
                 rot1_axis = rot1.get_axis().to_numpy()
                 rot1_f = rot1.get_function()
-                coord = 0                
+                coord = 0
                 if rot1_f.getConcreteClassName() == 'LinearFunction':  
                     rot1_f_obj = opensim.LinearFunction.safeDownCast(rot1_f)                          
                     rot1_f_slope = rot1_f_obj.getSlope()
@@ -790,7 +787,7 @@ def generateExternalFunction(
                 rot2 = spatialtransform.get_rotation2()
                 rot2_axis = rot2.get_axis().to_numpy()
                 rot2_f = rot2.get_function()
-                coord = 1                
+                coord = 1
                 if rot2_f.getConcreteClassName() == 'LinearFunction':
                     rot2_f_obj = opensim.LinearFunction.safeDownCast(rot2_f)
                     rot2_f_slope = rot2_f_obj.getSlope()
@@ -858,7 +855,7 @@ def generateExternalFunction(
                 rot3 = spatialtransform.get_rotation3()
                 rot3_axis = rot3.get_axis().to_numpy()
                 rot3_f = rot3.get_function()
-                coord = 2                
+                coord = 2
                 if rot3_f.getConcreteClassName() == 'LinearFunction': 
                     rot3_f_obj = opensim.LinearFunction.safeDownCast(rot3_f)
                     rot3_f_slope = rot3_f_obj.getSlope()
@@ -926,7 +923,7 @@ def generateExternalFunction(
                 tr1 = spatialtransform.get_translation1()
                 tr1_axis = tr1.get_axis().to_numpy()
                 tr1_f = tr1.get_function()
-                coord = 3                
+                coord = 3
                 if tr1_f.getConcreteClassName() == 'LinearFunction':    
                     tr1_f_obj = opensim.LinearFunction.safeDownCast(tr1_f)
                     tr1_f_slope = tr1_f_obj.getSlope()
@@ -994,7 +991,7 @@ def generateExternalFunction(
                 tr2 = spatialtransform.get_translation2()
                 tr2_axis = tr2.get_axis().to_numpy()
                 tr2_f = tr2.get_function()
-                coord = 4                
+                coord = 4
                 if tr2_f.getConcreteClassName() == 'LinearFunction': 
                     tr2_f_obj = opensim.LinearFunction.safeDownCast(tr2_f)
                     tr2_f_slope = tr2_f_obj.getSlope()
@@ -1062,7 +1059,7 @@ def generateExternalFunction(
                 tr3 = spatialtransform.get_translation3()
                 tr3_axis = tr3.get_axis().to_numpy()
                 tr3_f = tr3.get_function()
-                coord = 5                
+                coord = 5
                 if tr3_f.getConcreteClassName() == 'LinearFunction':     
                     tr3_f_obj = opensim.LinearFunction.safeDownCast(tr3_f)
                     tr3_f_slope = tr3_f_obj.getSlope()
@@ -1845,7 +1842,7 @@ def download_file_2(url, file_name):
 # %% Plot results simulations.
 # TODO: simplify and clean up.
 def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
-                         cases=['default'], mainPlots=False):
+                         cases=['default'], mainPlots=True):
     
     # %% Load optimal trajectories.
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')

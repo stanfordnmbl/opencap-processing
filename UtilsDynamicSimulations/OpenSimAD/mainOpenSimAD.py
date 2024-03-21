@@ -481,14 +481,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         coordinateNames.append(coordinateSet.get(coord).getName())
     kneeAdductionJoints = ['knee_adduction_r', 'knee_adduction_l']
     if all(x in coordinateNames for x in kneeAdductionJoints):
-        idx_knee_angle_r = joints.index('knee_angle_r')
-        idx_knee_angle_l = joints.index('knee_angle_l')
+        idx_knee_angle_r = joints.index('knee_angle_r')        
         joints.insert(idx_knee_angle_r+1, 'knee_adduction_r')
+        idx_knee_angle_l = joints.index('knee_angle_l')
         joints.insert(idx_knee_angle_l+1, 'knee_adduction_l')
         withKA = True
     elif any(x in coordinateNames for x in kneeAdductionJoints):
         raise ValueError('We found a knee adduction coordinate in the model, but only on one side. Please verify the model and the coordinate names.')
-    # # Lower-limb coordinates.
+    # Lower-limb coordinates.
     lowerLimbJoints = copy.deepcopy(joints)
     # Arm coordinates.
     armJoints = ['arm_flex_l', 'arm_add_l', 'arm_rot_l',
