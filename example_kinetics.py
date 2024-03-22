@@ -163,13 +163,13 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = True
+solveProblem = False
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to
 # True. This is useful if you do additional post-processing but do not want to
 # re-run the problem.
-analyzeResults = True
+analyzeResults = False
 
 # Path to where you want the data to be downloaded.
 dataFolder = os.path.join(baseDir, 'Data')
@@ -194,4 +194,4 @@ run_tracking(baseDir, dataFolder, session_id, settings, case=case,
 
 # %% Plots.
 # To compare different cases, add to the cases list, eg cases=['0','1'].
-plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, cases=['0', '1'], mainPlots=False)
+plotResultsOpenSimAD(dataFolder, session_id, trial_name, settings, cases=[case], mainPlots=False)
