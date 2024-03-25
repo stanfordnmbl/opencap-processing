@@ -3,8 +3,10 @@ import sys
 sys.path.append("..")
 import numpy as np
 import json
+import shutil
+import traceback
 
-from utils import get_trial_id, get_trial_json, download_file, post_video_to_trial, delete_video_from_trial
+from utils import get_trial_id, get_trial_json, download_file, post_video_to_trial, delete_video_from_trial, delete_results, set_trial_status
 
 data_folder = os.path.join("../Data/Parker")
 os.makedirs(data_folder, exist_ok=True)
@@ -68,12 +70,12 @@ all_bad_data = \
   'end': 9}, # TO REPROCESS, not sure it will help
  'b233300d-2c6d-4735-aadb-c597da014629_014': {'session': 'b233300d-2c6d-4735-aadb-c597da014629',
   'name': '10MRT',
-  'start': np.nan,
-  'end': np.nan}, # nothing obvious
+  'start': 7,
+  'end': np.nan}, # nothing obvious REDO
  'fa856382-bf8d-411a-b086-a2d74fab9d1b_015': {'name': '10mrt',
   'session': 'fa856382-bf8d-411a-b086-a2d74fab9d1b',
   'start': np.nan,
-  'end': 6}, # TO REPROCESS, person in background
+  'end': 4}, # TO REPROCESS, person in background REDO
  '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1_016': {'session': '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1',
   'name': '10mwrt_1',
   'start': np.nan,
@@ -89,7 +91,7 @@ all_bad_data = \
  '43db734e-13fb-4d6d-9223-09f967dd40f0_019': {'name': 'toe_stand',
   'session': '43db734e-13fb-4d6d-9223-09f967dd40f0',
   'start': np.nan,
-  'end': np.nan}, # nothing obvious
+  'end': np.nan}, # nothing obvious, v different lengths
  '8b7a734d-2874-42f7-94a2-c6026ec35d99_020': {'name': '10mwrt',
   'session': '8b7a734d-2874-42f7-94a2-c6026ec35d99',
   'start': np.nan,
@@ -282,10 +284,10 @@ all_bad_data = \
   'session': '822926eb-1c7d-4298-84c5-7ead6909387b',
   'start': 9,
   'end': np.nan}, # TO REPROCESS, people in the background
- '9108903d-26b3-479a-ad49-955aebb868c7_068': {'session': '9108903d-26b3-479a-ad49-955aebb868c7',
-  'name': 'Curl',
-  'start': np.nan,
-  'end': np.nan}, # folder not on drive
+#  '9108903d-26b3-479a-ad49-955aebb868c7_068': {'session': '9108903d-26b3-479a-ad49-955aebb868c7',
+#   'name': 'Curl',
+#   'start': np.nan,
+#   'end': np.nan}, # folder not on drive
  '8d2f7856-3996-462f-bb2b-f020e7053a90_069': {'session': '8d2f7856-3996-462f-bb2b-f020e7053a90',
   'name': 'TUGCone',
   'start': np.nan,
@@ -294,10 +296,10 @@ all_bad_data = \
   'session': '8d2f7856-3996-462f-bb2b-f020e7053a90',
   'start': np.nan,
   'end': np.nan}, # missing video
- 'ca174c27-d0fe-4edd-8799-9ef3ea053086_071': {'session': 'ca174c27-d0fe-4edd-8799-9ef3ea053086',
-  'name': 'TIPTOE',
-  'start': np.nan,
-  'end': np.nan}, # [videos missing?]
+#  'ca174c27-d0fe-4edd-8799-9ef3ea053086_071': {'session': 'ca174c27-d0fe-4edd-8799-9ef3ea053086',
+#   'name': 'TIPTOE',
+#   'start': np.nan,
+#   'end': np.nan}, # [videos missing?]
  'ca174c27-d0fe-4edd-8799-9ef3ea053086_072': {'session': 'ca174c27-d0fe-4edd-8799-9ef3ea053086',
   'name': 'TIPTOEV2',
   'start': np.nan,
@@ -333,7 +335,7 @@ all_bad_data = \
  '90e3af8d-3aac-4d97-ac5a-70f5c4e911ae_080': {'session': '90e3af8d-3aac-4d97-ac5a-70f5c4e911ae',
   'name': '10mwt',
   'start': np.nan,
-  'end': np.nan}, # VIDEOS DIFFERENT LENGTHS; one side has 12 extra seconds on the backend
+  'end': 10}, # VIDEOS DIFFERENT LENGTHS; one side has 12 extra seconds on the backend
  '4769f868-d487-4e0d-bda6-98eb6751b40a_081': {'session': '4769f868-d487-4e0d-bda6-98eb6751b40a',
   'name': 'toe_stand',
   'start': np.nan,
@@ -358,10 +360,10 @@ all_bad_data = \
   'session': 'ee86be93-b1da-4080-b445-176f6071e734',
   'start': np.nan,
   'end': 10}, # TO REPROCESS
- '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1_087': {'session': '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1',
-  'name': '10mwrt',
-  'start': np.nan,
-  'end': np.nan}, # folder not on drive
+#  '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1_087': {'session': '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1',
+#   'name': '10mwrt',
+#   'start': np.nan,
+#   'end': np.nan}, # folder not on drive
  '6537ecc8-e44b-4405-a9fe-c09ede5e0550_088': {'name': '5xsts',
   'session': '6537ecc8-e44b-4405-a9fe-c09ede5e0550',
   'start': 0,
@@ -549,30 +551,67 @@ def trim_video_by_frames(video_path, start_frame, frame_duration, frame_rate, tr
     os.system(ffmpeg_cmd)
 
 
-for count, session_id in enumerate(all_bad_data):
-    trial_name = all_bad_data[session_id]['name']
+for count, session_id_all in enumerate(all_bad_data):
+
+    # start from count=69
+    if count != 2:
+        continue
+
+    session_id = session_id_all.split('_')[0]
+    trial_name = all_bad_data[session_id_all]['name']
     trial_id = get_trial_id(session_id, trial_name)
     trial_json = get_trial_json(trial_id)
-    for k, video in enumerate(trial_json["videos"]):
+    # for k, video in enumerate(trial_json["videos"]):
 
-        # Download the video
-        videoDir = os.path.join(data_folder, session_id, trial_id, "Videos", video['id'], "InputMedia")
-        os.makedirs(videoDir, exist_ok=True)
-        video_path = os.path.join(videoDir, trial_id + ".mov")
-        download_file(video["video"], video_path)
+    #     # Download the video
+    #     videoDir = os.path.join(data_folder, session_id_all, trial_id, "Videos", video['id'], "InputMedia")
+    #     os.makedirs(videoDir, exist_ok=True)
+    #     video_path = os.path.join(videoDir, trial_id + ".mov")
+    #     # download_file(video["video"], video_path)
 
-        # # Trim the video
-        # frame_rate, frame_count = get_video_info(video_path)
-        # video_duration = frame_count / frame_rate        
-        # n_frame_trim_start = int(np.floor(bad_data_trim_needed[session_id]['start'] * frame_rate))
-        # desired_num_frames = int(np.floor((bad_data_trim_needed[session_id]['end'] - bad_data_trim_needed[session_id]['start']) * frame_rate))
-        # trimmedVideoDir = os.path.join(data_folder, session_id, trial_id, "Videos", video['id'], "TrimmedInputMedia")
-        # os.makedirs(trimmedVideoDir, exist_ok=True)
-        # trimmed_video_path = os.path.join(trimmedVideoDir, trial_id + ".mov")
-        # trim_video_by_frames(video_path, n_frame_trim_start, desired_num_frames, frame_rate, trimmed_video_path)
-
-        # # Post the trimmed video
-        # post_video_to_trial(trimmed_video_path,trial_id,video['device_id'],json.dumps(video['parameters']))
+    #     trimmedVideoDir = os.path.join(data_folder, session_id_all, trial_id, "Videos", video['id'], "Trimmed")
+    #     os.makedirs(trimmedVideoDir, exist_ok=True)
         
-        # # Delete the old video
-        # delete_video_from_trial(video['id'])
+    #     file_name = os.path.basename(video_path)
+    #     trimmed_video_path = os.path.join(trimmedVideoDir, file_name)
+
+    #     # Trim the video
+    #     frame_rate, frame_count = get_video_info(video_path)
+    #     video_duration = frame_count / frame_rate
+
+    #     start = all_bad_data[session_id_all]['start']
+    #     end = all_bad_data[session_id_all]['end']
+    #     # if both are nan, skip
+    #     if np.isnan(start) and np.isnan(end):
+    #         # Copy video to trimmed video directory
+    #         shutil.copy2(video_path, trimmed_video_path)
+    #         continue
+    #     # if end is not nan and start is nan, set start to 0
+    #     if np.isnan(start):
+    #         start = 0
+    #     # if start is not nan and end is nan, set end to video duration
+    #     if np.isnan(end):
+    #         end = video_duration
+    #     # if end is more than video duration, set end to video duration
+    #     if end > video_duration:
+    #         end = video_duration
+
+    #     n_frame_trim_start = int(np.floor(start * frame_rate))
+    #     desired_num_frames = int(np.floor((end - start) * frame_rate))
+        
+    #     trimmed_video_path = os.path.join(trimmedVideoDir, trial_id + ".mov")
+    #     # trim_video_by_frames(video_path, n_frame_trim_start, desired_num_frames, frame_rate, trimmed_video_path)
+    #     test = 1
+
+    #     # Post the trimmed video
+    #     post_video_to_trial(trimmed_video_path,trial_id,video['device_id'],json.dumps(video['parameters']))
+        
+    #     # Delete the old video
+    #     delete_video_from_trial(video['id'])
+
+    # # Delete the results of that trial
+    # delete_results(trial_id)
+
+    # Change the status to stopped
+    set_trial_status(trial_id, "stopped")
+    test=1
