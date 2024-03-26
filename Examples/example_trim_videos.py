@@ -11,6 +11,32 @@ from utils import get_trial_id, get_trial_json, download_file, post_video_to_tri
 data_folder = os.path.join("../Data/Parker")
 os.makedirs(data_folder, exist_ok=True)
 
+# Test
+# all_bad_data = \
+# {'19feaf9b-67ae-4652-bcdd-b42a447c3d31_000': {'session': '19feaf9b-67ae-4652-bcdd-b42a447c3d31',
+#   'name': 'test',
+#   'start': 0,
+#   'end': 2}, # nothing obvious
+# }
+
+sessions_to_exclude = [
+    '74cd2ec6-de3c-4a0e-a8c9-44edbffe0b86_001',
+    '74cd2ec6-de3c-4a0e-a8c9-44edbffe0b86_002',
+    '74cd2ec6-de3c-4a0e-a8c9-44edbffe0b86_003',
+    '74cd2ec6-de3c-4a0e-a8c9-44edbffe0b86_004',
+    '74cd2ec6-de3c-4a0e-a8c9-44edbffe0b86_005',
+    '74cd2ec6-de3c-4a0e-a8c9-44edbffe0b86_006',
+    '9108903d-26b3-479a-ad49-955aebb868c7_068',
+    '8d2f7856-3996-462f-bb2b-f020e7053a90_070',
+    'ca174c27-d0fe-4edd-8799-9ef3ea053086_071',
+    'ca174c27-d0fe-4edd-8799-9ef3ea053086_072',
+    'ca174c27-d0fe-4edd-8799-9ef3ea053086_073',
+    '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1_087'
+
+]
+
+# subject cannot perform activity: 25ebd0a3-e8ce-4a7a-ad91-0c1d94753b69_113
+
 all_bad_data = \
 {'dcfddd1b-39f9-4d0e-80c7-b68caa612a1e_000': {'session': 'dcfddd1b-39f9-4d0e-80c7-b68caa612a1e',
   'name': 'arm_rom',
@@ -71,11 +97,11 @@ all_bad_data = \
  'b233300d-2c6d-4735-aadb-c597da014629_014': {'session': 'b233300d-2c6d-4735-aadb-c597da014629',
   'name': '10MRT',
   'start': 7,
-  'end': np.nan}, # nothing obvious REDO
+  'end': np.nan}, # # TO REPROCESS
  'fa856382-bf8d-411a-b086-a2d74fab9d1b_015': {'name': '10mrt',
   'session': 'fa856382-bf8d-411a-b086-a2d74fab9d1b',
   'start': np.nan,
-  'end': 4}, # TO REPROCESS, person in background REDO
+  'end': 4}, # TO REPROCESS, person in background
  '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1_016': {'session': '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1',
   'name': '10mwrt_1',
   'start': np.nan,
@@ -94,7 +120,7 @@ all_bad_data = \
   'end': np.nan}, # nothing obvious, v different lengths
  '8b7a734d-2874-42f7-94a2-c6026ec35d99_020': {'name': '10mwrt',
   'session': '8b7a734d-2874-42f7-94a2-c6026ec35d99',
-  'start': np.nan,
+  'start': 3,
   'end': np.nan}, # fast run
  'ead8a2fc-c926-464f-9965-d155a62eead8_021': {'name': 'curls',
   'session': 'ead8a2fc-c926-464f-9965-d155a62eead8',
@@ -135,7 +161,7 @@ all_bad_data = \
  '3a681925-50b5-470e-a44a-c1cab743f58b_030': {'name': '10mwt',
   'session': '3a681925-50b5-470e-a44a-c1cab743f58b',
   'start': np.nan,
-  'end': np.nan}, # nothing obvious, quality seems bad (clinic)
+  'end': 9}, # nothing obvious, quality seems bad (clinic)
  '773c33cd-a12d-46d2-af17-35fa7b4e83bd_031': {'session': '773c33cd-a12d-46d2-af17-35fa7b4e83bd',
   'name': '10mrt',
   'start': np.nan,
@@ -174,7 +200,7 @@ all_bad_data = \
   'end': np.nan}, # fast run
  'd10ea979-2a29-4bd7-a3ac-d475b5878134_040': {'session': 'd10ea979-2a29-4bd7-a3ac-d475b5878134',
   'name': 'jump',
-  'start': 1,
+  'start': 0.1,
   'end': np.nan}, # TODO REPROCESS
  'dcfddd1b-39f9-4d0e-80c7-b68caa612a1e_041': {'name': 'curls',
   'session': 'dcfddd1b-39f9-4d0e-80c7-b68caa612a1e',
@@ -211,7 +237,7 @@ all_bad_data = \
  'd10ea979-2a29-4bd7-a3ac-d475b5878134_049': {'name': 'toe_stand',
   'session': 'd10ea979-2a29-4bd7-a3ac-d475b5878134',
   'start': np.nan,
-  'end': np.nan}, # nothing obvious
+  'end': np.nan}, # nothing obvious 
  '19788965-c4a4-481e-a687-f2055b6d85cb_050': {'session': '19788965-c4a4-481e-a687-f2055b6d85cb',
   'name': 'stairs_ascend',
   'start': np.nan,
@@ -284,10 +310,10 @@ all_bad_data = \
   'session': '822926eb-1c7d-4298-84c5-7ead6909387b',
   'start': 9,
   'end': np.nan}, # TO REPROCESS, people in the background
-#  '9108903d-26b3-479a-ad49-955aebb868c7_068': {'session': '9108903d-26b3-479a-ad49-955aebb868c7',
-#   'name': 'Curl',
-#   'start': np.nan,
-#   'end': np.nan}, # folder not on drive
+ '9108903d-26b3-479a-ad49-955aebb868c7_068': {'session': '9108903d-26b3-479a-ad49-955aebb868c7',
+  'name': 'Curl',
+  'start': np.nan,
+  'end': np.nan}, # folder not on drive
  '8d2f7856-3996-462f-bb2b-f020e7053a90_069': {'session': '8d2f7856-3996-462f-bb2b-f020e7053a90',
   'name': 'TUGCone',
   'start': np.nan,
@@ -296,10 +322,10 @@ all_bad_data = \
   'session': '8d2f7856-3996-462f-bb2b-f020e7053a90',
   'start': np.nan,
   'end': np.nan}, # missing video
-#  'ca174c27-d0fe-4edd-8799-9ef3ea053086_071': {'session': 'ca174c27-d0fe-4edd-8799-9ef3ea053086',
-#   'name': 'TIPTOE',
-#   'start': np.nan,
-#   'end': np.nan}, # [videos missing?]
+ 'ca174c27-d0fe-4edd-8799-9ef3ea053086_071': {'session': 'ca174c27-d0fe-4edd-8799-9ef3ea053086',
+  'name': 'TIPTOE',
+  'start': np.nan,
+  'end': np.nan}, # [videos missing?]
  'ca174c27-d0fe-4edd-8799-9ef3ea053086_072': {'session': 'ca174c27-d0fe-4edd-8799-9ef3ea053086',
   'name': 'TIPTOEV2',
   'start': np.nan,
@@ -347,7 +373,7 @@ all_bad_data = \
  '41599e7a-8eea-4b03-b5ef-57502504e879_083': {'name': 'toe_stand',
   'session': '41599e7a-8eea-4b03-b5ef-57502504e879',
   'start': 0,
-  'end': 35}, # TO REPROCESS
+  'end': 33}, # TO REPROCESS
  'e4d2328b-6f01-4f4e-bea3-64076357de64_084': {'name': '10mwrt',
   'session': 'e4d2328b-6f01-4f4e-bea3-64076357de64',
   'start': 4,
@@ -360,10 +386,10 @@ all_bad_data = \
   'session': 'ee86be93-b1da-4080-b445-176f6071e734',
   'start': np.nan,
   'end': 10}, # TO REPROCESS
-#  '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1_087': {'session': '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1',
-#   'name': '10mwrt',
-#   'start': np.nan,
-#   'end': np.nan}, # folder not on drive
+ '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1_087': {'session': '9ce91ceb-2bf8-4544-ae22-3da5ad3cb9a1',
+  'name': '10mwrt',
+  'start': np.nan,
+  'end': np.nan}, # folder not on drive
  '6537ecc8-e44b-4405-a9fe-c09ede5e0550_088': {'name': '5xsts',
   'session': '6537ecc8-e44b-4405-a9fe-c09ede5e0550',
   'start': 0,
@@ -371,12 +397,12 @@ all_bad_data = \
  'cda2db6e-b268-42ee-99d0-9cc358e893d1_089': {'name': '10mwrt',
   'session': 'cda2db6e-b268-42ee-99d0-9cc358e893d1',
   'start': 5,
-  'end': np.nan}, # TO REPROCESS
+  'end': np.nan}, # TO REPROCESS REDO
  '621e5ae8-226b-4fc6-bbd9-df448328ff1f_090': {'name': 'jump_1',
   'session': '621e5ae8-226b-4fc6-bbd9-df448328ff1f',
   'start': np.nan,
   'end': np.nan}, # no jump recorded
- '6de88f3d-b84a-4ee5-8003-a5fbb994278e_091': {'name': '10mwt',
+  '6de88f3d-b84a-4ee5-8003-a5fbb994278e_091': {'name': '10mwt',
   'session': '6de88f3d-b84a-4ee5-8003-a5fbb994278e',
   'start': np.nan,
   'end': np.nan}, # nothing obvious
@@ -511,7 +537,7 @@ all_bad_data = \
  '25d785ae-f49e-4531-b14c-86d6d5e9d144_124': {'name': 'toe_stand',
   'session': '25d785ae-f49e-4531-b14c-86d6d5e9d144',
   'start': 0,
-  'end': 31}, # TO REPROCESS
+  'end': 30.5}, # TO REPROCESS REDO
  '9e5d7c34-d9fc-43f7-85e9-d3e5def7ef3a_125': {'name': '10mrt',
   'session': '9e5d7c34-d9fc-43f7-85e9-d3e5def7ef3a',
   'start': np.nan,
@@ -525,7 +551,6 @@ all_bad_data = \
   'start': 10,
   'end': np.nan} # TO REPROCESS
   }
-
 
 def get_video_info(video_file):
     # Define the ffprobe command to get frame rate
@@ -546,72 +571,81 @@ def get_video_info(video_file):
     
 def trim_video_by_frames(video_path, start_frame, frame_duration, frame_rate, trimmed_video_path):
     # Build the ffmpeg command to trim without re-encoding
-    ffmpeg_cmd = f'ffmpeg -i {video_path} -ss {start_frame / frame_rate} -frames:v {frame_duration} -c:v copy -c:a copy {trimmed_video_path}'
-    
+    ffmpeg_cmd = f'ffmpeg -i {video_path} -ss {start_frame / frame_rate} -frames:v {frame_duration} -c:v copy {trimmed_video_path}'
+
     os.system(ffmpeg_cmd)
 
-
 for count, session_id_all in enumerate(all_bad_data):
-
-    # start from count=69
-    if count != 2:
+    
+    if session_id_all in sessions_to_exclude:
         continue
+
+    # if count < 90:
+    #     continue
+    
+    # if count > 89:
+    #     continue
+
+    # if count != 124:
+    #     continue
 
     session_id = session_id_all.split('_')[0]
     trial_name = all_bad_data[session_id_all]['name']
     trial_id = get_trial_id(session_id, trial_name)
     trial_json = get_trial_json(trial_id)
-    # for k, video in enumerate(trial_json["videos"]):
+    for k, video in enumerate(trial_json["videos"]):
 
-    #     # Download the video
-    #     videoDir = os.path.join(data_folder, session_id_all, trial_id, "Videos", video['id'], "InputMedia")
-    #     os.makedirs(videoDir, exist_ok=True)
-    #     video_path = os.path.join(videoDir, trial_id + ".mov")
-    #     # download_file(video["video"], video_path)
+        # Download the video
+        videoDir = os.path.join(data_folder, session_id_all, trial_id, "Videos", video['id'], "InputMedia")
+        os.makedirs(videoDir, exist_ok=True)
+        video_path = os.path.join(videoDir, trial_id + ".mov")
+        # download_file(video["video"], video_path)
 
-    #     trimmedVideoDir = os.path.join(data_folder, session_id_all, trial_id, "Videos", video['id'], "Trimmed")
-    #     os.makedirs(trimmedVideoDir, exist_ok=True)
+        trimmedVideoDir = os.path.join(data_folder, session_id_all, trial_id, "Videos", video['id'], "Trimmed")
+        os.makedirs(trimmedVideoDir, exist_ok=True)
         
-    #     file_name = os.path.basename(video_path)
-    #     trimmed_video_path = os.path.join(trimmedVideoDir, file_name)
+        file_name = os.path.basename(video_path)
+        trimmed_video_path = os.path.join(trimmedVideoDir, file_name)
 
-    #     # Trim the video
-    #     frame_rate, frame_count = get_video_info(video_path)
-    #     video_duration = frame_count / frame_rate
+        # Trim the video
+        frame_rate, frame_count = get_video_info(video_path)
+        video_duration = frame_count / frame_rate
 
-    #     start = all_bad_data[session_id_all]['start']
-    #     end = all_bad_data[session_id_all]['end']
-    #     # if both are nan, skip
-    #     if np.isnan(start) and np.isnan(end):
-    #         # Copy video to trimmed video directory
-    #         shutil.copy2(video_path, trimmed_video_path)
-    #         continue
-    #     # if end is not nan and start is nan, set start to 0
-    #     if np.isnan(start):
-    #         start = 0
-    #     # if start is not nan and end is nan, set end to video duration
-    #     if np.isnan(end):
-    #         end = video_duration
-    #     # if end is more than video duration, set end to video duration
-    #     if end > video_duration:
-    #         end = video_duration
+        start = all_bad_data[session_id_all]['start']
+        end = all_bad_data[session_id_all]['end']
+        # if both are nan, skip
+        reprocess_trial = True
+        if np.isnan(start) and np.isnan(end):
+            # Copy video to trimmed video directory
+            # shutil.copy2(video_path, trimmed_video_path)
+            reprocess_trial = False
+            continue
+        # if end is not nan and start is nan, set start to 0
+        if np.isnan(start):
+            start = 0
+        # if start is not nan and end is nan, set end to video duration
+        if np.isnan(end):
+            end = video_duration
+        # if end is more than video duration, set end to video duration
+        if end > video_duration:
+            end = video_duration
 
-    #     n_frame_trim_start = int(np.floor(start * frame_rate))
-    #     desired_num_frames = int(np.floor((end - start) * frame_rate))
+        n_frame_trim_start = int(np.floor(start * frame_rate))
+        desired_num_frames = int(np.floor((end - start) * frame_rate))
         
-    #     trimmed_video_path = os.path.join(trimmedVideoDir, trial_id + ".mov")
-    #     # trim_video_by_frames(video_path, n_frame_trim_start, desired_num_frames, frame_rate, trimmed_video_path)
-    #     test = 1
+        trimmed_video_path = os.path.join(trimmedVideoDir, trial_id + ".mov")
+        # trim_video_by_frames(video_path, n_frame_trim_start, desired_num_frames, frame_rate, trimmed_video_path)
 
-    #     # Post the trimmed video
-    #     post_video_to_trial(trimmed_video_path,trial_id,video['device_id'],json.dumps(video['parameters']))
+        # Post the trimmed video
+        post_video_to_trial(trimmed_video_path,trial_id,video['device_id'],json.dumps(video['parameters']))
         
-    #     # Delete the old video
-    #     delete_video_from_trial(video['id'])
+        # Delete the old video
+        delete_video_from_trial(video['id'])
 
-    # # Delete the results of that trial
-    # delete_results(trial_id)
+    if reprocess_trial:
+      # Delete the results of that trial
+      delete_results(trial_id)
 
-    # Change the status to stopped
-    set_trial_status(trial_id, "stopped")
-    test=1
+      # Change the status to stopped
+      set_trial_status(trial_id, "stopped")
+      test=1
