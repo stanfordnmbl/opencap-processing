@@ -80,6 +80,24 @@ def get_user_sessions_all(user_token=API_TOKEN):
     
     return sessions
 
+# Returns a list of all subjects of the user.
+def get_user_subjects(user_token=API_TOKEN):
+    user_token="f3b0fcb4c3f2b89c89f3b6c8145064a830942f06"
+    subjects = requests.get(
+            API_URL + "subjects/", 
+            headers = {"Authorization": "Token {}".format(user_token)}).json()
+    
+    return subjects
+
+# Returns a list of all sessions of a subject.
+def get_subject_sessions(subject_id, user_token=API_TOKEN):
+    user_token="f3b0fcb4c3f2b89c89f3b6c8145064a830942f06"
+    sessions = requests.get(
+        API_URL + "subjects/{}/".format(subject_id),
+        headers = {"Authorization": "Token {}".format(user_token)}).json()['sessions']
+    
+    return sessions
+
 def get_trial_json(trial_id):
     trialJson = requests.get(
         API_URL + "trials/{}/".format(trial_id),
@@ -558,6 +576,50 @@ def post_file_to_trial(filePath,trial_id,tag,device_id):
     requests.post("{}results/".format(API_URL), files=files, data=data,
                          headers = {"Authorization": "Token {}".format(API_TOKEN)})
     files["media"].close()
+
+def post_video_to_trial(filePath,trial_id,device_id,parameters):
+    files = {'video': open(filePath, 'rb')}
+    data = {
+        "trial": trial_id,
+        "device_id" : device_id,
+        "parameters": parameters
+    }
+
+    requests.post("{}videos/".format(API_URL), files=files, data=data,
+                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    files["video"].close()
+
+def delete_video_from_trial(video_id):
+
+    requests.delete("{}videos/{}/".format(API_URL, video_id),
+                        headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    
+def delete_results(trial_id, tag=None, resultNum=None):
+    # Delete specific result number, or all results with a specific tag, or all results if tag==None
+    if resultNum != None:
+        resultNums = [resultNum]
+    elif tag != None:
+        trial = get_trial_json(trial_id)
+        resultNums = [r['id'] for r in trial['results'] if r['tag']==tag]
+        
+    elif tag == None: 
+        trial = get_trial_json(trial_id)
+        resultNums = [r['id'] for r in trial['results']]
+
+    for rNum in resultNums:
+        requests.delete(API_URL + "results/{}/".format(rNum),
+                        headers = {"Authorization": "Token {}".format(API_TOKEN)})
+        
+def set_trial_status(trial_id, status):
+
+    # Available statuses: 'done', 'error', 'stopped', 'reprocess'
+    # 'processing' and 'recording also exist, but it does not make sense to set them manually.
+    # Throw error if status is not one of the above.
+    if status not in ['done', 'error', 'stopped', 'reprocess']:
+        raise ValueError('Invalid status. Available statuses: done, error, stopped, reprocess')
+
+    requests.patch(API_URL+"trials/{}/".format(trial_id), data={'status': status},
+                     headers = {"Authorization": "Token {}".format(API_TOKEN)})
     
 
 def get_syncd_videos(trial_id,session_path):
