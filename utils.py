@@ -82,7 +82,6 @@ def get_user_sessions_all(user_token=API_TOKEN):
 
 # Returns a list of all subjects of the user.
 def get_user_subjects(user_token=API_TOKEN):
-    user_token="f3b0fcb4c3f2b89c89f3b6c8145064a830942f06"
     subjects = requests.get(
             API_URL + "subjects/", 
             headers = {"Authorization": "Token {}".format(user_token)}).json()
@@ -91,7 +90,6 @@ def get_user_subjects(user_token=API_TOKEN):
 
 # Returns a list of all sessions of a subject.
 def get_subject_sessions(subject_id, user_token=API_TOKEN):
-    user_token="f3b0fcb4c3f2b89c89f3b6c8145064a830942f06"
     sessions = requests.get(
         API_URL + "subjects/{}/".format(subject_id),
         headers = {"Authorization": "Token {}".format(user_token)}).json()['sessions']
