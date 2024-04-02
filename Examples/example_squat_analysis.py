@@ -37,12 +37,12 @@ dataFolder = os.path.join(baseDir, 'Data')
 
 # %% User-defined variables.
 
-session_id = '27aa9b31-a477-4326-a269-be24b8242494'
+session_id = '1b380cb9-3c5c-498c-bc30-a1a379ffa04c'
 trial_name = 'squats'
 
 # TODO:
 # Peak trunk lean, peak hip adduction, peak knee abduction, knee flexion range of motion, peak ankle eversion
-scalar_names = {'peak_knee_flexion'}
+# scalar_names = {'peak_knee_flexion'}
 
 # Select how many repetitions you'd like to analyze. Select -1 for all
 # repetitions detected in the trial.
@@ -66,8 +66,9 @@ squat = squat_analysis(
     sessionDir, trialName,
     lowpass_cutoff_frequency_for_coordinate_values=filter_frequency,
     n_repetitions=n_repetitions)
-peak_knee_flexion_r = squat.compute_peak_angle('knee_angle_r')
+squat_events = squat.get_squat_events()
 
+# Example metrics
 ratio_max_knee_flexion_angle_mean, ratio_max_knee_flexion_angle_std, ratio_max_knee_flexion_angle_unit = squat.compute_ratio_peak_angle('knee_angle_r', 'knee_angle_l')
 ratio_max_hip_flexion_angle_mean, ratio_max_hip_flexion_angle_std, ratio_max_knee_flexion_angle_unit = squat.compute_ratio_peak_angle('hip_flexion_r', 'hip_flexion_l')
 
@@ -96,11 +97,11 @@ print('Peak hip flexion angle: {} +/- {} deg'.format(np.round(max_hip_flexion_an
 print('Peak hip adduction angle: {} +/- {} deg'.format(np.round(max_hip_adduction_angle_mean_mean,2), np.round(max_hip_adduction_angle_mean_std,2)))
 print('ROM knee flexion angle: {} +/- {} deg'.format(np.round(rom_knee_flexion_angle_mean_mean,2), np.round(rom_knee_flexion_angle_mean_std,2)))
 
-# Get time-normalized kinematic curves.
-squat_joint_kinematics = squat.get_coordinates_segmented_normalized_time()
-squat_com_kinematics = squat.get_center_of_mass_segmented_normalized_time() 
     
 # %% Example plots.
+squat_joint_kinematics = squat.get_coordinates_segmented_normalized_time()
+squat_com_kinematics = squat.get_center_of_mass_segmented_normalized_time() 
+
 plot_dataframe_with_shading(
     [squat_joint_kinematics['mean']],
     [squat_joint_kinematics['sd']],
