@@ -123,15 +123,18 @@ class squat_analysis(kinematics):
         return scalarDict
     
     def segment_squat(self, n_repetitions=-1, peak_proportion_threshold=0.7, 
-                      peak_width_rel_height=0.95, visualizeSegmentation=True):
+                      peak_width_rel_height=0.95, peak_distance_sec=0.5,
+                      visualizeSegmentation=True):
 
         pelvis_ty = self.coordinateValues['pelvis_ty'].to_numpy()  
+        dt = np.mean(np.diff(self.time))
 
         # Identify minimums.
         pelvSignal = np.array(-pelvis_ty - np.min(-pelvis_ty))
         pelvRange = np.abs(np.max(pelvis_ty) - np.min(pelvis_ty))
         peakThreshold = peak_proportion_threshold * pelvRange
-        idxMinPelvTy,_ = find_peaks(pelvSignal, height=peakThreshold)
+        idxMinPelvTy,_ = find_peaks(pelvSignal, prominence=peakThreshold,
+                                    distance=peak_distance_sec/dt)
         peakWidths = peak_widths(pelvSignal, idxMinPelvTy, 
                                  rel_height=peak_width_rel_height)
         
