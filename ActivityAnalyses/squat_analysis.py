@@ -23,7 +23,7 @@ sys.path.append('../')
 
 import numpy as np
 import pandas as pd
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, peak_widths
 from matplotlib import pyplot as plt
 
 from utilsKinematics import kinematics
@@ -122,28 +122,27 @@ class squat_analysis(kinematics):
         
         return scalarDict
     
-    def segment_squat(self, n_repetitions=-1, height_value=0.2, visualizeSegmentation=False):
+    def segment_squat(self, n_repetitions=-1, peak_proportion_threshold=0.7, 
+                      peak_width_rel_height=0.95, visualizeSegmentation=True):
 
         pelvis_ty = self.coordinateValues['pelvis_ty'].to_numpy()  
-        dt = np.mean(np.diff(self.time))
 
         # Identify minimums.
         pelvSignal = np.array(-pelvis_ty - np.min(-pelvis_ty))
-        pelvSignalPos = np.array(pelvis_ty - np.min(pelvis_ty))
-        idxMinPelvTy,_ = find_peaks(pelvSignal, distance=.7/dt, height=height_value)
+        pelvRange = np.abs(np.max(pelvis_ty) - np.min(pelvis_ty))
+        peakThreshold = peak_proportion_threshold * pelvRange
+        idxMinPelvTy,_ = find_peaks(pelvSignal, height=peakThreshold)
+        peakWidths = peak_widths(pelvSignal, idxMinPelvTy, 
+                                 rel_height=peak_width_rel_height)
         
         # Find the max adjacent to all of the minimums.
-        minIdxOld = 0
         startEndIdxs = []
-        for i, minIdx in enumerate(idxMinPelvTy):
-            if i < len(idxMinPelvTy) - 1:
-                nextIdx = idxMinPelvTy[i+1]
-            else:
-                nextIdx = len(pelvSignalPos)
-            startIdx = np.argmax(pelvSignalPos[minIdxOld:minIdx]) + minIdxOld
-            endIdx = np.argmax(pelvSignalPos[minIdx:nextIdx]) + minIdx
-            startEndIdxs.append([startIdx,endIdx])
-            minIdxOld = np.copy(minIdx)            
+        print(peakWidths)
+        for start_ips, end_ips in zip(peakWidths[2], peakWidths[3]):
+            print(start_ips)
+            print(end_ips)
+            startEndIdxs.append([start_ips, end_ips])
+        startEndIdxs = np.rint(startEndIdxs).astype(int)
             
         # Limit the number of repetitions.
         if n_repetitions != -1:
@@ -162,6 +161,8 @@ class squat_analysis(kinematics):
                         label='Start/End rep')
                 if c_v == 0:
                     plt.legend()
+            plt.hlines(-peakWidths[1], peakWidths[2], peakWidths[3], color='k',
+                       label='peak start/end')
             plt.xlabel('Frames')
             plt.ylabel('Position [m]')
             plt.title('Vertical pelvis position')

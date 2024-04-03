@@ -38,7 +38,7 @@ dataFolder = os.path.join(baseDir, 'Data')
 # %% User-defined variables.
 
 session_id = '1b380cb9-3c5c-498c-bc30-a1a379ffa04c'
-trial_name = 'squats'
+trial_name = 'bossu_squats'
 
 # TODO:
 # Peak trunk lean, peak hip adduction, peak knee abduction, knee flexion range of motion, peak ankle eversion
