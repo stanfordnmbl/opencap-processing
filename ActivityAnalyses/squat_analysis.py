@@ -74,7 +74,7 @@ class squat_analysis(kinematics):
             self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
         # Segment squat repetitions.
-        self.squatEvents = self.segment_squat(n_repetitions=n_repetitions)
+        self.squatEvents = self.segment_squat(n_repetitions=n_repetitions, visualizeSegmentation=True)
         self.nRepetitions = np.shape(self.squatEvents['eventIdxs'])[0]
         
         # Initialize variables to be lazy loaded.
@@ -124,7 +124,8 @@ class squat_analysis(kinematics):
     
     def segment_squat(self, n_repetitions=-1, peak_proportion_threshold=0.7, 
                       peak_width_rel_height=0.95, peak_distance_sec=0.5,
-                      visualizeSegmentation=True):
+                      toe_height_threshold=0.05,
+                      visualizeSegmentation=False):
 
         pelvis_ty = self.coordinateValues['pelvis_ty'].to_numpy()  
         dt = np.mean(np.diff(self.time))
@@ -138,12 +139,9 @@ class squat_analysis(kinematics):
         peakWidths = peak_widths(pelvSignal, idxMinPelvTy, 
                                  rel_height=peak_width_rel_height)
         
-        # Find the max adjacent to all of the minimums.
+        # Store start and end indices.
         startEndIdxs = []
-        print(peakWidths)
         for start_ips, end_ips in zip(peakWidths[2], peakWidths[3]):
-            print(start_ips)
-            print(end_ips)
             startEndIdxs.append([start_ips, end_ips])
         startEndIdxs = np.rint(startEndIdxs).astype(int)
             
@@ -151,9 +149,8 @@ class squat_analysis(kinematics):
         if n_repetitions != -1:
             startEndIdxs = startEndIdxs[-n_repetitions:]
             
-        # Extract events: start and end of each repetition.
-        eventIdxs = np.array(startEndIdxs)
-        eventTimes = self.time[eventIdxs]            
+        # Store start and end event times
+        eventTimes = self.time[startEndIdxs]            
         
         if visualizeSegmentation:
             plt.figure()     
@@ -170,12 +167,38 @@ class squat_analysis(kinematics):
             plt.ylabel('Position [m]')
             plt.title('Vertical pelvis position')
             plt.draw()
+        
+        # Detect squat type (double leg, single leg right, single leg left)
+        # Use toe markers
+        eventTypes = []
+        markersDict = self.markerDict['markers']
+        
+        for eventIdx in startEndIdxs:
+            lToeYMean = np.mean(markersDict['L_toe_study'][eventIdx[0]:eventIdx[1]+1, 1])
+            rToeYMean = np.mean(markersDict['r_toe_study'][eventIdx[0]:eventIdx[1]+1, 1])
             
+            if lToeYMean - rToeYMean > toe_height_threshold:
+                eventTypes.append('single_leg_r')
+            elif rToeYMean - lToeYMean > toe_height_threshold:
+                eventTypes.append('single_leg_l')
+            else:
+                eventTypes.append('double_leg')
+            
+        
+        if visualizeSegmentation:
+            plt.figure()
+            plt.plot(self.markerDict['markers']['L_calc_study'][:,1], label='L_calc_study')
+            plt.plot(self.markerDict['markers']['L_toe_study'][:,1], label='L_toe_study')
+            plt.plot(self.markerDict['markers']['r_calc_study'][:,1], label='r_calc_study')
+            plt.plot(self.markerDict['markers']['r_toe_study'][:,1], label='r_toe_study')
+            plt.legend()
+        
         # Output.
         squatEvents = {
             'eventIdxs': startEndIdxs,
             'eventTimes': eventTimes,
-            'eventNames':['repStart','repEnd']}
+            'eventNames':['repStart','repEnd'],
+            'eventTypes': eventTypes}
         
         return squatEvents
     
@@ -329,3 +352,7 @@ class squat_analysis(kinematics):
         comValuesTimeNormalized['indiv'] = [pd.DataFrame(data=d, columns=colNames) for d in comValuesSegmentedNorm]
         
         return comValuesTimeNormalized 
+
+    def compute_calcn_locations(self):
+        
+        raise Exception('not implemented')
