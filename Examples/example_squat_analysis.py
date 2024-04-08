@@ -37,8 +37,13 @@ dataFolder = os.path.join(baseDir, 'Data')
 
 # %% User-defined variables.
 
-session_id = '1b380cb9-3c5c-498c-bc30-a1a379ffa04c'
-trial_name = 'squats'
+# example without KA
+#session_id = '1b380cb9-3c5c-498c-bc30-a1a379ffa04c'
+#trial_name = 'single_leg_squats_l'
+
+# example with KA
+session_id = 'e742eb1c-efbc-4c17-befc-a772150ca84d'
+trial_name = 'SLS_L1'
 
 # TODO:
 # Peak trunk lean, peak hip adduction, peak knee abduction, knee flexion range of motion, peak ankle eversion
@@ -68,6 +73,12 @@ squat = squat_analysis(
     n_repetitions=n_repetitions)
 squat_events = squat.get_squat_events()
 
+# Check if we can also analyze adduction
+knee_adduction_names = ['knee_adduction_r', 'knee_adduction_l'] # TODO: hard-coded
+analyze_knee_adduction = False
+if all(x in squat.coordinates for x in knee_adduction_names):
+    analyze_knee_adduction = True
+
 # Example metrics
 ratio_max_knee_flexion_angle_mean, ratio_max_knee_flexion_angle_std, ratio_max_knee_flexion_angle_unit = squat.compute_ratio_peak_angle('knee_angle_r', 'knee_angle_l')
 ratio_max_hip_flexion_angle_mean, ratio_max_hip_flexion_angle_std, ratio_max_knee_flexion_angle_unit = squat.compute_ratio_peak_angle('hip_flexion_r', 'hip_flexion_l')
@@ -91,6 +102,11 @@ rom_knee_flexion_angle_r_mean, rom_knee_flexion_angle_r_std, _ = squat.compute_r
 rom_knee_flexion_angle_l_mean, rom_knee_flexion_angle_l_std, _ = squat.compute_range_of_motion('knee_angle_l')
 rom_knee_flexion_angle_mean_mean = np.mean(np.array([rom_knee_flexion_angle_r_mean, rom_knee_flexion_angle_l_mean]))
 rom_knee_flexion_angle_mean_std = np.mean(np.array([rom_knee_flexion_angle_r_std, rom_knee_flexion_angle_l_std]))
+
+eventTypes = squat.squatEvents['eventTypes']
+print('Detected {} total squats: {} single_leg_l, {} single_leg_r, {} double_leg.'.format( 
+      len(eventTypes), eventTypes.count('single_leg_l'), 
+      eventTypes.count('single_leg_r'), eventTypes.count('double_leg')))
 
 print('Peak knee flexion angle: {} +/- {} deg'.format(np.round(max_knee_flexion_angle_mean_mean,2), np.round(max_knee_flexion_angle_mean_std,2)))
 print('Peak hip flexion angle: {} +/- {} deg'.format(np.round(max_hip_flexion_angle_mean_mean,2), np.round(max_hip_flexion_angle_mean_std,2)))
@@ -158,10 +174,17 @@ import json
 with open('squat_scalars.json', 'w') as fp:
     json.dump(squat_scalars, fp)
 
+if analyze_knee_adduction:
+    max_knee_adduction_angle_r_mean, max_knee_adduction_angle_r_std, _ = squat.compute_peak_angle('knee_adduction_r')
+    max_knee_adduction_angle_l_mean, max_knee_adduction_angle_l_std, _ = squat.compute_peak_angle('knee_adduction_l')
+    max_knee_adduction_angle_mean_mean = np.mean(np.array([max_knee_adduction_angle_r_mean, max_knee_adduction_angle_l_mean]))
+    max_knee_adduction_angle_mean_std = np.mean(np.array([max_knee_adduction_angle_r_std, max_knee_adduction_angle_l_std]))
+    
+    print('Peak knee adduction angle: {} +/- {} deg'.format(np.round(max_knee_adduction_angle_mean_mean,2), np.round(max_knee_adduction_angle_mean_std,2)))
     
 # %% Example plots.
 squat_joint_kinematics = squat.get_coordinates_segmented_normalized_time()
-squat_com_kinematics = squat.get_center_of_mass_segmented_normalized_time() 
+squat_com_kinematics = squat.get_center_of_mass_segmented_normalized_time()
 
 plot_dataframe_with_shading(
     [squat_joint_kinematics['mean']],

@@ -23,7 +23,7 @@ sys.path.append('../')
 
 import numpy as np
 import pandas as pd
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, peak_widths
 from matplotlib import pyplot as plt
 
 from utilsKinematics import kinematics
@@ -74,7 +74,7 @@ class squat_analysis(kinematics):
             self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
         # Segment squat repetitions.
-        self.squatEvents = self.segment_squat(n_repetitions=n_repetitions)
+        self.squatEvents = self.segment_squat(n_repetitions=n_repetitions, visualizeSegmentation=True)
         self.nRepetitions = np.shape(self.squatEvents['eventIdxs'])[0]
         
         # Initialize variables to be lazy loaded.
@@ -122,36 +122,39 @@ class squat_analysis(kinematics):
         
         return scalarDict
     
+<<<<<<< HEAD
     def segment_squat(self, n_repetitions=-1, height_value=0.2, visualizeSegmentation=True):
+=======
+    def segment_squat(self, n_repetitions=-1, peak_proportion_threshold=0.7, 
+                      peak_width_rel_height=0.95, peak_distance_sec=0.5,
+                      toe_height_threshold=0.05,
+                      visualizeSegmentation=False):
+>>>>>>> f9408ae5e86a51a59787005d8e798dcb21fb267f
 
         pelvis_ty = self.coordinateValues['pelvis_ty'].to_numpy()  
         dt = np.mean(np.diff(self.time))
 
         # Identify minimums.
         pelvSignal = np.array(-pelvis_ty - np.min(-pelvis_ty))
-        pelvSignalPos = np.array(pelvis_ty - np.min(pelvis_ty))
-        idxMinPelvTy,_ = find_peaks(pelvSignal, distance=.7/dt, height=height_value)
+        pelvRange = np.abs(np.max(pelvis_ty) - np.min(pelvis_ty))
+        peakThreshold = peak_proportion_threshold * pelvRange
+        idxMinPelvTy,_ = find_peaks(pelvSignal, prominence=peakThreshold,
+                                    distance=peak_distance_sec/dt)
+        peakWidths = peak_widths(pelvSignal, idxMinPelvTy, 
+                                 rel_height=peak_width_rel_height)
         
-        # Find the max adjacent to all of the minimums.
-        minIdxOld = 0
+        # Store start and end indices.
         startEndIdxs = []
-        for i, minIdx in enumerate(idxMinPelvTy):
-            if i < len(idxMinPelvTy) - 1:
-                nextIdx = idxMinPelvTy[i+1]
-            else:
-                nextIdx = len(pelvSignalPos)
-            startIdx = np.argmax(pelvSignalPos[minIdxOld:minIdx]) + minIdxOld
-            endIdx = np.argmax(pelvSignalPos[minIdx:nextIdx]) + minIdx
-            startEndIdxs.append([startIdx,endIdx])
-            minIdxOld = np.copy(minIdx)            
+        for start_ips, end_ips in zip(peakWidths[2], peakWidths[3]):
+            startEndIdxs.append([start_ips, end_ips])
+        startEndIdxs = np.rint(startEndIdxs).astype(int)
             
         # Limit the number of repetitions.
         if n_repetitions != -1:
             startEndIdxs = startEndIdxs[-n_repetitions:]
             
-        # Extract events: start and end of each repetition.
-        eventIdxs = np.array(startEndIdxs)
-        eventTimes = self.time[eventIdxs]            
+        # Store start and end event times
+        eventTimes = self.time[startEndIdxs]            
         
         if visualizeSegmentation:
             plt.figure()     
@@ -162,16 +165,44 @@ class squat_analysis(kinematics):
                         label='Start/End rep')
                 if c_v == 0:
                     plt.legend()
+            plt.hlines(-peakWidths[1], peakWidths[2], peakWidths[3], color='k',
+                       label='peak start/end')
             plt.xlabel('Frames')
             plt.ylabel('Position [m]')
             plt.title('Vertical pelvis position')
             plt.draw()
+        
+        # Detect squat type (double leg, single leg right, single leg left)
+        # Use toe markers
+        eventTypes = []
+        markersDict = self.markerDict['markers']
+        
+        for eventIdx in startEndIdxs:
+            lToeYMean = np.mean(markersDict['L_toe_study'][eventIdx[0]:eventIdx[1]+1, 1])
+            rToeYMean = np.mean(markersDict['r_toe_study'][eventIdx[0]:eventIdx[1]+1, 1])
             
+            if lToeYMean - rToeYMean > toe_height_threshold:
+                eventTypes.append('single_leg_r')
+            elif rToeYMean - lToeYMean > toe_height_threshold:
+                eventTypes.append('single_leg_l')
+            else:
+                eventTypes.append('double_leg')
+            
+        
+        if visualizeSegmentation:
+            plt.figure()
+            plt.plot(self.markerDict['markers']['L_calc_study'][:,1], label='L_calc_study')
+            plt.plot(self.markerDict['markers']['L_toe_study'][:,1], label='L_toe_study')
+            plt.plot(self.markerDict['markers']['r_calc_study'][:,1], label='r_calc_study')
+            plt.plot(self.markerDict['markers']['r_toe_study'][:,1], label='r_toe_study')
+            plt.legend()
+        
         # Output.
         squatEvents = {
             'eventIdxs': startEndIdxs,
             'eventTimes': eventTimes,
-            'eventNames':['repStart','repEnd']}
+            'eventNames':['repStart','repEnd'],
+            'eventTypes': eventTypes}
         
         return squatEvents
     
@@ -325,3 +356,7 @@ class squat_analysis(kinematics):
         comValuesTimeNormalized['indiv'] = [pd.DataFrame(data=d, columns=colNames) for d in comValuesSegmentedNorm]
         
         return comValuesTimeNormalized 
+
+    def compute_calcn_locations(self):
+        
+        raise Exception('not implemented')
