@@ -97,6 +97,67 @@ print('Peak hip flexion angle: {} +/- {} deg'.format(np.round(max_hip_flexion_an
 print('Peak hip adduction angle: {} +/- {} deg'.format(np.round(max_hip_adduction_angle_mean_mean,2), np.round(max_hip_adduction_angle_mean_std,2)))
 print('ROM knee flexion angle: {} +/- {} deg'.format(np.round(rom_knee_flexion_angle_mean_mean,2), np.round(rom_knee_flexion_angle_mean_std,2)))
 
+squat_scalars = {}
+squat_scalars['peak_knee_flexion_angle_mean'] = {'value': max_knee_flexion_angle_mean_mean}
+squat_scalars['peak_knee_flexion_angle_mean']['label'] = 'Mean peak knee flexion angle (deg)'
+squat_scalars['peak_knee_flexion_angle_mean']['colors'] = ["red", "yellow", "green"]
+peak_knee_flexion_angle_threshold = 100
+squat_scalars['peak_knee_flexion_angle_mean']['min_limit'] = float(np.round(0.90*peak_knee_flexion_angle_threshold))
+squat_scalars['peak_knee_flexion_angle_mean']['max_limit'] = float(peak_knee_flexion_angle_threshold)
+
+squat_scalars['peak_knee_flexion_angle_std'] = {'value': max_knee_flexion_angle_mean_std}
+squat_scalars['peak_knee_flexion_angle_std']['label'] = 'Std peak knee flexion angle (deg)'
+squat_scalars['peak_knee_flexion_angle_std']['colors'] = ["green", "yellow", "red"]
+std_threshold_min = 2
+std_threshold_max = 4
+squat_scalars['peak_knee_flexion_angle_std']['min_limit'] = float(std_threshold_min)
+squat_scalars['peak_knee_flexion_angle_std']['max_limit'] = float(std_threshold_max)
+
+squat_scalars['peak_hip_flexion_angle_mean'] = {'value': max_hip_flexion_angle_mean_mean}
+squat_scalars['peak_hip_flexion_angle_mean']['label'] = 'Mean peak hip flexion angle (deg)'
+squat_scalars['peak_hip_flexion_angle_mean']['colors'] = ["red", "yellow", "green"]
+peak_hip_flexion_angle_threshold = 100
+squat_scalars['peak_hip_flexion_angle_mean']['min_limit'] = float(np.round(0.90*peak_hip_flexion_angle_threshold))
+squat_scalars['peak_hip_flexion_angle_mean']['max_limit'] = float(peak_hip_flexion_angle_threshold)
+
+squat_scalars['peak_hip_flexion_angle_std'] = {'value': max_hip_flexion_angle_mean_std}
+squat_scalars['peak_hip_flexion_angle_std']['label'] = 'Std peak hip flexion angle (deg)'
+squat_scalars['peak_hip_flexion_angle_std']['colors'] = ["green", "yellow", "red"]
+squat_scalars['peak_hip_flexion_angle_std']['min_limit'] = float(std_threshold_min)
+squat_scalars['peak_hip_flexion_angle_std']['max_limit'] = float(std_threshold_max)
+
+squat_scalars['peak_knee_adduction_angle_mean'] = {'value': max_hip_adduction_angle_mean_mean}
+squat_scalars['peak_knee_adduction_angle_mean']['label'] = 'Mean peak knee adduction angle (deg)'
+squat_scalars['peak_knee_adduction_angle_mean']['colors'] = ["red", "green", "red"]
+knee_adduction_angle_threshold = 5
+squat_scalars['peak_knee_adduction_angle_mean']['min_limit'] = float(-knee_adduction_angle_threshold)
+squat_scalars['peak_knee_adduction_angle_mean']['max_limit'] = float(knee_adduction_angle_threshold)
+
+squat_scalars['peak_knee_adduction_angle_std'] = {'value': max_hip_adduction_angle_mean_std}
+squat_scalars['peak_knee_adduction_angle_std']['label'] = 'Std peak knee adduction angle (deg)'
+squat_scalars['peak_knee_adduction_angle_std']['colors'] = ["green", "yellow", "red"]
+squat_scalars['peak_knee_adduction_angle_std']['min_limit'] = float(std_threshold_min)
+squat_scalars['peak_knee_adduction_angle_std']['max_limit'] = float(std_threshold_max)
+
+squat_scalars['rom_knee_flexion_angle_mean'] = {'value': rom_knee_flexion_angle_mean_mean}
+squat_scalars['rom_knee_flexion_angle_mean']['label'] = 'Mean range of motion knee flexion angle (deg)'
+squat_scalars['rom_knee_flexion_angle_mean']['colors'] = ["red", "yellow", "green"]
+rom_knee_flexion_angle_threshold_min = 85
+rom_knee_flexion_angle_threshold_max = 115
+squat_scalars['rom_knee_flexion_angle_mean']['min_limit'] = float(rom_knee_flexion_angle_threshold_min)
+squat_scalars['rom_knee_flexion_angle_mean']['max_limit'] = float(rom_knee_flexion_angle_threshold_max)
+
+squat_scalars['rom_knee_flexion_angle_std'] = {'value': rom_knee_flexion_angle_mean_std}
+squat_scalars['rom_knee_flexion_angle_std']['label'] = 'Std range of motion knee flexion angle (deg)'
+squat_scalars['rom_knee_flexion_angle_std']['colors'] = ["green", "yellow", "red"]
+squat_scalars['rom_knee_flexion_angle_std']['min_limit'] = float(std_threshold_min)
+squat_scalars['rom_knee_flexion_angle_std']['max_limit'] = float(std_threshold_max)
+
+# dump to json
+import json
+with open('squat_scalars.json', 'w') as fp:
+    json.dump(squat_scalars, fp)
+
     
 # %% Example plots.
 squat_joint_kinematics = squat.get_coordinates_segmented_normalized_time()

@@ -122,7 +122,7 @@ class squat_analysis(kinematics):
         
         return scalarDict
     
-    def segment_squat(self, n_repetitions=-1, height_value=0.2, visualizeSegmentation=False):
+    def segment_squat(self, n_repetitions=-1, height_value=0.2, visualizeSegmentation=True):
 
         pelvis_ty = self.coordinateValues['pelvis_ty'].to_numpy()  
         dt = np.mean(np.diff(self.time))
