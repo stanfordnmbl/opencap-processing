@@ -7,6 +7,8 @@ Data/*
 
 *DS_Store
 
+.vscode/*
+
 UtilsDynamicSimulations/OpenSimAD/build-ExpressionGraphF/*
 UtilsDynamicSimulations/OpenSimAD/build-ExternalFunctionF/*
 UtilsDynamicSimulations/OpenSimAD/install-ExternalFunctionF/*
