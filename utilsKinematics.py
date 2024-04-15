@@ -178,7 +178,34 @@ class kinematics:
                 for marker_name, data in markerDict['markers'].items()}
         
         return markerDict
+    
+    def get_body_transform_dict(self):
+    
+        states_traj = self.stateTrajectory()
+        states_table = states_traj.exportToTable(self.model)
+    
+        body_dict = {}
+        body_dict['time'] = np.array(states_table.getIndependentColumn())
         
+        body_list = []
+        body_transforms_dict = {}
+        for body in self.model.getBodySet():
+            body_list.append(body.getName())
+            body_transforms_dict[body.getName()] = []
+        body_dict['body_names'] = body_list
+            
+        for i in range(self.table.getNumRows()):
+            this_state = states_traj[i]
+            self.model.realizePosition(this_state)
+            
+            for body in self.model.getBodySet():
+                this_body_transform = body.getTransformInGround(this_state)
+                body_transforms_dict[body.getName()].append(this_body_transform)
+        
+        body_dict['body_transforms'] = body_transforms_dict
+        
+        return body_dict
+    
     def get_coordinate_values(self, in_degrees=True, 
                               lowpass_cutoff_frequency=-1):
         

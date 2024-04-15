@@ -38,12 +38,12 @@ dataFolder = os.path.join(baseDir, 'Data')
 # %% User-defined variables.
 
 # example without KA
-#session_id = '1b380cb9-3c5c-498c-bc30-a1a379ffa04c'
-#trial_name = 'single_leg_squats_l'
+session_id = '1b380cb9-3c5c-498c-bc30-a1a379ffa04c'
+trial_name = 'single_leg_squats_l'
 
 # example with KA
-session_id = 'e742eb1c-efbc-4c17-befc-a772150ca84d'
-trial_name = 'SLS_L1'
+#session_id = 'e742eb1c-efbc-4c17-befc-a772150ca84d'
+#trial_name = 'SLS_L1'
 
 # TODO:
 # Peak trunk lean, peak hip adduction, peak knee abduction, knee flexion range of motion, peak ankle eversion

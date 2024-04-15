@@ -53,24 +53,38 @@ class squat_analysis(kinematics):
 
         # Coordinate values.
         self.coordinateValues = self.get_coordinate_values()
+        
+        # Body transforms
+        self.bodyTransformDict = self.get_body_transform_dict()
 
         # Making sure time vectors of marker and coordinate data are the same.
         if not np.allclose(self.markerDict['time'], self.coordinateValues['time'], atol=.001, rtol=0):
             raise Exception('Time vectors of marker and coordinate data are not the same.')
         
-        # Trim marker data and coordinate values.
+        if not np.allclose(self.bodyTransformDict['time'], self.coordinateValues['time'], atol=.001, rtol=0):
+            raise Exception('Time vectors of body transofrms and coordinate data are not the same.')
+            
+        # Trim marker, body transforms, and coordinate data.
         if self.trimming_start > 0:
             self.idx_trim_start = np.where(np.round(self.markerDict['time'] - self.trimming_start,6) <= 0)[0][-1]
-            self.markerDict['time'] = self.markerDict['time'][self.idx_trim_start:,]
+            self.markerDict['time'] = self.markerDict['time'][self.idx_trim_start:]
             for marker in self.markerDict['markers']:
                 self.markerDict['markers'][marker] = self.markerDict['markers'][marker][self.idx_trim_start:,:]
+            self.bodyTransformDict['time'] = self.bodyTransformDict['time'][self.idx_trim_start:]
+            for body in self.bodyTransformDict['body_transforms']:
+                self.bodyTransformDict['body_transforms'][body] = \
+                    self.bodyTransformDict['body_transforms'][body][self.idx_trim_start:]
             self.coordinateValues = self.coordinateValues.iloc[self.idx_trim_start:]
         
         if self.trimming_end > 0:
             self.idx_trim_end = np.where(np.round(self.markerDict['time'],6) <= np.round(self.markerDict['time'][-1] - self.trimming_end,6))[0][-1] + 1
-            self.markerDict['time'] = self.markerDict['time'][:self.idx_trim_end,]
+            self.markerDict['time'] = self.markerDict['time'][:self.idx_trim_end]
             for marker in self.markerDict['markers']:
                 self.markerDict['markers'][marker] = self.markerDict['markers'][marker][:self.idx_trim_end,:]
+            self.bodyTransformDict['time'] = self.bodyTransformDict['time'][self.idx_trim_end:]
+            for body in self.bodyTransformDict['body_transforms']:
+                self.bodyTransformDict['body_transforms'][body] = \
+                    self.bodyTransformDict['body_transforms'][body][self.idx_trim_end:]
             self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
         # Segment squat repetitions.
