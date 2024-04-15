@@ -125,7 +125,7 @@ class squat_analysis(kinematics):
         nonexistant_methods = [entry for entry in scalarNames if 'compute_' + entry not in method_names]
         
         if len(nonexistant_methods) > 0:
-            raise Exception(str(['compute_' + a for a in nonexistant_methods]) + ' does not exist in gait_analysis class.')
+            raise Exception(str(['compute_' + a for a in nonexistant_methods]) + ' does not exist in squat_analysis class.')
         
         scalarDict = {}
         for scalarName in scalarNames:
@@ -135,6 +135,7 @@ class squat_analysis(kinematics):
                 scalarDict[scalarName]['units']) = thisFunction(return_all=return_all)
         
         return scalarDict
+        
     
     def segment_squat(self, n_repetitions=-1, peak_proportion_threshold=0.7, 
                       peak_width_rel_height=0.95, peak_distance_sec=0.5,
