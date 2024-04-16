@@ -27,7 +27,7 @@ from scipy.signal import find_peaks, peak_widths
 from matplotlib import pyplot as plt
 
 from utilsKinematics import kinematics
-
+import opensim
 
 class squat_analysis(kinematics):
     
@@ -296,6 +296,85 @@ class squat_analysis(kinematics):
         else:
             return range_of_motion_mean, range_of_motion_std, units
     
+    def compute_trunk_lean_relative_to_pelvis(self, return_all=False):
+        torso_transforms = self.bodyTransformDict['body_transforms']['torso']
+        pelvis_transforms = self.bodyTransformDict['body_transforms']['pelvis']
+        
+        max_trunk_leans = np.zeros((self.nRepetitions))
+        for i in range(self.nRepetitions):            
+            rep_range = self.squatEvents['eventIdxs'][i]
+            
+            torso_transforms_range = torso_transforms[rep_range[0]:rep_range[1]+1]
+            pelvis_transforms_range = pelvis_transforms[rep_range[0]:rep_range[1]+1]
+            
+            trunk_leans_range = np.zeros(len(torso_transforms_range))
+            for j in range(len(torso_transforms_range)):
+                y_axis = opensim.Vec3(0, 1, 0)
+                torso_y_in_ground = torso_transforms_range[j].xformFrameVecToBase(y_axis).to_numpy()
+                
+                z_axis = opensim.Vec3(0, 0, 1)
+                pelvis_z_in_ground = pelvis_transforms_range[j].xformFrameVecToBase(z_axis).to_numpy()
+                
+                acos_deg = np.rad2deg(np.arccos(np.dot(torso_y_in_ground, pelvis_z_in_ground)))
+                trunk_leans_range[j] = 90 - acos_deg
+            
+            # using absolute value for now. perhaps keep track of both positive
+            # and negative trunk lean angles (to try to detect a bad side?)
+            max_trunk_leans[i] = np.max(np.abs(trunk_leans_range))
+            units = 'deg'
+            
+            if return_all:
+                return max_trunk_leans, units
+            
+            else:
+                trunk_lean_mean = np.mean(max_trunk_leans)
+                trunk_lean_std = np.std(max_trunk_leans)
+                return trunk_lean_mean, trunk_lean_std, units
+    
+    def compute_trunk_lean_relative_to_ground(self, return_all=False):
+        torso_transforms = self.bodyTransformDict['body_transforms']['torso']
+        pelvis_transforms = self.bodyTransformDict['body_transforms']['pelvis']
+        
+        max_trunk_leans = np.zeros((self.nRepetitions))
+        for i in range(self.nRepetitions):            
+            rep_range = self.squatEvents['eventIdxs'][i]
+            
+            torso_transforms_range = torso_transforms[rep_range[0]:rep_range[1]+1]
+            pelvis_transforms_range = pelvis_transforms[rep_range[0]:rep_range[1]+1]
+            
+            trunk_leans_range = np.zeros(len(torso_transforms_range))
+            for j in range(len(torso_transforms_range)):
+                y_axis = opensim.Vec3(0, 1, 0)
+                torso_y_in_ground = torso_transforms_range[j].xformFrameVecToBase(y_axis).to_numpy()
+                
+                # find the heading of the pelvis (in the ground x-z plane)
+                x_axis = opensim.Vec3(1, 0, 0)
+                pelvis_x_in_ground = pelvis_transforms_range[j].xformFrameVecToBase(x_axis).to_numpy()
+                pelvis_x_in_ground_xz_plane = pelvis_x_in_ground
+                pelvis_x_in_ground_xz_plane[1] = 0
+                pelvis_x_in_ground_xz_plane /= np.linalg.norm(pelvis_x_in_ground_xz_plane)
+                
+                # find the z-axis for comparison to the torso (z-axis in ground
+                # that is rotated to the heading of the pelvis)
+                rotated_z_axis = np.cross(pelvis_x_in_ground_xz_plane, np.array([0, 1, 0]))
+                
+                acos_deg = np.rad2deg(np.arccos(np.dot(torso_y_in_ground, rotated_z_axis)))
+                trunk_leans_range[j] = 90 - acos_deg
+            
+            # using absolute value for now. perhaps keep track of both positive
+            # and negative trunk lean angles (to try to detect a bad side?)
+            max_trunk_leans[i] = np.max(np.abs(trunk_leans_range))
+        
+        units = 'deg'
+            
+        if return_all:
+            return max_trunk_leans, units
+        
+        else:
+            trunk_lean_mean = np.mean(max_trunk_leans)
+            trunk_lean_std = np.std(max_trunk_leans)
+            return trunk_lean_mean, trunk_lean_std, units
+    
     def get_coordinates_segmented(self):
         
         colNames = self.coordinateValues.columns
@@ -367,7 +446,4 @@ class squat_analysis(kinematics):
         comValuesTimeNormalized['indiv'] = [pd.DataFrame(data=d, columns=colNames) for d in comValuesSegmentedNorm]
         
         return comValuesTimeNormalized 
-
-    def compute_calcn_locations(self):
-        
-        raise Exception('not implemented')
+    
