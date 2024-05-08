@@ -20,6 +20,7 @@
 
 import os
 import opensim
+import copy
 import utils
 import numpy as np
 import pandas as pd
@@ -28,6 +29,8 @@ import scipy.interpolate as interpolate
 
 from utilsProcessing import lowPassFilter
 from utilsTRC import trc_2_dict
+import numpy as np
+from scipy.spatial.transform import Rotation
 
 
 class kinematics:
@@ -178,7 +181,41 @@ class kinematics:
                 for marker_name, data in markerDict['markers'].items()}
         
         return markerDict
+    
+    def rotate_marker_dict(self, markerDict, euler_angles):
+        # euler_angles is a dictionary with keys being the axes of rotation
+        # (x, y, z) and values being the angles in degrees. e.g. {'x': 90, 'y': 180}
         
+        rotated_marker_dict = copy.deepcopy(markerDict)
+        rotated_marker_dict['markers'] = {}
+        
+        rotation = Rotation.from_euler(''.join(list(euler_angles.keys())),
+                                       list(euler_angles.values()), degrees=True)
+        
+        for marker, positions in markerDict['markers'].items():
+            rotated_positions = rotation.apply(positions)
+            rotated_marker_dict['markers'][marker] = rotated_positions
+        
+        return rotated_marker_dict
+        
+    def rotate_com(self, comValues, euler_angles):
+        # euler_angles is a dictionary with keys being the axes of rotation
+        # (x, y, z) and values being the angles in degrees. e.g. {'x': 90, 'y': 180}
+        
+        rotation = Rotation.from_euler(''.join(list(euler_angles.keys())),
+                                       list(euler_angles.values()), degrees=True)
+        
+        # turn the x, y, z dataframe entries into a into a 3xN array
+        comValuesArray = comValues[['x','y','z']].to_numpy()
+
+        rotated_com = rotation.apply(comValuesArray)
+
+        # turn back into a dataframe with time as first column 
+        rotated_com = pd.DataFrame(data=np.concatenate((np.expand_dims(comValues['time'].to_numpy, axis=1), rotated_com), axis=1),
+                                   columns=['time','x','y','z'])
+               
+        return rotated_com
+
     def get_coordinate_values(self, in_degrees=True, 
                               lowpass_cutoff_frequency=-1):
         
@@ -201,9 +238,9 @@ class kinematics:
         data = np.concatenate(
             (np.expand_dims(self.time, axis=1), Qs), axis=1)
         columns = ['time'] + self.columnLabels            
-        coordinate_values = pd.DataFrame(data=data, columns=columns)
+        self.coordinate_values = pd.DataFrame(data=data, columns=columns)
         
-        return coordinate_values
+        return self.coordinate_values
     
     def get_coordinate_speeds(self, in_degrees=True, 
                               lowpass_cutoff_frequency=-1):
@@ -406,4 +443,67 @@ class kinematics:
         columns = ['time'] + ['x','y','z']               
         com_accelerations = pd.DataFrame(data=data, columns=columns)
         
-        return com_accelerations        
+        return com_accelerations 
+
+    def get_body_angular_velocity(self, body_names=None, lowpass_cutoff_frequency=-1,
+                                  expressed_in='body'):
+        
+        body_set = self.model.getBodySet()
+        if body_names is None:
+            body_names = []
+            for i in range(body_set.getSize()):
+                print(i)
+                body = body_set.get(i)
+                body_names.append(body.getName())
+        
+        bodies = [body_set.get(body_name) for body_name in body_names]           
+        ground = self.model.getGround()
+
+        angular_velocity = np.ndarray((self.table.getNumRows(),
+                              len(body_names)*3)) # time x bodies x dim
+                        
+        for i_time in range(self.table.getNumRows()): # loop over time
+            state = self.stateTrajectory()[i_time]
+            self.model.realizeVelocity(state)
+            
+            
+            for i_body,body in enumerate(bodies):
+                ang_vel_in_ground = body.getAngularVelocityInGround(state)
+                if expressed_in == 'body':
+                    angular_velocity[i_time, i_body*3:i_body*3+3] = ground.expressVectorInAnotherFrame(
+                                                          state, ang_vel_in_ground, body
+                                                          ).to_numpy()
+                elif expressed_in == 'ground':
+                    angular_velocity[i_time, i_body*3:i_body*3+3] = ang_vel_in_ground.to_numpy()
+                else:
+                    raise Exception (expressed_in + ' is not a valid frame to express angular' + 
+                                     ' velocity.')
+                    
+        angular_velocity_filtered = lowPassFilter(self.time, angular_velocity, lowpass_cutoff_frequency)
+        
+        # Put into a dataframe
+        data = np.concatenate((np.expand_dims(self.time, axis=1), angular_velocity_filtered), axis=1)
+        columns = ['time']
+        for i, body_name in enumerate(body_names):
+            columns += [f'{body_name}_x', f'{body_name}_y', f'{body_name}_z']
+        angular_velocity_df = pd.DataFrame(data=data, columns=columns)
+                                                                                                
+        return angular_velocity_df
+
+    def get_ranges_of_motion(self, in_degrees=True, lowpass_cutoff_frequency=-1):
+        
+        self.get_coordinate_values(
+            in_degrees=in_degrees, 
+            lowpass_cutoff_frequency=lowpass_cutoff_frequency)
+        
+        # Compute ranges of motion.        
+        ROM = {}
+        for c, coord in enumerate(self.coordinates):
+            ROM[coord] = {}
+            ROM[coord]['min'] = self.coordinate_values[coord].min()
+            ROM[coord]['max'] = self.coordinate_values[coord].max()
+            ROM[coord]['amplitude'] = (
+                self.coordinate_values[coord].max() - 
+                self.coordinate_values[coord].min())
+            
+        return ROM 

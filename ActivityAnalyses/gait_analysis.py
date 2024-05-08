@@ -22,6 +22,7 @@ import sys
 sys.path.append('../')
 
 import numpy as np
+import copy
 import pandas as pd
 from scipy.signal import find_peaks
 from matplotlib import pyplot as plt
@@ -73,6 +74,9 @@ class gait_analysis(kinematics):
                 self.markerDict['markers'][marker] = self.markerDict['markers'][marker][:self.idx_trim_end,:]
             self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
+        # Rotate marker data so x is forward (not using for now, but could be useful for some analyses).
+        # self.rotation_about_y, self.markerDictRotated = self.rotate_x_forward()
+
         # Segment gait cycles.
         self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg)
         self.nGaitCycles = np.shape(self.gaitEvents['ipsilateralIdx'])[0]
@@ -83,16 +87,43 @@ class gait_analysis(kinematics):
         # Initialize variables to be lazy loaded.
         self._comValues = None
         self._R_world_to_gait = None
+        self._leg_length = None
+
+        # Rotate marker data with a per gait cycle rotation
+        self.markerDictRotatedPerGaitCycle = self.rotate_vector_into_gait_frame()
     
     # Compute COM trajectory.
-    def comValues(self):
-        if self._comValues is None:
-            self._comValues = self.get_center_of_mass_values()
-            if self.trimming_start > 0:
-                self._comValues = self._comValues.iloc[self.idx_trim_start:]            
-            if self.trimming_end > 0:
-                self._comValues = self._comValues.iloc[:self.idx_trim_end]
-        return self._comValues
+    def comValues(self,rotate=None,filt_freq=-1):
+        if rotate == None:
+            if self._comValues is None or filt_freq != -1:
+                self._comValues = self.get_center_of_mass_values(lowpass_cutoff_frequency = filt_freq)
+                if self.trimming_start > 0:
+                    self._comValues = self._comValues.iloc[self.idx_trim_start:]            
+                if self.trimming_end > 0:
+                    self._comValues = self._comValues.iloc[:self.idx_trim_end]
+            return self._comValues
+
+        if rotate == 'gaitCycle':
+            if self._comValuesRotatedPerGaitCycle is None or filt_freq!=-1:
+                comUnrotated = self.comValues(filt_freq=filt_freq)
+                comRotated = self.rotate_vector_into_gait_frame(comUnrotated[['x', 'y', 'z']].to_numpy())
+                # turn back into a dataframe with time as first column
+                self._comValuesRotatedPerGaitCycle = pd.DataFrame(data=np.concatenate((np.expand_dims(comUnrotated['time'].to_numpy(), axis=1), comRotated),axis=1),
+                                           columns=['time','x','y','z'])        
+                if self.trimming_start > 0:
+                    self._comValuesRotatedPerGaitCycle = self._comValuesRotatedPerGaitCycle.iloc[self.idx_trim_start:]            
+                if self.trimming_end > 0:
+                    self._comValuesRotatedPerGaitCycle = self._comValuesRotatedPerGaitCycle.iloc[:self.idx_trim_end]   
+            return self._comValuesRotatedPerGaitCycle
+        
+        if rotate == 'y': # need to initialize self.rotation_about_y -- currently commented in the init function
+            if self._comValuesRotated is None or filt_freq!=-1:
+                self._comValuesRotated = self.rotate_com(self.comValues(filt_freq=filt_freq),{'y':self.rotation_about_y})
+                if self.trimming_start > 0:
+                    self._comValuesRotated = self._comValuesRotated.iloc[self.idx_trim_start:]            
+                if self.trimming_end > 0:
+                    self._comValuesRotated = self._comValuesRotated.iloc[:self.idx_trim_end]   
+            return self._comValuesRotated
     
     # Compute gait frame.
     def R_world_to_gait(self):
@@ -103,6 +134,72 @@ class gait_analysis(kinematics):
     def get_gait_events(self):
         
         return self.gaitEvents
+    
+    def rotate_x_forward(self):
+        # Find the midpoint of the PSIS markers
+        psis_midpoint = (self.markerDict['markers']['r.PSIS_study'] + self.markerDict['markers']['L.PSIS_study']) / 2
+
+        # Find the midpoint of the ASIS markers
+        asis_midpoint = (self.markerDict['markers']['r.ASIS_study'] + self.markerDict['markers']['L.ASIS_study']) / 2
+
+        # Compute the vector pointing from the PSIS midpoint to the ASIS midpoint
+        heading_vector = asis_midpoint - psis_midpoint
+
+        # Compute the angle between the heading vector projected onto x-z plane and x-axis
+        angle = np.unwrap(np.arctan2(heading_vector[:,2], heading_vector[:,0]))
+
+        # compute average angle during middle 50% of the trial
+        n_frames = len(self.markerDict['time'])
+        start_index = int(n_frames * 0.25)
+        end_index = int(n_frames * 0.75)
+        angle = np.degrees(np.mean(angle[start_index:end_index], axis=0))
+
+        # Apply the rotation to the marker data
+        marker_dict_rotated = self.rotate_marker_dict(self.markerDict, {'y':angle})
+
+        return angle, marker_dict_rotated
+    
+        
+    def leg_length(self):
+
+        if self._leg_length is None:
+
+            leg, contLeg = self.get_leg()
+            # compute the midpoint between the knee and m_knee markers
+            kjc = (self.markerDict['markers'][leg + '_knee_study'] + 
+                            self.markerDict['markers'][leg + '_mknee_study']) / 2
+            ajc = (self.markerDict['markers'][leg + '_ankle_study'] +
+                                self.markerDict['markers'][leg + '_mankle_study']) / 2
+            hjc = self.markerDict['markers'][leg.upper() + 'HJC_study']
+                
+            # compute the femur vector from hjc to kjc, then find the average of its norm
+            femur_vector = kjc - hjc
+            femur_length = np.mean(np.linalg.norm(femur_vector, axis=1))
+
+            # compute the tibia vector from kjc to ajc, then find the average of its norm
+            tibia_vector = ajc - kjc
+            tibia_length = np.mean(np.linalg.norm(tibia_vector, axis=1))
+
+            # sum the femur and tibia lengths to get the leg length
+            _leg_length = {'ipsilateral':femur_length + tibia_length}
+
+            # repeat for contraolateral leg
+            kjc = (self.markerDict['markers'][contLeg + '_knee_study'] + 
+                            self.markerDict['markers'][contLeg + '_mknee_study']) / 2
+            ajc = (self.markerDict['markers'][contLeg + '_ankle_study'] +
+                                self.markerDict['markers'][contLeg + '_mankle_study']) / 2
+            hjc = self.markerDict['markers'][contLeg.upper() + 'HJC_study']
+                   
+            femur_vector = kjc - hjc
+            femur_length = np.mean(np.linalg.norm(femur_vector, axis=1))
+
+            tibia_vector = ajc - kjc
+            tibia_length = np.mean(np.linalg.norm(tibia_vector, axis=1))
+
+            _leg_length['contralateral'] = femur_length + tibia_length
+        
+        return _leg_length
+    
     
     def compute_scalars(self,scalarNames,return_all=False):
                
@@ -129,19 +226,19 @@ class gait_analysis(kinematics):
         
         return scalarDict
     
+    
     def compute_stride_length(self,return_all=False):
         
         leg,_ = self.get_leg()
         
-        calc_position = self.markerDict['markers'][leg + '_calc_study']
+        calc_position = self.markerDictRotatedPerGaitCycle['markers'][leg + '_calc_study']
 
         # On treadmill, the stride length is the difference in ipsilateral
         # calcaneus position at heel strike + treadmill speed * time.
         strideLengths = (
-            np.linalg.norm(
-                calc_position[self.gaitEvents['ipsilateralIdx'][:,:1]] - 
-                calc_position[self.gaitEvents['ipsilateralIdx'][:,2:3]], axis=2) + 
-                self.treadmillSpeed * np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]))
+                - calc_position[self.gaitEvents['ipsilateralIdx'][:,:1],0] +
+                calc_position[self.gaitEvents['ipsilateralIdx'][:,2:3],0] + 
+                self.treadmillSpeed * np.diff(self.gaitEvents['ipsilateralTime'][:,(0,2)]))       
         
         # Average across all strides.
         strideLength = np.mean(strideLengths)
@@ -153,20 +250,21 @@ class gait_analysis(kinematics):
             return strideLengths,units
         else: 
             return strideLength, units
+        
     
     def compute_step_length(self,return_all=False):
         leg, contLeg = self.get_leg()
         step_lengths = {}
         
-        step_lengths[contLeg.lower()] = (np.linalg.norm(
-            self.markerDict['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,:1]] - 
-            self.markerDict['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2]], axis=2) + 
+        step_lengths[contLeg.lower()] = (
+            - self.markerDictRotatedPerGaitCycle['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,:1],0] + 
+            self.markerDictRotatedPerGaitCycle['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2],0] + 
             self.treadmillSpeed * (self.gaitEvents['contralateralTime'][:,1:2] -
                                    self.gaitEvents['ipsilateralTime'][:,:1]))
         
-        step_lengths[leg.lower()]  = (np.linalg.norm(
-            self.markerDict['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,2:]] - 
-            self.markerDict['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2]], axis=2) + 
+        step_lengths[leg.lower()]  = (
+            self.markerDictRotatedPerGaitCycle['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,2:],0] - 
+            self.markerDictRotatedPerGaitCycle['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2],0] + 
             self.treadmillSpeed * (-self.gaitEvents['contralateralTime'][:,1:2] +
                                    self.gaitEvents['ipsilateralTime'][:,2:]))
                
@@ -181,6 +279,7 @@ class gait_analysis(kinematics):
             return step_lengths, units
         else:
             return step_length, units
+        
         
     def compute_step_length_symmetry(self,return_all=False):
         step_lengths,units = self.compute_step_length(return_all=True)
@@ -197,6 +296,7 @@ class gait_analysis(kinematics):
             return step_length_symmetry_all, units
         else:
             return step_length_symmetry, units
+        
     
     def compute_gait_speed(self,return_all=False):
                            
@@ -625,19 +725,50 @@ class gait_analysis(kinematics):
             x = x / np.linalg.norm(x,axis=1,keepdims=True)
             
         # Mean ASIS vector over gait cycle.
-        z = np.zeros((self.nGaitCycles,3))
+        z_temp = np.zeros((self.nGaitCycles,3))
         for i in range(self.nGaitCycles):
-            z[i,:] = np.mean(asisVector[self.gaitEvents['ipsilateralIdx'][i,0]: \
+            z_temp[i,:] = np.mean(asisVector[self.gaitEvents['ipsilateralIdx'][i,0]: \
                              self.gaitEvents['ipsilateralIdx'][i,2]],axis=0)
-        z = z / np.linalg.norm(z,axis=1,keepdims=True)
+        z_temp = z_temp / np.linalg.norm(z_temp,axis=1,keepdims=True)
         
         # Cross to get y.
-        y = np.cross(z,x)
+        y = np.cross(z_temp,x)
+        
+        z = np.cross(x,y)
         
         # 3x3xnSteps.
         R_lab_to_gait = np.stack((x.T,y.T,z.T),axis=1).transpose((2, 0, 1))
         
         return R_lab_to_gait
+    
+    def rotate_vector_into_gait_frame(self,vectorArray=None):
+        # vectorArray is a nFramesx3 array
+        # This takes a vector array and rotates it into the gait frame, per gait frame. Thus,
+        # the data in the vector array is not expressed all in the same frame. This data should
+        # only be used on gait cycle, by gait cycle data. Note, the second heel strike data gets overwritten
+        # by subsequent gait cycles (since it is the same index as the first heel strike in the subsequent
+        # gait cycle). We assume that the gait frame doesn't change dramatically from step to step.
+
+        def rotate_vec(vec,R):
+            return np.dot(vec,R)
+        
+        if vectorArray is None: # rotate each marker in the entire markerDict
+            markerDict_rotated_per_step = copy.deepcopy(self.markerDict)
+            for marker_name,marker in markerDict_rotated_per_step['markers'].items():
+                for i in range(self.nGaitCycles):
+                    markerDict_rotated_per_step['markers'][marker_name][self.gaitEvents['ipsilateralIdx'][i,0]:
+                                                                        self.gaitEvents['ipsilateralIdx'][i,2],:] = rotate_vec(
+                    marker[self.gaitEvents['ipsilateralIdx'][i,0]:self.gaitEvents['ipsilateralIdx'][i,2],:],
+                    self.R_world_to_gait()[i,:,:])
+            return markerDict_rotated_per_step
+            
+        else:
+            for i in range(self.nGaitCycles):
+                vectorArray[self.gaitEvents['ipsilateralIdx'][i,0]:self.gaitEvents['ipsilateralIdx'][i,2],:] = rotate_vec(
+                    vectorArray[self.gaitEvents['ipsilateralIdx'][i,0]:self.gaitEvents['ipsilateralIdx'][i,2],:],
+                        self.R_world_to_gait()[i,:,:])
+
+            return vectorArray
     
     def get_leg(self,lower=False):
 
