@@ -211,7 +211,7 @@ class kinematics:
         rotated_com = rotation.apply(comValuesArray)
 
         # turn back into a dataframe with time as first column 
-        rotated_com = pd.DataFrame(data=np.concatenate((np.expand_dims(comValues['time'].to_numpy, axis=1), rotated_com), axis=1),
+        rotated_com = pd.DataFrame(data=np.concatenate((np.expand_dims(comValues['time'].to_numpy(), axis=1), rotated_com), axis=1),
                                    columns=['time','x','y','z'])
                
         return rotated_com
