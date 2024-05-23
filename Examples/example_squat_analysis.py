@@ -38,12 +38,12 @@ dataFolder = os.path.join(baseDir, 'Data')
 # %% User-defined variables.
 
 # example without KA
-#session_id = '1b380cb9-3c5c-498c-bc30-a1a379ffa04c'
-#trial_name = 'squats'
+session_id = '1b380cb9-3c5c-498c-bc30-a1a379ffa04c'
+trial_name = 'bossu_squats'
 
 # example with KA
-session_id = 'e742eb1c-efbc-4c17-befc-a772150ca84d'
-trial_name = 'SLS_L1'
+#session_id = 'e742eb1c-efbc-4c17-befc-a772150ca84d'
+#trial_name = 'SLS_L1'
 
 # TODO:
 # Peak trunk lean, peak hip adduction, peak knee abduction, knee flexion range of motion, peak ankle eversion
@@ -93,13 +93,19 @@ if all(x in squat.coordinates for x in knee_adduction_names):
     analyze_knee_adduction = True
 
 # Example metrics
-max_trunk_lean_pelvis_mean, max_trunk_lean_pelvis_std, max_trunk_lean_pelvis_units = squat.compute_trunk_lean_relative_to_pelvis()
+#max_trunk_lean_pelvis_mean, max_trunk_lean_pelvis_std, max_trunk_lean_pelvis_units = squat.compute_trunk_lean_relative_to_pelvis()
 max_trunk_lean_ground_mean, max_trunk_lean_ground_std, max_trunk_lean_ground_units = squat.compute_trunk_lean_relative_to_ground()
+max_trunk_flexion_mean, max_trunk_flexion_std, max_trunk_flexion_units = squat.compute_trunk_flexion_relative_to_ground()
+squat_depth_mean, squat_depth_std, squat_depth_units = squat.compute_squat_depth()
 
-
-print('Trunk lean relative to pelvis: {} +/- {} {}'.format(np.round(max_trunk_lean_pelvis_mean,2), np.round(max_trunk_lean_pelvis_std,2), max_trunk_lean_pelvis_units))
-print('Trunk lean relative to ground: {} +/- {} {}'.format(np.round(max_trunk_lean_ground_mean,2), np.round(max_trunk_lean_ground_std,2), max_trunk_lean_ground_units))
+#print('Trunk lean relative to pelvis: {} +/- {} {}'.format(np.round(max_trunk_lean_pelvis_mean,2), np.round(max_trunk_lean_pelvis_std,2), max_trunk_lean_pelvis_units))
+print('Max trunk lean relative to ground: {} +/- {} {}'.format(np.round(max_trunk_lean_ground_mean,2), np.round(max_trunk_lean_ground_std,2), max_trunk_lean_ground_units))
+print('Max trunk lean flexion to ground: {} +/- {} {}'.format(np.round(max_trunk_flexion_mean,2), np.round(max_trunk_flexion_std,2), max_trunk_flexion_units))
+print('Squat depth: {} +/- {} {}'.format(np.round(squat_depth_mean,2), np.round(squat_depth_std,2), squat_depth_units))
 print('')
+
+squat.plot_hip_knee_ankle_sagittal_kinematics()
+
 if eventTypes[0] == 'double_leg':
     ratio_max_knee_flexion_angle_mean, ratio_max_knee_flexion_angle_std, ratio_max_knee_flexion_angle_unit = squat.compute_ratio_peak_angle('knee_angle_r', 'knee_angle_l')
     ratio_max_hip_flexion_angle_mean, ratio_max_hip_flexion_angle_std, ratio_max_knee_flexion_angle_unit = squat.compute_ratio_peak_angle('hip_flexion_r', 'hip_flexion_l')

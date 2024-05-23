@@ -295,7 +295,29 @@ class squat_analysis(kinematics):
             return ranges_of_motion, units
         else:
             return range_of_motion_mean, range_of_motion_std, units
-    
+
+    def compute_squat_depth(self, return_all=False):
+        pelvis_ty = self.coordinateValues['pelvis_ty'].to_numpy()  
+        
+        squat_depths = np.zeros((self.nRepetitions))
+        for i in range(self.nRepetitions):            
+            rep_range = self.squatEvents['eventIdxs'][i]
+            
+            pelvis_ty_range = pelvis_ty[rep_range[0]:rep_range[1]+1]
+            squat_depths[i] = np.max(pelvis_ty_range) - np.min(pelvis_ty_range)
+        
+        # Average across all squats.
+        squat_depths_mean = np.mean(squat_depths)
+        squat_depths_std = np.std(squat_depths)
+        
+        # Define units.
+        units = 'm'
+        
+        if return_all:
+            return squat_depths, units
+        else:
+            return squat_depths_mean, squat_depths_std, units
+
     def compute_trunk_lean_relative_to_pelvis(self, return_all=False):
         torso_transforms = self.bodyTransformDict['body_transforms']['torso']
         pelvis_transforms = self.bodyTransformDict['body_transforms']['pelvis']
@@ -374,6 +396,85 @@ class squat_analysis(kinematics):
             trunk_lean_mean = np.mean(max_trunk_leans)
             trunk_lean_std = np.std(max_trunk_leans)
             return trunk_lean_mean, trunk_lean_std, units
+        
+    def compute_trunk_flexion_relative_to_ground(self, return_all=False):
+        torso_transforms = self.bodyTransformDict['body_transforms']['torso']
+        pelvis_transforms = self.bodyTransformDict['body_transforms']['pelvis']
+        
+        max_trunk_flexions = np.zeros((self.nRepetitions))
+        for i in range(self.nRepetitions):            
+            rep_range = self.squatEvents['eventIdxs'][i]
+            
+            torso_transforms_range = torso_transforms[rep_range[0]:rep_range[1]+1]
+            pelvis_transforms_range = pelvis_transforms[rep_range[0]:rep_range[1]+1]
+            
+            trunk_flexions_range = np.zeros(len(torso_transforms_range))
+            for j in range(len(torso_transforms_range)):
+                y_axis = opensim.Vec3(0, 1, 0)
+                torso_y_in_ground = torso_transforms_range[j].xformFrameVecToBase(y_axis).to_numpy()
+                
+                # find the heading of the pelvis (in the ground x-z plane)
+                x_axis = opensim.Vec3(1, 0, 0)
+                pelvis_x_in_ground = pelvis_transforms_range[j].xformFrameVecToBase(x_axis).to_numpy()
+                pelvis_x_in_ground_xz_plane = pelvis_x_in_ground
+                pelvis_x_in_ground_xz_plane[1] = 0
+                pelvis_x_in_ground_xz_plane /= np.linalg.norm(pelvis_x_in_ground_xz_plane)
+                
+                acos_deg = np.rad2deg(np.arccos(np.dot(torso_y_in_ground, pelvis_x_in_ground_xz_plane)))
+                trunk_flexions_range[j] = 90 - acos_deg
+            
+            # using absolute value for now. perhaps keep track of both positive
+            # and negative trunk lean angles (to try to detect a bad side?)
+            max_trunk_flexions[i] = np.max(trunk_flexions_range)
+        
+        units = 'deg'
+            
+        if return_all:
+            return max_trunk_flexions, units
+        
+        else:
+            max_trunk_flexions_mean = np.mean(max_trunk_flexions)
+            max_trunk_flexions_std = np.std(max_trunk_flexions)
+            return max_trunk_flexions_mean, max_trunk_flexions_std, units
+    
+    def plot_hip_knee_ankle_sagittal_kinematics(self):
+        hip_flexion_l = self.coordinateValues['hip_flexion_l'].to_numpy() 
+        hip_flexion_r = self.coordinateValues['hip_flexion_r'].to_numpy()  
+         
+        knee_flexion_l = self.coordinateValues['knee_angle_l'].to_numpy()  
+        knee_flexion_r = self.coordinateValues['knee_angle_r'].to_numpy()  
+        
+        ankle_flexion_l = self.coordinateValues['ankle_angle_l'].to_numpy()
+        ankle_flexion_r = self.coordinateValues['ankle_angle_r'].to_numpy()  
+        
+        time = self.time
+        
+        f, axs = plt.subplots(3, 2, sharey='row')
+        for i in range(self.nRepetitions):            
+            rep_range = self.squatEvents['eventIdxs'][i]
+            
+            rep_time = time[rep_range[0]:rep_range[1]+1] - time[rep_range[0]]
+            
+            axs[0, 0].plot(rep_time, hip_flexion_l[rep_range[0]:rep_range[1]+1], color='k')
+            axs[0, 1].plot(rep_time, hip_flexion_r[rep_range[0]:rep_range[1]+1], color='k')
+            axs[1, 0].plot(rep_time, knee_flexion_l[rep_range[0]:rep_range[1]+1], color='k')
+            axs[1, 1].plot(rep_time, knee_flexion_r[rep_range[0]:rep_range[1]+1], color='k')
+            axs[2, 0].plot(rep_time, ankle_flexion_l[rep_range[0]:rep_range[1]+1], color='k')
+            axs[2, 1].plot(rep_time, ankle_flexion_r[rep_range[0]:rep_range[1]+1], color='k')
+            
+            #plt.title('Sagittal Plane Kinematics')
+        
+        axs[0, 0].set_title('hip flexion left')
+        axs[0, 1].set_title('hip flexion right')
+        axs[1, 0].set_title('knee flexion left')
+        axs[1, 1].set_title('knee flexion right')
+        axs[2, 0].set_title('ankle dorsiflexion left')
+        axs[2, 1].set_title('ankle dorsiflexion right')
+        
+        
+        plt.tight_layout()
+        plt.draw()
+            
     
     def get_coordinates_segmented(self):
         
