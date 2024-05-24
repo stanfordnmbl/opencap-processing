@@ -449,7 +449,7 @@ class squat_analysis(kinematics):
         
         time = self.time
         
-        f, axs = plt.subplots(3, 2, sharey='row')
+        f, axs = plt.subplots(3, 2, sharex='col', sharey='row')
         for i in range(self.nRepetitions):            
             rep_range = self.squatEvents['eventIdxs'][i]
             
