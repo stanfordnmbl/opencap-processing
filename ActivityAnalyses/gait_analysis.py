@@ -75,7 +75,7 @@ class gait_analysis(kinematics):
             self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
         # Rotate marker data so x is forward (not using for now, but could be useful for some analyses).
-        # self.rotation_about_y, self.markerDictRotated = self.rotate_x_forward()
+        self.rotation_about_y, self.markerDictRotated = self.rotate_x_forward()
 
         # Segment gait cycles.
         self.gaitEvents = self.segment_walking(n_gait_cycles=n_gait_cycles,leg=leg)
@@ -257,14 +257,14 @@ class gait_analysis(kinematics):
         step_lengths = {}
         
         step_lengths[contLeg.lower()] = (
-            - self.markerDictRotatedPerGaitCycle['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,:1],0] + 
-            self.markerDictRotatedPerGaitCycle['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2],0] + 
+            - self.markerDictRotated['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,:1],0] + 
+            self.markerDictRotated['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2],0] + 
             self.treadmillSpeed * (self.gaitEvents['contralateralTime'][:,1:2] -
                                    self.gaitEvents['ipsilateralTime'][:,:1]))
         
         step_lengths[leg.lower()]  = (
-            self.markerDictRotatedPerGaitCycle['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,2:],0] - 
-            self.markerDictRotatedPerGaitCycle['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2],0] + 
+            self.markerDictRotated['markers'][leg + '_calc_study'][self.gaitEvents['ipsilateralIdx'][:,2:],0] - 
+            self.markerDictRotated['markers'][contLeg + '_calc_study'][self.gaitEvents['contralateralIdx'][:,1:2],0] + 
             self.treadmillSpeed * (-self.gaitEvents['contralateralTime'][:,1:2] +
                                    self.gaitEvents['ipsilateralTime'][:,2:]))
                
