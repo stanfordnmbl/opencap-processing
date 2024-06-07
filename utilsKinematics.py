@@ -62,7 +62,7 @@ class kinematics:
         motionPath = os.path.join(sessionDir, 'OpenSimData', 'Kinematics',
                                   '{}.mot'.format(trialName))
         
-        # Create time-series table with coordinate values.             
+        # Create time-series table with coordinate values.
         self.table = opensim.TimeSeriesTable(motionPath)        
         tableProcessor = opensim.TableProcessor(self.table)
         self.columnLabels = list(self.table.getColumnLabels())
@@ -102,7 +102,7 @@ class kinematics:
             self.Qds[:,i] = splineD1(self.time)
             # Coordinate accelerations.
             splineD2 = spline.derivative(n=2)
-            self.Qdds[:,i] = splineD2(self.time)            
+            self.Qdds[:,i] = splineD2(self.time)
             # Add coordinate speeds to table.
             columnLabel_speed = columnLabel[:-5] + 'speed'
             self.table.appendColumn(
@@ -118,14 +118,14 @@ class kinematics:
         existingLabels = self.table.getColumnLabels()
         for stateVariableNameStr in stateVariableNamesStr:
             if not stateVariableNameStr in existingLabels:
-                vec_0 = opensim.Vector([0] * self.table.getNumRows())            
+                vec_0 = opensim.Vector([0] * self.table.getNumRows())     
                 self.table.appendColumn(stateVariableNameStr, vec_0)
                        
         # Number of muscles.
         self.nMuscles = 0
         self.forceSet = self.model.getForceSet()
         for i in range(self.forceSet.getSize()):        
-            c_force_elt = self.forceSet.get(i)  
+            c_force_elt = self.forceSet.get(i)
             if 'Muscle' in c_force_elt.getConcreteClassName():
                 self.nMuscles += 1
                 

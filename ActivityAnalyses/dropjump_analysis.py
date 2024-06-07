@@ -89,7 +89,7 @@ class dropjump_analysis(kinematics):
             self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
         # Segment dropjump.
-        self.dropjumpEvents = self.segment_dropjump(visualizeSegmentation=False)
+        self.dropjumpEvents = self.segment_dropjump(visualizeSegmentation=True)
         # self.nRepetitions = np.shape(self.dropjumpEvents['eventIdxs'])[0]
         
         # Initialize variables to be lazy loaded.
@@ -138,7 +138,7 @@ class dropjump_analysis(kinematics):
         return scalarDict
         
     
-    def segment_dropjump(self, n_repetitions=-1, prominence=1, distance_sec=0.4, height=1,
+    def segment_dropjump(self, prominence=1, distance_sec=0.4, height=1,
                       visualizeSegmentation=False):
         
         
@@ -177,11 +177,44 @@ class dropjump_analysis(kinematics):
 
             if visualizeSegmentation:
                 plt.figure()
+                plt.plot(time, m_y, label='{} pos'.format(test_marker))
                 plt.plot(time, m_y_vel, label='{} vel'.format(test_marker))
+                
                 plt.scatter(time[contactIdxs[legs[count]]], m_y_vel[contactIdxs[legs[count]]], color='green')
-                plt.scatter(time[toeoffIdxs[legs[count]]], m_y_vel[toeoffIdxs[legs[count]]], color='red')                
+                plt.vlines(time[contactIdxs[legs[count]]], np.min(m_y_vel), np.max(m_y_vel), color='green', linewidth=1)
+                
+                plt.scatter(time[toeoffIdxs[legs[count]]], m_y_vel[toeoffIdxs[legs[count]]], color='red')
+                plt.vlines(time[toeoffIdxs[legs[count]]], np.min(m_y_vel), np.max(m_y_vel), color='red', linewidth=1)
+                
                 plt.legend()
                 plt.show()
+
+        # Find if double-leg or single-leg by looking for height differences
+        # during largest possible contact window
+        largest_contact_window_idx = [min(contactIdxs['r'][0], contactIdxs['l'][0]),
+                                       max(toeoffIdxs['r'][0], toeoffIdxs['l'][0])]
+        
+        m_right_y = self.markerDict['markers']['r_toe_study'][:,1]
+        m_left_y = self.markerDict['markers']['L_toe_study'][:,1]
+        m_diff = m_right_y - m_left_y
+        
+        time_window = time[largest_contact_window_idx[0]:largest_contact_window_idx[1]]
+        m_diff_window = (m_right_y - m_left_y)[largest_contact_window_idx[0]:largest_contact_window_idx[1]]
+        
+        if visualizeSegmentation:
+            plt.figure()
+            plt.plot(time_window, m_diff_window)
+            plt.title('smallest contact window: toe marker right - left')
+        
+        eventType = 'double'
+        if np.percentile(abs(m_diff_window), 95) > 0.1:
+            if np.mean(m_diff_window) < 0.0:
+                eventType = 'right'
+            else:
+                eventType = 'left'
+        
+        print(f'eventType = {eventType}')
+        
 
         # TODO, let's just select the widest window for now
         contactIdxsAll = [min(contactIdxs['r'][0], contactIdxs['l'][0]), max(contactIdxs['r'][1], contactIdxs['l'][1])]
@@ -198,28 +231,52 @@ class dropjump_analysis(kinematics):
         dropjumpEvents = {
             'eventIdxs': eventIdxs,
             'eventTimes': eventTimes,
-            'eventNames': eventNames}
+            'eventNames': eventNames,
+            'eventType': eventType}
         
         return dropjumpEvents
     
     def compute_jump_height(self):
-        
-        # Get the COM trajectory.
-        comValues = self.comValues()
+        # Get the pelvis COM trajectory.
+        pelvis_ty = self.coordinateValues['pelvis_ty'].to_numpy()  
 
         # Select from first contact to second contact
         selIdxs = [self.dropjumpEvents['eventIdxs']['contactIdxs'][0], self.dropjumpEvents['eventIdxs']['contactIdxs'][1]]
         
         # Compute the jump height.
         # TODO: is that a proper definition of jump height
-        max_com_height = np.max(comValues['y'].to_numpy()[selIdxs[0]:selIdxs[1]+1])
-        min_com_height = np.min(comValues['y'].to_numpy()[selIdxs[0]:selIdxs[1]+1])
-        jump_height = max_com_height - min_com_height
+        max_pelvis_height = np.max(pelvis_ty[selIdxs[0]:selIdxs[1]+1])
+        min_pelvis_height = np.min(pelvis_ty[selIdxs[0]:selIdxs[1]+1])
+        jump_height = max_pelvis_height - min_pelvis_height
         
         # Define units.
         units = 'm'
         
         return jump_height, units
+    
+    def compute_leg_length(self):
+        # Estimate leg length based on pelvis and toes COM vertical distance 
+        # in default model pose.
+        model = self.model
+        default_state = model.initSystem()
+        body_set = model.getBodySet()
+        pelvis_body = body_set.get('pelvis')
+        toes_r_body = body_set.get('toes_r')
+        toes_l_body = body_set.get('toes_l')
+        
+        pelvis_y = pelvis_body.expressVectorInGround(default_state,
+                                                     pelvis_body.getMassCenter()).get(1)
+        toes_r_y = toes_r_body.expressVectorInGround(default_state,
+                                                toes_r_body.getMassCenter()).get(1)
+        toes_l_y = toes_l_body.expressVectorInGround(default_state,
+                                                toes_l_body.getMassCenter()).get(1)
+        
+        leg_length = pelvis_y - 0.5*(toes_r_y + toes_l_y)
+        
+        # Define units.
+        units = 'm'
+        
+        return leg_length, units
     
     def compute_contact_time(self):        
 

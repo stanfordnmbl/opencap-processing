@@ -37,7 +37,8 @@ dataFolder = os.path.join(baseDir, 'Data')
 # %% User-defined variables.
 # example with KA
 session_id = '907bd795-093b-44e7-9656-3c1b38da7dcc'
-trial_name = 'dropjump'
+trial_name = 'dropjump_7'
+#trial_name = 'dropjump_8' # this case fails as foot is noisy after toe off
 
 scalars = {
         'jump_height': {'label': 'Jump height (cm)', 'order': 0, 'decimal': 1, 'multiplier': 100},

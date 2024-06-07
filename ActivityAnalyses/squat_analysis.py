@@ -198,15 +198,6 @@ class squat_analysis(kinematics):
                 eventTypes.append('single_leg_l')
             else:
                 eventTypes.append('double_leg')
-            
-        
-        if visualizeSegmentation:
-            plt.figure()
-            plt.plot(self.markerDict['markers']['L_calc_study'][:,1], label='L_calc_study')
-            plt.plot(self.markerDict['markers']['L_toe_study'][:,1], label='L_toe_study')
-            plt.plot(self.markerDict['markers']['r_calc_study'][:,1], label='r_calc_study')
-            plt.plot(self.markerDict['markers']['r_toe_study'][:,1], label='r_toe_study')
-            plt.legend()
         
         # Output.
         squatEvents = {
@@ -436,45 +427,6 @@ class squat_analysis(kinematics):
             max_trunk_flexions_mean = np.mean(max_trunk_flexions)
             max_trunk_flexions_std = np.std(max_trunk_flexions)
             return max_trunk_flexions_mean, max_trunk_flexions_std, units
-    
-    def plot_hip_knee_ankle_sagittal_kinematics(self):
-        hip_flexion_l = self.coordinateValues['hip_flexion_l'].to_numpy() 
-        hip_flexion_r = self.coordinateValues['hip_flexion_r'].to_numpy()  
-         
-        knee_flexion_l = self.coordinateValues['knee_angle_l'].to_numpy()  
-        knee_flexion_r = self.coordinateValues['knee_angle_r'].to_numpy()  
-        
-        ankle_flexion_l = self.coordinateValues['ankle_angle_l'].to_numpy()
-        ankle_flexion_r = self.coordinateValues['ankle_angle_r'].to_numpy()  
-        
-        time = self.time
-        
-        f, axs = plt.subplots(3, 2, sharex='col', sharey='row')
-        for i in range(self.nRepetitions):            
-            rep_range = self.squatEvents['eventIdxs'][i]
-            
-            rep_time = time[rep_range[0]:rep_range[1]+1] - time[rep_range[0]]
-            
-            axs[0, 0].plot(rep_time, hip_flexion_l[rep_range[0]:rep_range[1]+1], color='k')
-            axs[0, 1].plot(rep_time, hip_flexion_r[rep_range[0]:rep_range[1]+1], color='k')
-            axs[1, 0].plot(rep_time, knee_flexion_l[rep_range[0]:rep_range[1]+1], color='k')
-            axs[1, 1].plot(rep_time, knee_flexion_r[rep_range[0]:rep_range[1]+1], color='k')
-            axs[2, 0].plot(rep_time, ankle_flexion_l[rep_range[0]:rep_range[1]+1], color='k')
-            axs[2, 1].plot(rep_time, ankle_flexion_r[rep_range[0]:rep_range[1]+1], color='k')
-            
-            #plt.title('Sagittal Plane Kinematics')
-        
-        axs[0, 0].set_title('hip flexion left')
-        axs[0, 1].set_title('hip flexion right')
-        axs[1, 0].set_title('knee flexion left')
-        axs[1, 1].set_title('knee flexion right')
-        axs[2, 0].set_title('ankle dorsiflexion left')
-        axs[2, 1].set_title('ankle dorsiflexion right')
-        
-        
-        plt.tight_layout()
-        plt.draw()
-            
     
     def get_coordinates_segmented(self):
         
