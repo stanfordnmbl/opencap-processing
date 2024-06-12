@@ -1,4 +1,4 @@
-scipy
+scipy==1.10.0
 pandas
 matplotlib
 ipython
