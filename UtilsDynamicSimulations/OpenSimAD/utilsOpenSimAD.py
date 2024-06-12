@@ -538,7 +538,10 @@ def generateExternalFunction(
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
-    suffix_model = '_contacts'
+    if contact_side != 'all':
+        suffix_model = '_contacts_' + contact_side
+    else:
+        suffix_model = '_contacts'
     outputModelFileName = (OpenSimModel + "_scaled" + suffix_MA + suffix_model)
     pathModel = os.path.join(pathModelFolder, outputModelFileName + ".osim")
     pathOutputExternalFunctionFolder = os.path.join(pathModelFolder,
