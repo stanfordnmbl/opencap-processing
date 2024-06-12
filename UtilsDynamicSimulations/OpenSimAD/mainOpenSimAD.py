@@ -364,7 +364,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     pathSettings = os.path.join(pathResults, 'Setup_{}.yaml'.format(case))
     # Dump settings in yaml file.
     with open(pathSettings, 'w') as file:
-        yaml.dump(settings, file)
+        yaml.dump(settings, file, default_flow_style=False)
         
     print('Processing {} - Case {}'.format(trialName, case))
     

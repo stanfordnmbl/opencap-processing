@@ -88,7 +88,7 @@ class squat_analysis(kinematics):
             self.coordinateValues = self.coordinateValues.iloc[:self.idx_trim_end]
         
         # Segment squat repetitions.
-        self.squatEvents = self.segment_squat(n_repetitions=n_repetitions, visualizeSegmentation=True)
+        self.squatEvents = self.segment_squat(n_repetitions=n_repetitions, visualizeSegmentation=False)
         self.nRepetitions = np.shape(self.squatEvents['eventIdxs'])[0]
         
         # Initialize variables to be lazy loaded.

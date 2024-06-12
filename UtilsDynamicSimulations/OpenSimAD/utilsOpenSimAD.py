@@ -43,6 +43,8 @@ from utilsProcessing import (segment_squats, segment_STS, adjust_muscle_wrapping
                              generate_model_with_contacts)
 from settingsOpenSimAD import get_setup
 
+from squat_analysis import squat_analysis
+
 # %% Filter numpy array.
 def filterNumpyArray(array, time, cutoff_frequency=6, order=4):
     
@@ -2305,12 +2307,19 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     pathMotionFile = os.path.join(sessionFolder, 'OpenSimData', 'Kinematics',
                                   trial_name + '.mot')
     if (repetition is not None and 
-        (motion_type == 'squats' or motion_type == 'sit_to_stand')): 
-        if motion_type == 'squats':
-            times_window = segment_squats(pathMotionFile, visualize=True)
-        elif motion_type == 'sit_to_stand':
+        ('squats' in motion_type or 'sit_to_stand' in motion_type)): 
+        if 'squats' in motion_type:           
+            sessionDir = os.path.join(dataFolder, session_id)
+            squat = squat_analysis(
+                sessionDir, trial_name,
+                lowpass_cutoff_frequency_for_coordinate_values=4,
+                n_repetitions=-1)
+            squat_events = squat.get_squat_events()            
+            times_window = [list(row) for row in squat_events['eventTimes']]
+        elif 'sit_to_stand' in motion_type:
             _, _, times_window = segment_STS(pathMotionFile, visualize=True)
         time_window = times_window[repetition]
+        time_window = [x.item() for x in time_window]
         settings['repetition'] = repetition
     else:
         motion_file = storage_to_numpy(pathMotionFile)
