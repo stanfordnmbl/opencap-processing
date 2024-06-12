@@ -87,6 +87,16 @@ Please provide:
                     subject is moving forward. You should ignore this parameter
                     or set it to 0 if the trial was not measured on a
                     treadmill. By default, treadmill_speed is set to 0.
+    (optional)
+    contact_side:   This an optional parameter that indicates on which foot to
+                    add contact spheres to model foot-ground contact. It might
+                    be useful to only add contact spheres on one foot if only
+                    that foot is in contact with the ground. We found this to
+                    be helpful for simulating for instance single leg dropjump
+                    as it might prevent the optimizer to cheat by using the
+                    other foot to stabilize the model. Options are 'all', 
+                    'left', and 'right'. By default, contact_side is set to
+                    'all', meaning that contact spheres are added to both feet.
     
 See example inputs below for different activities. Please note that we did not
 verify the biomechanical validity of the results; we only made sure the
@@ -96,33 +106,6 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 '''
 
 # We provide a few examples for overground and treadmill activities.
-# We tested these examples locally. Here are some pointers about how many
-# iterations the examples took to converge. Please note that these numbers 
-# might change depending on the machine and operating system.
-#   - squat:
-#       - Windows (Windows 10):    converged in 595 iterations
-#       - macOS   (Monterey 12.2): converged in 624 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 431 iterations
-#   - STS:
-#       - Windows (Windows 10):    converged in 422 iterations
-#       - macOS   (Monterey 12.2): converged in 412 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 419 iterations
-#   - jump:
-#       - Windows (Windows 10):    converged in 2321 iterations
-#       - macOS   (Monterey 12.2): converged in 3457 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 2457 iterations 
-#   - walk_1_25ms:
-#       - Windows (Windows 10):    converged in 776 iterations
-#       - macOS   (Monterey 12.2): converged in 597 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 602 iterations 
-#   - run_2_5ms:
-#       - Windows (Windows 10):    converged in 2022 iterations
-#       - macOS   (Monterey 12.2): converged in 1698 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 2104 iterations 
-#   - run_4ms:
-#       - Windows (Windows 10):    converged in 861 iterations
-#       - macOS   (Monterey 12.2): converged in 869 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 856 iterations 
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
@@ -178,9 +161,11 @@ if not 'repetition' in locals():
     repetition = None
 if not 'treadmill_speed' in locals():
     treadmill_speed = 0
+if not 'contact_side' in locals():
+    contact_side = 'all'
 settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name, 
                                   motion_type, time_window, repetition,
-                                  treadmill_speed)
+                                  treadmill_speed, contact_side)
 
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 

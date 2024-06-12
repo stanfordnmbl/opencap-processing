@@ -9,7 +9,7 @@ Data/*
 
 .vscode/*
 
-UtilsDynamicSimulations/OpenSimAD/build-ExpressionGraphF/*
-UtilsDynamicSimulations/OpenSimAD/build-ExternalFunctionF/*
-UtilsDynamicSimulations/OpenSimAD/install-ExternalFunctionF/*
+UtilsDynamicSimulations/OpenSimAD/build-ExpressionGraphF*
+UtilsDynamicSimulations/OpenSimAD/build-ExternalFunctionF*
+UtilsDynamicSimulations/OpenSimAD/install-ExternalFunctionF*
 UtilsDynamicSimulations/OpenSimAD/opensimAD-install/*
