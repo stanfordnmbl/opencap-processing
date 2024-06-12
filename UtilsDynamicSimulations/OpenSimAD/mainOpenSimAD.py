@@ -334,6 +334,14 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     if 'useExpressionGraphFunction' in settings:
         useExpressionGraphFunction = settings['useExpressionGraphFunction']
 
+    # Set contact_side to 'left' or 'right' to only add contact spheres to the
+    # specified side. This is useful when simulating motions with only one foot
+    # in contact with the ground. The default is to add contact spheres to both
+    # sides.
+    contact_side = 'all'
+    if 'contact_side' in settings:
+        contact_side = settings['contact_side']
+
     # %% Paths and dirs.
     pathMain = os.getcwd()
     pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
@@ -798,6 +806,8 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     if treadmill:
         F_name += '_treadmill'
         dim += 1
+    if contact_side != 'all':
+        F_name += '_{}'.format(contact_side)
     if useExpressionGraphFunction:
         from utilsOpenSimAD import getF_expressingGraph
         # Import function for expression graph.    
