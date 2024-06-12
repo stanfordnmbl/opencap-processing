@@ -1712,6 +1712,9 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
 
         # Select the preferred generator if it is available
         preferred_generator = get_preferred_generator(available_generators)
+        if not preferred_generator:
+            raise ValueError("Generator not found. Have you installed Visual Studio with the C++ extension? See instructions: https://github.com/stanfordnmbl/opencap-processing?tab=readme-ov-file#muscle-driven-simulations")
+
         cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -G "' + preferred_generator + '" -A x64 -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + SDK_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
         cmd2 = "cmake --build . --config RelWithDebInfo"
         
