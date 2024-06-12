@@ -124,7 +124,8 @@ if session_type == 'overground':
         time_window = [1.3, 2.2]
     elif trial_name == 'SLDJ_L2': # Jump  
         motion_type = 'drop_jump_knee_adduction'
-        time_window = [1.7, 2.7]
+        time_window = [2.7, 3.7]
+        contact_side = 'left'
 # Options are 'walk_1_25ms', 'run_2_5ms', and 'run_4ms'.
 elif session_type == 'treadmill': 
     trial_name = 'walk_1_25ms'
@@ -146,7 +147,7 @@ elif session_type == 'treadmill':
         treadmill_speed = 4.0
     
 # Set to True to solve the optimal control problem.
-solveProblem = False
+solveProblem = True
 # Set to True to analyze the results of the optimal control problem. If you
 # solved the problem already, and only want to analyze/process the results, you
 # can set solveProblem to False and run this script with analyzeResults set to

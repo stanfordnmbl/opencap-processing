@@ -329,7 +329,7 @@ def adjust_muscle_wrapping(
         scaledModel,pose_hipFlexors,'iliacus_r',coord_hipFlexors)    
     # Get path point locations.
     muscle = scaledModel.getMuscles().get('iliacus_r')
-    pathPoints = muscle.get_GeometryPath().getPathPointSet()
+    pathPoints = muscle.getGeometryPath().getPathPointSet()
     point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
     loc1Vec = point1.get_location()
     point2 = opensim.PathPoint.safeDownCast(pathPoints.get(2))
@@ -347,7 +347,7 @@ def adjust_muscle_wrapping(
         if np.abs(momentArm_scaled) < np.max([0.7* np.abs(momentArm_unscaled) , 0.015]):             
             # Get path point locations.
             muscle = scaledModel.getMuscles().get('iliacus_r')
-            pathPoints = muscle.get_GeometryPath().getPathPointSet()
+            pathPoints = muscle.getGeometryPath().getPathPointSet()
             point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
             loc1Vec = point1.get_location()
             point2 = opensim.PathPoint.safeDownCast(pathPoints.get(2))
@@ -367,7 +367,7 @@ def adjust_muscle_wrapping(
             if np.abs(momentArm_scaled) > np.max([0.7* np.abs(momentArm_unscaled) , 0.015]): # succeeded
                 # Set the left side as well.
                 muscle = scaledModel.getMuscles().get('iliacus_l')
-                pathPoints = muscle.get_GeometryPath().getPathPointSet()        
+                pathPoints = muscle.getGeometryPath().getPathPointSet()        
                 point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
                 loc1Vec_l = point1.get_location()
                 loc1Vec_l[0] = loc1Vec[0]
@@ -409,7 +409,7 @@ def adjust_muscle_wrapping(
         scaledModel,pose_hipFlexors,'psoas_r',coord_hipFlexors)    
     # Get path point locations 
     muscle = scaledModel.getMuscles().get('psoas_r')
-    pathPoints = muscle.get_GeometryPath().getPathPointSet()
+    pathPoints = muscle.getGeometryPath().getPathPointSet()
     point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
     loc1Vec = point1.get_location()
     point2 = opensim.PathPoint.safeDownCast(pathPoints.get(2))
@@ -427,7 +427,7 @@ def adjust_muscle_wrapping(
         if np.abs(momentArm_scaled) < np.max([0.7* np.abs(momentArm_unscaled), 0.015]):            
             # Get path point locations.
             muscle = scaledModel.getMuscles().get('psoas_r')
-            pathPoints = muscle.get_GeometryPath().getPathPointSet()
+            pathPoints = muscle.getGeometryPath().getPathPointSet()
             point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
             loc1Vec = point1.get_location()
             point2 = opensim.PathPoint.safeDownCast(pathPoints.get(2))
@@ -447,7 +447,7 @@ def adjust_muscle_wrapping(
             if np.abs(momentArm_scaled) > np.max([0.7* np.abs(momentArm_unscaled) , 0.015]): # succeeded
                 # set the left side as well.
                 muscle = scaledModel.getMuscles().get('psoas_l')
-                pathPoints = muscle.get_GeometryPath().getPathPointSet()        
+                pathPoints = muscle.getGeometryPath().getPathPointSet()        
                 point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
                 loc1Vec_l = point1.get_location()
                 loc1Vec_l[0] = loc1Vec[0]
