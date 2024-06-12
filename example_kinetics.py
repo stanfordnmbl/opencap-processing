@@ -87,6 +87,16 @@ Please provide:
                     subject is moving forward. You should ignore this parameter
                     or set it to 0 if the trial was not measured on a
                     treadmill. By default, treadmill_speed is set to 0.
+    (optional)
+    contact_side:   This an optional parameter that indicates on which foot to
+                    add contact spheres to model foot-ground contact. It might
+                    be useful to only add contact spheres on one foot if only
+                    that foot is in contact with the ground. We found this to
+                    be helpful for simulating for instance single leg dropjump
+                    as it might prevent the optimizer to cheat by using the
+                    other foot to stabilize the model. Options are 'all', 
+                    'left', and 'right'. By default, contact_side is set to
+                    'all', meaning that contact spheres are added to both feet.
     
 See example inputs below for different activities. Please note that we did not
 verify the biomechanical validity of the results; we only made sure the
@@ -151,9 +161,11 @@ if not 'repetition' in locals():
     repetition = None
 if not 'treadmill_speed' in locals():
     treadmill_speed = 0
+if not 'contact_side' in locals():
+    contact_side = 'all'
 settings = processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name, 
                                   motion_type, time_window, repetition,
-                                  treadmill_speed)
+                                  treadmill_speed, contact_side)
 
 # %% Simulation.
 run_tracking(baseDir, dataFolder, session_id, settings, case=case, 

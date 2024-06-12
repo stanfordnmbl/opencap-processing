@@ -503,27 +503,28 @@ def getMomentArms(model, poses, muscleName, coordinateForMomentArm):
 # %% Generate model with contacts.
 def generate_model_with_contacts(
         dataDir, subject, OpenSimModel="LaiUhlrich2022", 
-        setPatellaMasstoZero=True, side=None, overwrite=False):
+        setPatellaMasstoZero=True, contact_side=None, overwrite=False):
     
     # %% Process settings.
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
     outputModelFileName = (OpenSimModel + "_scaled" + suffix_MA)
-    pathOutputFiles = os.path.join(pathModelFolder, outputModelFileName)
-    pathOutputModel = pathOutputFiles + "_contacts.osim"
+    pathOutputFiles = os.path.join(pathModelFolder, outputModelFileName)    
 
     # Return error is side is not None, 'right', or 'left'.
-    if side not in [None, 'right', 'left']:
-        raise ValueError('side must be None, "right", or "left"')
+    if contact_side not in ['all', 'right', 'left']:
+        raise ValueError('side must be "all", "right", or "left"')
+    
+    if contact_side == 'all':
+        pathOutputModel = pathOutputFiles + "_contacts.osim"
+    else:
+        pathOutputModel = pathOutputFiles + "_contacts_" + contact_side + ".osim"
     
     if overwrite is False and os.path.exists(pathOutputModel):
         return
     else:
-        if side:
-            print('Add foot-ground contacts to the {} side.'.format(side))
-        else:
-            print('Add foot-ground contacts.')
+        print('Add foot-ground contacts.')
         
     # %% Add contact spheres to the scaled model.
     # The parameters of the foot-ground contacts are based on previous work. We
@@ -573,9 +574,9 @@ def generate_model_with_contacts(
     # ContactSpheres and SmoothSphereHalfSpaceForces.
     for ref_contact_sphere in reference_contact_spheres:
 
-        if side == 'right' and '_l' in ref_contact_sphere:
+        if contact_side == 'right' and '_l' in ref_contact_sphere:
             continue
-        if side == 'left' and '_r' in ref_contact_sphere:
+        if contact_side == 'left' and '_r' in ref_contact_sphere:
             continue
 
         # ContactSpheres.
