@@ -531,7 +531,7 @@ def generateExternalFunction(
         OpenSimModel="LaiUhlrich2022",
         treadmill=False, build_externalFunction=True, verifyID=True, 
         externalFunctionName='F', overwrite=False,
-        useExpressionGraphFunction=True):
+        useExpressionGraphFunction=True, contact_side='all'):
 
     # %% Process settings.
     pathCWD = os.getcwd()
@@ -545,7 +545,9 @@ def generateExternalFunction(
                                                     "ExternalFunction")
     os.makedirs(pathOutputExternalFunctionFolder, exist_ok=True)
     if treadmill:
-        externalFunctionName += '_treadmill'    
+        externalFunctionName += '_treadmill'
+    if contact_side != 'all':
+        externalFunctionName += '_' + contact_side
     pathOutputFile = os.path.join(pathOutputExternalFunctionFolder, 
                                   externalFunctionName + ".cpp")
     pathOutputMap = os.path.join(pathOutputExternalFunctionFolder, 
@@ -2253,8 +2255,8 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
 # %% Process inputs for optimal control problem.   
 def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                            motion_type, time_window=[], repetition=None,
-                           treadmill_speed=0, overwrite=False,
-                           useExpressionGraphFunction=True):
+                           treadmill_speed=0, contact_side='all',
+                           overwrite=False, useExpressionGraphFunction=True):
         
     # Path session folder.
     sessionFolder =  os.path.join(dataFolder, session_id)
@@ -2284,12 +2286,14 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
                          OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Add foot-ground contacts to musculoskeletal model.    
     generate_model_with_contacts(dataFolder, session_id,
-                              OpenSimModel=OpenSimModel, overwrite=overwrite)
+                              OpenSimModel=OpenSimModel, overwrite=overwrite,
+                              contact_side=contact_side)
     # Generate external function.    
     generateExternalFunction(baseDir, dataFolder, session_id,
                              OpenSimModel=OpenSimModel,
                              overwrite=overwrite, 
                              treadmill=bool(treadmill_speed),
+                             contact_side=contact_side,
                              useExpressionGraphFunction=useExpressionGraphFunction)
     
     # Get settings.
@@ -2338,6 +2342,9 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
 
     # Whether to use the expression graph function or (old) external function.
     settings['useExpressionGraphFunction'] = useExpressionGraphFunction
+
+    # Contact side
+    settings['contact_side'] = contact_side
     
     return settings
 
