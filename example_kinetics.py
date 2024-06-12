@@ -153,7 +153,7 @@ solveProblem = True
 # can set solveProblem to False and run this script with analyzeResults set to
 # True. This is useful if you do additional post-processing but do not want to
 # re-run the problem.
-analyzeResults = False
+analyzeResults = True
 
 # Path to where you want the data to be downloaded.
 dataFolder = os.path.join(baseDir, 'Data')
