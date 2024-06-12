@@ -96,33 +96,6 @@ Please contact us for any questions: https://www.opencap.ai/#contact
 '''
 
 # We provide a few examples for overground and treadmill activities.
-# We tested these examples locally. Here are some pointers about how many
-# iterations the examples took to converge. Please note that these numbers 
-# might change depending on the machine and operating system.
-#   - squat:
-#       - Windows (Windows 10):    converged in 595 iterations
-#       - macOS   (Monterey 12.2): converged in 624 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 431 iterations
-#   - STS:
-#       - Windows (Windows 10):    converged in 422 iterations
-#       - macOS   (Monterey 12.2): converged in 412 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 419 iterations
-#   - jump:
-#       - Windows (Windows 10):    converged in 2321 iterations
-#       - macOS   (Monterey 12.2): converged in 3457 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 2457 iterations 
-#   - walk_1_25ms:
-#       - Windows (Windows 10):    converged in 776 iterations
-#       - macOS   (Monterey 12.2): converged in 597 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 602 iterations 
-#   - run_2_5ms:
-#       - Windows (Windows 10):    converged in 2022 iterations
-#       - macOS   (Monterey 12.2): converged in 1698 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 2104 iterations 
-#   - run_4ms:
-#       - Windows (Windows 10):    converged in 861 iterations
-#       - macOS   (Monterey 12.2): converged in 869 iterations
-#       - Linux   (Ubuntu 20.04):  converged in 856 iterations 
 # Select which example you would like to run.
 session_type = 'overground' # Options are 'overground' and 'treadmill'.
 session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"

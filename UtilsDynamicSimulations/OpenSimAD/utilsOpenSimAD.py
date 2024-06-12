@@ -34,6 +34,8 @@ import urllib.request
 import requests
 import zipfile
 import seaborn as sns
+import subprocess
+import re
 
 from utils import (storage_to_numpy, storage_to_dataframe, 
                    download_kinematics, import_metadata, numpy_to_storage)
@@ -1703,7 +1705,14 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             with zipfile.ZipFile('windows.zip', 'r') as zip_ref:
                 zip_ref.extractall(OpenSimAD_DIR)
             os.remove('windows.zip')
-        cmd1 = 'cmake "' + pathBuildExpressionGraph + '"  -A x64 -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + SDK_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
+
+        # Get the list of available generators
+        available_generators_output = subprocess.check_output(['cmake', '--help'], universal_newlines=True)
+        available_generators = available_generators_output.splitlines()
+
+        # Select the preferred generator if it is available
+        preferred_generator = get_preferred_generator(available_generators)
+        cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -G "' + preferred_generator + '" -A x64 -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + SDK_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
         cmd2 = "cmake --build . --config RelWithDebInfo"
         
     elif os_system == 'Linux':
@@ -1796,7 +1805,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             generateF(nInputs, fooName)
         
         if os_system == 'Windows':
-            cmd3 = 'cmake "' + pathBuildExternalFunction + '" -A x64 -DTARGET_NAME:STRING="' + filename + '" -DINSTALL_DIR:PATH="' + path_external_functions_filename_install + '"'
+            cmd3 = 'cmake "' + pathBuildExternalFunction + '" -G "' + preferred_generator + '" -A x64 -DTARGET_NAME:STRING="' + filename + '" -DINSTALL_DIR:PATH="' + path_external_functions_filename_install + '"'
             cmd4 = "cmake --build . --config RelWithDebInfo --target install"
         elif os_system == 'Linux':
             cmd3 = 'cmake "' + pathBuildExternalFunction + '" -DTARGET_NAME:STRING="' + filename + '" -DINSTALL_DIR:PATH="' + path_external_functions_filename_install + '"'
@@ -1826,6 +1835,32 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
         shutil.rmtree(path_external_functions_filename_build)
     if os_system == 'Windows':
         os.remove(path_external_filename_foo)
+
+def get_preferred_generator(available_generators):
+    # Define a list of preferred generators in order of preference
+    preferred_generators = [
+        "Visual Studio 17 2022",
+        "Visual Studio 16 2019",
+        "Visual Studio 15 2017"
+    ]
+    
+    # Loop through each preferred generator and look for matches
+    matches = {}
+    for generator in preferred_generators:        
+        for line in available_generators:
+            if re.search(r'\b' + re.escape(generator) + r'\b', line):
+                matches[generator] = line
+        
+    # If there are matches, prioritize the one with an asterisk
+    if matches:
+        for generator in matches:
+            if '*' in matches[generator]:
+                return generator
+                
+        # If no match with asterisk is found, return the first match        
+        return list(matches.keys())[0]
+    
+    return None
     
 # %% Download file given url (approach 1).
 def download_file(url, file_name):

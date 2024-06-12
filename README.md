@@ -3,24 +3,24 @@
 This repository enables the post-processing of human movement kinematics collected using [OpenCap](opencap.ai). You can run kinematic analyses, download multiple sessions using scripting, and run muscle-driven simulations to estimate kinetics.
 
 ## Publication
-More information is available in our [preprint](https://www.biorxiv.org/content/10.1101/2022.07.07.499061v1): <br> <br>
-Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 2022. OpenCap: 3D human movement dynamics from smartphone videos. _biorxiv_. https://doi.org/10.1101/2022.07.07.499061. *contributed equally <br> <br>
+More information is available in our [paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011462): <br> <br>
+Uhlrich SD*, Falisse A*, Kidzinski L*, Ko M, Chaudhari AS, Hicks JL, Delp SL, 2022. OpenCap: Human movement dynamics from smartphone videos. PLoS Comput Biol 19(10): e1011462. https://doi.org/10.1371/journal.pcbi.1011462. *contributed equally <br> <br>
 Archived code base corresponding to publication: https://zenodo.org/record/7419973
 
 ## Install requirements
 ### General
 1. Install [Anaconda](https://www.anaconda.com/)
 1. Open Anaconda prompt
-2. Create environment (python 3.10 recommended): `conda create -n opencap-processing python=3.10`
+2. Create environment (python 3.11 recommended): `conda create -n opencap-processing python=3.11`
 3. Activate environment: `conda activate opencap-processing`
-4. Install OpenSim: `conda install -c opensim-org opensim=4.4.1=py310np121`
+4. Install OpenSim: `conda install -c opensim-org opensim=4.5=py311np123`
     - Test that OpenSim was successfully installed:
         - Start python: `python`
         - Import OpenSim: `import opensim`
             - If you don't get any error message at this point, you should be good to go.
         - You can also double check which version you installed : `opensim.GetVersion()`
         - Exit python: `quit()`
-    - Visit this [webpage](https://simtk-confluence.stanford.edu:8443/display/OpenSim/Conda+Package) for more details about the OpenSim conda package.
+    - Visit this [webpage](https://opensimconfluence.atlassian.net/wiki/spaces/OpenSim/pages/53116061/Conda+Package) for more details about the OpenSim conda package.
 5. (Optional): Install an IDE such as Spyder: `conda install spyder`
 6. Clone the repository to your machine: 
     - Navigate to the directory where you want to download the code: eg. `cd Documents`. Make sure there are no spaces in this path.
