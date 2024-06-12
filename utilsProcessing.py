@@ -227,8 +227,7 @@ def segment_STS(ikFilePath, pelvis_ty=None, timeVec=None, velSeated=0.3,
 # are made for the gmax1, iliacus, and psoas. Changes are documented in
 # modelAdjustment.log.
 def adjust_muscle_wrapping(
-        baseDir, dataDir, subject, poseDetector='DefaultPD', 
-        cameraSetup='DefaultModel', OpenSimModel="LaiUhlrich2022",
+        baseDir, dataDir, subject, OpenSimModel="LaiUhlrich2022",
         overwrite=False):
     
     # Paths
@@ -503,23 +502,28 @@ def getMomentArms(model, poses, muscleName, coordinateForMomentArm):
 
 # %% Generate model with contacts.
 def generate_model_with_contacts(
-        dataDir, subject, poseDetector='DefaultPD', cameraSetup='DefaultModel',
-        OpenSimModel="LaiUhlrich2022", setPatellaMasstoZero=True, 
-        overwrite=False):
+        dataDir, subject, OpenSimModel="LaiUhlrich2022", 
+        setPatellaMasstoZero=True, side=None, overwrite=False):
     
     # %% Process settings.
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
-    # pathModelFolder = os.path.join(osDir, poseDetector, cameraSetup, 'Model')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
     outputModelFileName = (OpenSimModel + "_scaled" + suffix_MA)
     pathOutputFiles = os.path.join(pathModelFolder, outputModelFileName)
     pathOutputModel = pathOutputFiles + "_contacts.osim"
+
+    # Return error is side is not None, 'right', or 'left'.
+    if side not in [None, 'right', 'left']:
+        raise ValueError('side must be None, "right", or "left"')
     
     if overwrite is False and os.path.exists(pathOutputModel):
         return
     else:
-        print('Add foot-ground contacts.')
+        if side:
+            print('Add foot-ground contacts to the {} side.'.format(side))
+        else:
+            print('Add foot-ground contacts.')
         
     # %% Add contact spheres to the scaled model.
     # The parameters of the foot-ground contacts are based on previous work. We
@@ -567,7 +571,13 @@ def generate_model_with_contacts(
     model.addContactGeometry(contactHalfSpace)
     
     # ContactSpheres and SmoothSphereHalfSpaceForces.
-    for ref_contact_sphere in reference_contact_spheres:    
+    for ref_contact_sphere in reference_contact_spheres:
+
+        if side == 'right' and '_l' in ref_contact_sphere:
+            continue
+        if side == 'left' and '_r' in ref_contact_sphere:
+            continue
+
         # ContactSpheres.
         body = bodySet.get(reference_contact_spheres[ref_contact_sphere]["socket_frame"])
         # Scale location based on attached_geometry scale_factors.      

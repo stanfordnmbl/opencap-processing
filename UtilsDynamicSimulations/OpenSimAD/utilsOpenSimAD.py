@@ -2283,7 +2283,7 @@ def processInputsOpenSimAD(baseDir, dataFolder, session_id, trial_name,
     adjust_muscle_wrapping(baseDir, dataFolder, session_id,
                          OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Add foot-ground contacts to musculoskeletal model.    
-    generate_model_with_contacts(dataFolder, session_id, 
+    generate_model_with_contacts(dataFolder, session_id,
                               OpenSimModel=OpenSimModel, overwrite=overwrite)
     # Generate external function.    
     generateExternalFunction(baseDir, dataFolder, session_id,
