@@ -115,7 +115,7 @@ case = '0' # Change this to compare across settings.
 if session_type == 'overground': 
     trial_name = 'squat'
     if trial_name == 'squat': # Squat
-        motion_type = 'squats_periodic_pelvis_ty'
+        motion_type = 'squats'
         repetition = 0
     elif trial_name == 'STS': # Sit-to-stand        
         motion_type = 'sit_to_stand'
