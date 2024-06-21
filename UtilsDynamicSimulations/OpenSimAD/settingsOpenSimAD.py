@@ -484,10 +484,8 @@ def get_setup(motion_type):
         'withReserveActuators': True,
         'reserveActuatorCoordinates': {
             'hip_rotation_l': 30, 'hip_rotation_r': 30},
-        'periodicConstraints': {'coordinateValues': ['lowerLimbJoints'],
-                                'coordinateSpeeds': ['lowerLimbJoints'],
-                                'muscleActivationsForces': ['all'],
-                                'lumbarJointActivations': ['all']},
+        'periodicConstraints': {'coordinateValues': ['pelvis_ty'],
+                                'coordinateSpeeds': ['pelvis_ty']},
         'ignorePassiveFiberForce': True,
         'filter_Qs_toTrack': True,
         'cutoff_freq_Qs': 4,
