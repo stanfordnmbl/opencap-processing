@@ -1924,12 +1924,18 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
             else:
                 scale_angles = 1
             plotReference = False
+            plotMocapReference = False
             for c, case in enumerate(cases):
                 if joints[i] in optimaltrajectories[case]['coordinates']:                        
-                    idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])                    
+                    idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
+                    if 'coordinate_values_mocap' in optimaltrajectories[case]:
+                        if not plotMocapReference:
+                            ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                    optimaltrajectories[case]['coordinate_values_mocap'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Mocap-based IK', linewidth=linewidth)
+                            plotMocapReference = True                
                     if not plotReference:
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['coordinate_values_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
+                                optimaltrajectories[case]['coordinate_values_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dotted', label='Tracked data (OpenCap): ' + cases[c], linewidth=linewidth)
                         plotReference = True
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                             optimaltrajectories[case]['coordinate_values'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
@@ -1972,12 +1978,18 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
                 else:
                     scale_angles = 1
                 plotReference = False
+                plotMocapReference = False
                 for c, case in enumerate(cases):
                     if joints[i] in optimaltrajectories[case]['coordinates']:                        
                         idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
+                        if 'coordinate_speeds_mocap' in optimaltrajectories[case]:
+                            if not plotMocapReference:
+                                ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                        optimaltrajectories[case]['coordinate_speeds_mocap'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Mocap-based IK', linewidth=linewidth)
+                                plotMocapReference = True
                         if not plotReference:
                             ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                    optimaltrajectories[case]['coordinate_speeds_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
+                                    optimaltrajectories[case]['coordinate_speeds_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dotted', label='Tracked data (OpenCap): ' + cases[c], linewidth=linewidth)
                             plotReference = True
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                                 optimaltrajectories[case]['coordinate_speeds'][idx_coord:idx_coord+1,:-1].T * scale_angles, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
@@ -2020,12 +2032,18 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
                 else:
                     scale_angles = 1
                 plotReference = False
+                plotMocapReference = False
                 for c, case in enumerate(cases):
                     if joints[i] in optimaltrajectories[case]['coordinates']:                        
                         idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
+                        if 'coordinate_accelerations_mocap' in optimaltrajectories[case]:
+                            if not plotMocapReference:
+                                ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                        optimaltrajectories[case]['coordinate_accelerations_mocap'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Mocap-based IK', linewidth=linewidth)
+                                plotMocapReference = True
                         if not plotReference:
                             ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                    optimaltrajectories[case]['coordinate_accelerations_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dashed', label='Tracked data: ' + cases[c], linewidth=linewidth)
+                                    optimaltrajectories[case]['coordinate_accelerations_toTrack'][idx_coord:idx_coord+1,:].T * scale_angles, c='black', linestyle='dotted', label='Tracked data (OpenCap): ' + cases[c], linewidth=linewidth)
                             plotReference = True
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                                 optimaltrajectories[case]['coordinate_accelerations'][idx_coord:idx_coord+1,:].T * scale_angles, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)   
@@ -2066,10 +2084,10 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
             for c, case in enumerate(cases):
                 if joints[i] in optimaltrajectories[case]['coordinates']:                        
                     idx_coord = optimaltrajectories[case]['coordinates'].index(joints[i])
-                    if 'torques_ref' in optimaltrajectories[case]:
+                    if 'torques_mocap' in optimaltrajectories[case]:
                         if not plotReference:
                             ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                    optimaltrajectories[case]['torques_ref'][idx_coord:idx_coord+1,:].T, c='black', label='Mocap ' + cases[c], linewidth=linewidth)
+                                    optimaltrajectories[case]['torques_mocap'][idx_coord:idx_coord+1,:].T, c='black', linestyle='dashed', label='Mocap-based ID', linewidth=linewidth)
                             plotReference = True
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                             optimaltrajectories[case]['torques'][idx_coord:idx_coord+1,:].T, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)     
@@ -2111,10 +2129,10 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
         if i < NGRF:
             plotedGRF = False
             for c, case in enumerate(cases):
-                if 'GRF_ref' in optimaltrajectories[case] and not plotedGRF:
+                if 'GRF_experimental' in optimaltrajectories[case] and not plotedGRF:
                     plotedGRF = True
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                            optimaltrajectories[case]['GRF_ref'][i:i+1,:].T, c='black', label='Mocap ' + cases[c], linewidth=linewidth)   
+                            optimaltrajectories[case]['GRF_experimental'][i:i+1,:].T, c='black', linestyle='dashed', label='Force plate', linewidth=linewidth)   
                 ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                         optimaltrajectories[case]['GRF'][i:i+1,:].T, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)          
             ax.set_title(GRF_labels[i], fontsize=fontsizeTitle, fontweight='bold')
@@ -2146,10 +2164,10 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
             if i < NGRF:
                 plotedGRF = False
                 for c, case in enumerate(cases):
-                    if 'GRM_ref' in optimaltrajectories[case] and not plotedGRF:
+                    if 'GRM_experimental' in optimaltrajectories[case] and not plotedGRF:
                         plotedGRF = True
                         ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
-                                optimaltrajectories[case]['GRM_ref'][i:i+1,:].T, c='black', label='Mocap ' + cases[c], linewidth=linewidth)   
+                                optimaltrajectories[case]['GRM_experimental'][i:i+1,:].T, c='black', linestyle='dashed', label='Force plate', linewidth=linewidth)   
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                             optimaltrajectories[case]['GRM'][i:i+1,:].T, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)          
                 ax.set_title(GRF_labels[i], fontsize=fontsizeTitle, fontweight='bold')
@@ -2187,7 +2205,15 @@ def plotResultsOpenSimAD(dataDir, subject, motion_filename, settings,
     fig.suptitle('Muscle activations', fontsize=fontsizeSubTitle, fontweight='bold') 
     for i, ax in enumerate(axs.flat):
         if i < NMuscles:
+            plotedEMG = False
             for c, case in enumerate(cases):
+                if 'muscle_activations_emg' in optimaltrajectories[case] and not plotedEMG:
+                    c_emg = optimaltrajectories[case]['muscle_activations_emg'][i:i+1,:].T
+                    # check if there is any value different from nan
+                    if not np.isnan(c_emg).all():                        
+                        plotedEMG = True
+                        ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
+                                optimaltrajectories[case]['muscle_activations_emg'][i:i+1,:].T, c='black', linestyle='dashed', label='EMG', linewidth=linewidth)
                 if 'muscle_activations' in optimaltrajectories[case]:
                     ax.plot(optimaltrajectories[case]['time'][0,:-1].T,
                             optimaltrajectories[case]['muscle_activations'][i:i+1,:-1].T, c=colors[c], label='Dynamic simulation: ' + cases[c], linewidth=linewidth)         
