@@ -31,7 +31,7 @@ import yaml
 import scipy.interpolate as interpolate
 import platform
 import copy
-import importlib
+import pandas as pd
 
 # %% Settings.
 def run_tracking(baseDir, dataDir, subject, settings, case='0',
@@ -342,14 +342,24 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     if 'contact_side' in settings:
         contact_side = settings['contact_side']
 
+    print('Processing {} - Case {}'.format(trialName, case))
+
     # %% Paths and dirs.
     pathMain = os.getcwd()
-    pathOSData = os.path.join(dataDir, subject, 'OpenSimData')
+    pathSubjectData = os.path.join(dataDir, subject)
+    pathOSData = os.path.join(pathSubjectData, 'OpenSimData')
     pathModelFolder = os.path.join(pathOSData, 'Model')
     pathModelFile = os.path.join(pathModelFolder, model_full_name + ".osim")
     pathExternalFunctionFolder = os.path.join(pathModelFolder,
                                               'ExternalFunction')
     pathIKFolder = os.path.join(pathOSData, 'Kinematics')
+    # If Force/EMG/IK/ID data is available, we load it for comparison.
+    pathForceFolder = os.path.join(pathSubjectData, 'ForceData')
+    pathEMGFolder = os.path.join(pathSubjectData, 'EMGData')    
+    pathMocapFolder = os.path.join(pathSubjectData, "OpenSimDataMocap")
+    pathMocapIKFolder = os.path.join(pathMocapFolder, 'InverseKinematics')
+    pathMocapIDFolder = os.path.join(pathMocapFolder, 'InverseDynamics')
+    # Path results and settings.
     pathResults = os.path.join(pathOSData, 'Dynamics', trialName)
     if 'repetition' in settings:
         pathResults = os.path.join(
@@ -360,8 +370,6 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # Dump settings in yaml file.
     with open(pathSettings, 'w') as file:
         yaml.dump(settings, file)
-        
-    print('Processing {} - Case {}'.format(trialName, case))
     
     # %% Muscles.
     # This section specifies the muscles and some of their parameters. This is
@@ -501,6 +509,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     # Ground pelvis coordinates.
     groundPelvisJoints = ['pelvis_tilt', 'pelvis_list', 'pelvis_rotation',
                           'pelvis_tx', 'pelvis_ty', 'pelvis_tz']
+    groundPelvisJointsForces = ['pelvis_tx', 'pelvis_ty', 'pelvis_tz']
     
     # Lumbar coordinates (for torque actuators).    
     lumbarJoints = ['lumbar_extension', 'lumbar_bending', 'lumbar_rotation']
@@ -615,13 +624,11 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     else:
         Qs_fromIK_filter = Qs_fromIK           
     # Interpolation.
-    Qs_fromIK_interp = interpolateDataFrame(
+    Qs_toTrack = interpolateDataFrame(
         Qs_fromIK_filter, timeIntervals[0], timeIntervals[1], N)
-    Qs_toTrack = copy.deepcopy(Qs_fromIK_interp)
     # We do not want to down-sample before differentiating the splines.
     Qs_fromIK_sel = selectDataFrame(
         Qs_fromIK_filter, timeIntervals[0], timeIntervals[1])
-    Qs_toTrack_s = copy.deepcopy(Qs_fromIK_sel) 
     nEl_toTrack = len(coordinates_toTrack)
     # Individual coordinate weigths. Option to weight the contribution of the
     # coordinates to the cost terms differently. This applies for coordinate
@@ -637,7 +644,54 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
     from utilsOpenSimAD import scaleDataFrame, selectFromDataFrame     
     dataToTrack_Qs_nsc = selectFromDataFrame(
         Qs_toTrack, coordinates_toTrack_l).to_numpy()[:,1::].T
-        
+    
+    # If Force/EMG/IK/ID data is available, we load it for comparison.
+    # Force (GRF and GRM)
+    from utilsOpenSimAD import getGRFAll, getEMG, getID
+    pathGRFFile = os.path.join(pathForceFolder, trialName + '.mot')
+    experimental_force_data_available = False
+    if os.path.exists(pathGRFFile):
+        experimental_force_data_available = True
+        experimental_force = getGRFAll(pathGRFFile, timeIntervals, N)
+        experimental_grf = selectFromDataFrame(
+            experimental_force['df_interp']['forces']['all'], 
+            experimental_force['headers']['forces']['all']).to_numpy()[:,1::].T        
+        experimental_grm = selectFromDataFrame(
+            experimental_force['df_interp']['torques_G']['all'], 
+            experimental_force['headers']['torques']['all']).to_numpy()[:,1::].T
+    # EMG
+    pathEMGFile = os.path.join(pathEMGFolder, trialName + '.sto')
+    experimental_emg_data_available = False
+    if os.path.exists(pathEMGFile):
+        experimental_emg_data_available = True
+        experimental_emg_t = getEMG(pathEMGFile, bothSidesMuscles)
+        experimental_emg = interpolateDataFrame(experimental_emg_t, 
+            timeIntervals[0], timeIntervals[1], N).to_numpy()[:,1::].T
+    # IK
+    pathIKFileMocap = os.path.join(pathMocapIKFolder, trialName + '.mot')
+    mocap_ik_data_available = False
+    if os.path.exists(pathIKFileMocap):
+        mocap_ik_data_available = True
+        Qs_mocap = getIK(pathIKFileMocap, joints)
+        if filter_Qs_toTrack:
+            Qs_mocap_filter = filterDataFrame(
+                Qs_mocap, cutoff_frequency=cutoff_freq_Qs)
+        else:
+            Qs_mocap_filter = Qs_mocap
+        Qs_mocap_sel = selectDataFrame(
+                Qs_mocap_filter, timeIntervals[0], timeIntervals[1])
+        Qs_mocap_ref = interpolateDataFrame(
+            Qs_mocap_filter, timeIntervals[0], timeIntervals[1],
+            N).to_numpy()[:,1::].T
+    # ID
+    pathIDFile = os.path.join(pathMocapIDFolder, trialName + '.sto')
+    mocap_id_data_available = False
+    if os.path.exists(pathIDFile):
+        mocap_id_data_available = True
+        mocap_id_t = getID(pathIDFile, joints)
+        mocap_id = interpolateDataFrame(
+            mocap_id_t, timeIntervals[0], timeIntervals[1], N).to_numpy()[:,1::].T
+            
     # %% Polynomial approximations.
     # Muscle-tendon lengths, velocities, and moment arms are estimated based
     # on polynomial approximations of joint positions and velocities. The
@@ -1068,20 +1122,24 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         w0['Offset'] = guess.getGuessOffset(scaling['Offset'])
             
     # %% Process tracking data.
-    # Splining.
-    Qs_spline = Qs_toTrack_s.copy()
-    Qds_spline = Qs_toTrack_s.copy()
-    Qdds_spline = Qs_toTrack_s.copy()
+    # Initialize dataframes.  
+    Qs_spline = pd.DataFrame(columns=Qs_fromIK_sel.columns)
+    Qds_spline = pd.DataFrame(columns=Qs_fromIK_sel.columns)
+    Qdds_spline = pd.DataFrame(columns=Qs_fromIK_sel.columns)
+    # Set time.
+    Qs_spline['time'] = Qs_fromIK_sel['time']
+    Qds_spline['time'] = Qs_fromIK_sel['time']
+    Qdds_spline['time'] = Qs_fromIK_sel['time']
+    # Compute values.
     for joint in joints:
         spline = interpolate.InterpolatedUnivariateSpline(
-            Qs_toTrack_s['time'], Qs_toTrack_s[joint], k=3)
-        Qs_spline[joint] = spline(Qs_toTrack_s['time'])
+            Qs_fromIK_sel['time'], Qs_fromIK_sel[joint], k=3)
+        Qs_spline[joint] = spline(Qs_fromIK_sel['time'])
         splineD1 = spline.derivative(n=1)
-        Qds_spline[joint] = splineD1(Qs_toTrack_s['time'])    
+        Qds_spline[joint] = splineD1(Qs_fromIK_sel['time'])    
         splineD2 = spline.derivative(n=2)
-        Qdds_spline[joint] = splineD2(Qs_toTrack_s['time'])
-        
-    # Filtering.
+        Qdds_spline[joint] = splineD2(Qs_fromIK_sel['time'])        
+    # Filter.
     if filter_Qds_toTrack:
         Qds_spline_filter = filterDataFrame(
             Qds_spline, cutoff_frequency=cutoff_freq_Qds)
@@ -1091,12 +1149,12 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         Qdds_spline_filter = filterDataFrame(
             Qdds_spline, cutoff_frequency=cutoff_freq_Qdds)
     else:
-        Qdds_spline_filter = Qdds_spline
-        
-    # Instead of splining Qs twice to get Qdds, spline Qds, which can
-    # be filtered or not.
+        Qdds_spline_filter = Qdds_spline        
+    # Instead of splining Qs twice to get Qdds, spline (filtered) Qds.
     if splineQds:
-        Qdds_spline2 = Qs_toTrack_s.copy()
+        Qdds_spline2 = pd.DataFrame(
+                columns=Qs_fromIK_sel.columns)
+        Qdds_spline2['time'] = Qs_fromIK_sel['time']
         for joint in joints:
             spline = interpolate.InterpolatedUnivariateSpline(
                 Qds_spline_filter['time'], Qds_spline_filter[joint], k=3)
@@ -1106,25 +1164,82 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             Qdds_spline_filter = filterDataFrame(
                 Qdds_spline2, cutoff_frequency=cutoff_freq_Qdds)
         else:
-            Qdds_spline_filter = Qdds_spline2
-        
-    # Interpolation.
+            Qdds_spline_filter = Qdds_spline2        
+    # Interpolate.
     Qds_spline_interp = interpolateDataFrame(
         Qds_spline_filter, timeIntervals[0], timeIntervals[1], N)
     Qdds_spline_interp = interpolateDataFrame(
         Qdds_spline_filter, timeIntervals[0], timeIntervals[1], N)
-    
+    # Scale.
     dataToTrack_Qds_sc = scaleDataFrame(
             Qds_spline_interp, scaling['Qds'], 
             coordinates_toTrack_l).to_numpy()[:,1::].T
     dataToTrack_Qdds_sc = scaleDataFrame(
             Qdds_spline_interp, scaling['Qdds'], 
             coordinates_toTrack_l).to_numpy()[:,1::].T
-    
+    # Select.
     refData_Qds_nsc = selectFromDataFrame(
         Qds_spline_interp, joints).to_numpy()[:,1::].T            
     refData_Qdds_nsc = selectFromDataFrame(
         Qdds_spline_interp, joints).to_numpy()[:,1::].T
+    # Proceeed similarly with experimental data for comparison.
+    if mocap_ik_data_available:
+        # Initialize dataframes.     
+        Qs_mocap_spline = pd.DataFrame(columns=Qs_mocap_sel.columns)
+        Qds_mocap_spline = pd.DataFrame(columns=Qs_mocap_sel.columns)
+        Qdds_mocap_spline = pd.DataFrame(columns=Qs_mocap_sel.columns)
+        # Set time.
+        Qs_mocap_spline['time'] = Qs_mocap_sel['time']
+        Qds_mocap_spline['time'] = Qs_mocap_sel['time']
+        Qdds_mocap_spline['time'] = Qs_mocap_sel['time']
+        # Compute values.
+        for joint in joints:
+            spline = interpolate.InterpolatedUnivariateSpline(
+                Qs_mocap_sel['time'], 
+                Qs_mocap_sel[joint], k=3)
+            Qs_mocap_spline[joint] = spline(
+                Qs_mocap_sel['time'])
+            splineD1 = spline.derivative(n=1)
+            Qds_mocap_spline[joint] = splineD1(
+                Qs_mocap_sel['time'])
+            splineD2 = spline.derivative(n=2)
+            Qdds_mocap_spline[joint] = splineD2(
+                Qs_mocap_sel['time'])        
+        # Filter.
+        if filter_Qds_toTrack:
+            Qds_mocap_spline_filter = filterDataFrame(
+                Qds_mocap_spline, cutoff_frequency=cutoff_freq_Qds)
+        else:
+            Qds_mocap_spline_filter = Qds_mocap_spline                
+        if filter_Qdds_toTrack:
+            Qdds_mocap_spline_filter = filterDataFrame(
+                Qdds_mocap_spline, cutoff_frequency=cutoff_freq_Qdds)
+        else:
+            Qdds_mocap_spline_filter = Qdds_mocap_spline            
+        # Instead of splining Qs twice to get Qdds, spline (filtered) Qds.
+        if splineQds:
+            Qdds_mocap_spline2 = pd.DataFrame(
+                columns=Qs_mocap_sel.columns)
+            Qdds_mocap_spline2['time'] = Qs_mocap_sel['time']
+            for joint in joints:
+                spline = interpolate.InterpolatedUnivariateSpline(
+                    Qds_mocap_spline_filter['time'], 
+                    Qds_mocap_spline_filter[joint], k=3)
+                splineD1 = spline.derivative(n=1)
+                Qdds_mocap_spline2[joint] = splineD1(
+                    Qds_mocap_spline_filter['time'])                
+            if filter_Qdds_toTrack:
+                Qdds_mocap_spline_filter = filterDataFrame(
+                    Qdds_mocap_spline2, cutoff_frequency=cutoff_freq_Qdds)
+            else:
+                Qdds_mocap_spline_filter = Qdds_mocap_spline2        
+        # Interpolate.
+        Qds_mocap_ref = interpolateDataFrame(
+            Qds_mocap_spline_filter, timeIntervals[0], 
+            timeIntervals[1], N).to_numpy()[:,1::].T
+        Qdds_mocap_ref = interpolateDataFrame(
+            Qdds_mocap_spline_filter, timeIntervals[0], 
+            timeIntervals[1], N).to_numpy()[:,1::].T
             
     # %% Update bounds if coordinate constraints.
     if coordinate_constraints:
@@ -2007,7 +2122,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             
         # %% Write files for visualization in OpenSim GUI.
         # Convert to degrees.
-        Qs_opt_nsc_deg = copy.deepcopy(Qs_opt_nsc)
+        Qs_opt_nsc_deg = np.copy(Qs_opt_nsc)
         Qs_opt_nsc_deg[idxRotationalJoints, :] = (
             Qs_opt_nsc_deg[idxRotationalJoints, :] * 180 / np.pi)
         # Labels
@@ -2119,7 +2234,7 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         # %% Data processing.
         # Reference Qs adjusted with optimized offset.
         refData_nsc = Qs_toTrack.to_numpy()[:,1::].T
-        refData_offset_nsc = copy.deepcopy(refData_nsc)
+        refData_offset_nsc = np.copy(refData_nsc)
         if offset_ty:                    
             refData_offset_nsc[joints.index("pelvis_ty")] = (
                 refData_nsc[joints.index("pelvis_ty")] + offset_opt_nsc)         
@@ -2411,7 +2526,6 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
             print("To compute medial knee contact forces, use a muscle-driven model.\n")
         if computeMCF:
             # Export muscle forces and non muscle-driven torques (if existing).
-            import pandas as pd
             labels = ['time'] 
             labels += bothSidesMuscles
             # Muscle forces.
@@ -2516,11 +2630,26 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         BW_ht = BW * settings['height_m']
         GRF_BW_all_opt = GRF_all_opt['all'] / BW * 100
         GRM_BWht_all_opt = GRM_all_opt['all'] / BW_ht * 100
-        torques_BWht_opt = torques_opt / BW_ht * 100
+        torques_BWht_opt = np.zeros(torques_opt.shape)
+        for c_j, c_j_name in enumerate(joints):
+            if c_j_name in groundPelvisJointsForces:
+                torques_BWht_opt[c_j, :] = torques_opt[c_j, :] / BW * 100
+            else:
+                torques_BWht_opt[c_j, :] = torques_opt[c_j, :] / BW_ht * 100
         if computeKAM:
             KAM_BWht = KAM / BW_ht * 100
         if computeMCF:
             MCF_BW = MCF / BW * 100
+        if experimental_force_data_available:
+            experimental_grf_BW = experimental_grf / BW * 100
+            experimental_grm_BWht = experimental_grm / BW_ht * 100
+        if mocap_id_data_available:
+            mocap_id_BWht = np.zeros(mocap_id.shape)
+            for c_j, c_j_name in enumerate(joints):
+                if c_j_name in groundPelvisJointsForces:
+                    mocap_id_BWht[c_j, :] = mocap_id[c_j, :] / BW * 100
+                else:
+                    mocap_id_BWht[c_j, :] = mocap_id[c_j, :] / BW_ht * 100
 
         # %% Compute joint powers.
         poweredJoints = []
@@ -2575,7 +2704,21 @@ def run_tracking(baseDir, dataDir, subject, settings, case='0',
         if computeMCF:
             optimaltrajectories[case]['MCF'] = MCF
             optimaltrajectories[case]['MCF_BW'] = MCF_BW
-            optimaltrajectories[case]['MCF_labels'] = MCF_labels              
+            optimaltrajectories[case]['MCF_labels'] = MCF_labels
+        if experimental_force_data_available:
+            optimaltrajectories[case]['GRF_experimental'] = experimental_grf
+            optimaltrajectories[case]['GRF_BW_experimental'] = experimental_grf_BW
+            optimaltrajectories[case]['GRM_experimental'] = experimental_grm
+            optimaltrajectories[case]['GRM_BWht_experimental'] = experimental_grm_BWht
+        if experimental_emg_data_available:
+            optimaltrajectories[case]['muscle_activations_emg'] = experimental_emg
+        if mocap_ik_data_available:
+            optimaltrajectories[case]['coordinate_values_mocap'] = Qs_mocap_ref
+            optimaltrajectories[case]['coordinate_speeds_mocap'] = Qds_mocap_ref
+            optimaltrajectories[case]['coordinate_accelerations_mocap'] = Qdds_mocap_ref
+        if mocap_id_data_available:
+            optimaltrajectories[case]['torques_mocap'] = mocap_id
+            optimaltrajectories[case]['torques_BWht_mocap'] = mocap_id_BWht
         optimaltrajectories[case]['iter'] = stats['iter_count']
 
         if torque_driven_model:
