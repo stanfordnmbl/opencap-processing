@@ -619,6 +619,9 @@ def set_trial_status(trial_id, status):
     requests.patch(API_URL+"trials/{}/".format(trial_id), data={'status': status},
                      headers = {"Authorization": "Token {}".format(API_TOKEN)})
     
+def set_session_subject(session_id, subject_id):
+    requests.patch(API_URL+"sessions/{}/".format(session_id), data={'subject': subject_id},
+                     headers = {"Authorization": "Token {}".format(API_TOKEN)})  
 
 def get_syncd_videos(trial_id,session_path):
     trial = requests.get("{}trials/{}/".format(API_URL,trial_id),
