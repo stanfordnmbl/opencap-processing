@@ -23,9 +23,17 @@ import os
 
 # List of sessions you'd like to download. They go to the Data folder in the 
 # current directory.
-sessionList = ['7272a71a-e70a-4794-a253-39e11cb7542c',
-               'abe79267-646f-436b-a19e-a9e1d8f32807']
 
+sessionList = ['8c4c4d76-7207-427f-aa9f-68b35d68e314']
+
+import pandas as pd 
+
+dataframe = pd.read_csv('./Data/OpenCap-Data-Links-Master-Sheet1.csv')
+ppe_keys = dataframe['e'].str.contains("PPE1008") == True  
+ppe_values = dataframe[ppe_keys]
+links = list(ppe_values['Link'])
+
+sessionList = [link.split('/')[-1] for link in links]
 
 # # alternatively, read list of session IDs from CSV column
 # from pathlib import Path
@@ -36,8 +44,17 @@ sessionList = ['7272a71a-e70a-4794-a253-39e11cb7542c',
 
              
 # base directory for downloads. Specify None if you want to go to os.path.join(os.getcwd(),'Data')
-downloadPath = os.path.join(os.getcwd(),'Data')
+downloadPath = os.path.join(os.getcwd(),'OtherData')
 
 for session_id in sessionList:
+    
+    datapath = os.path.join(downloadPath,"OpenCapData_" + session_id)
+
+    if os.path.exists(datapath):
+        continue
+
     # If only interested in marker and OpenSim data, downladVideos=False will be faster
-    download_session(session_id,sessionBasePath=downloadPath,downloadVideos=True)
+    try: 
+        download_session(session_id,sessionBasePath=downloadPath,downloadVideos=True)
+    except Exception as e:
+        print(f"Couldn't donwload:{session_id} Err:{e}") 
