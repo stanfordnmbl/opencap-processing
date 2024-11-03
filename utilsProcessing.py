@@ -227,8 +227,7 @@ def segment_STS(ikFilePath, pelvis_ty=None, timeVec=None, velSeated=0.3,
 # are made for the gmax1, iliacus, and psoas. Changes are documented in
 # modelAdjustment.log.
 def adjust_muscle_wrapping(
-        baseDir, dataDir, subject, poseDetector='DefaultPD', 
-        cameraSetup='DefaultModel', OpenSimModel="LaiUhlrich2022",
+        baseDir, dataDir, subject, OpenSimModel="LaiUhlrich2022",
         overwrite=False):
     
     # Paths
@@ -330,7 +329,7 @@ def adjust_muscle_wrapping(
         scaledModel,pose_hipFlexors,'iliacus_r',coord_hipFlexors)    
     # Get path point locations.
     muscle = scaledModel.getMuscles().get('iliacus_r')
-    pathPoints = muscle.get_GeometryPath().getPathPointSet()
+    pathPoints = muscle.getGeometryPath().getPathPointSet()
     point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
     loc1Vec = point1.get_location()
     point2 = opensim.PathPoint.safeDownCast(pathPoints.get(2))
@@ -348,7 +347,7 @@ def adjust_muscle_wrapping(
         if np.abs(momentArm_scaled) < np.max([0.7* np.abs(momentArm_unscaled) , 0.015]):             
             # Get path point locations.
             muscle = scaledModel.getMuscles().get('iliacus_r')
-            pathPoints = muscle.get_GeometryPath().getPathPointSet()
+            pathPoints = muscle.getGeometryPath().getPathPointSet()
             point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
             loc1Vec = point1.get_location()
             point2 = opensim.PathPoint.safeDownCast(pathPoints.get(2))
@@ -368,7 +367,7 @@ def adjust_muscle_wrapping(
             if np.abs(momentArm_scaled) > np.max([0.7* np.abs(momentArm_unscaled) , 0.015]): # succeeded
                 # Set the left side as well.
                 muscle = scaledModel.getMuscles().get('iliacus_l')
-                pathPoints = muscle.get_GeometryPath().getPathPointSet()        
+                pathPoints = muscle.getGeometryPath().getPathPointSet()        
                 point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
                 loc1Vec_l = point1.get_location()
                 loc1Vec_l[0] = loc1Vec[0]
@@ -410,7 +409,7 @@ def adjust_muscle_wrapping(
         scaledModel,pose_hipFlexors,'psoas_r',coord_hipFlexors)    
     # Get path point locations 
     muscle = scaledModel.getMuscles().get('psoas_r')
-    pathPoints = muscle.get_GeometryPath().getPathPointSet()
+    pathPoints = muscle.getGeometryPath().getPathPointSet()
     point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
     loc1Vec = point1.get_location()
     point2 = opensim.PathPoint.safeDownCast(pathPoints.get(2))
@@ -428,7 +427,7 @@ def adjust_muscle_wrapping(
         if np.abs(momentArm_scaled) < np.max([0.7* np.abs(momentArm_unscaled), 0.015]):            
             # Get path point locations.
             muscle = scaledModel.getMuscles().get('psoas_r')
-            pathPoints = muscle.get_GeometryPath().getPathPointSet()
+            pathPoints = muscle.getGeometryPath().getPathPointSet()
             point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
             loc1Vec = point1.get_location()
             point2 = opensim.PathPoint.safeDownCast(pathPoints.get(2))
@@ -448,7 +447,7 @@ def adjust_muscle_wrapping(
             if np.abs(momentArm_scaled) > np.max([0.7* np.abs(momentArm_unscaled) , 0.015]): # succeeded
                 # set the left side as well.
                 muscle = scaledModel.getMuscles().get('psoas_l')
-                pathPoints = muscle.get_GeometryPath().getPathPointSet()        
+                pathPoints = muscle.getGeometryPath().getPathPointSet()        
                 point1 = opensim.PathPoint.safeDownCast(pathPoints.get(1))
                 loc1Vec_l = point1.get_location()
                 loc1Vec_l[0] = loc1Vec[0]
@@ -503,18 +502,24 @@ def getMomentArms(model, poses, muscleName, coordinateForMomentArm):
 
 # %% Generate model with contacts.
 def generate_model_with_contacts(
-        dataDir, subject, poseDetector='DefaultPD', cameraSetup='DefaultModel',
-        OpenSimModel="LaiUhlrich2022", setPatellaMasstoZero=True, 
-        overwrite=False):
+        dataDir, subject, OpenSimModel="LaiUhlrich2022", 
+        setPatellaMasstoZero=True, contact_side=None, overwrite=False):
     
     # %% Process settings.
     osDir = os.path.join(dataDir, subject, 'OpenSimData')
-    # pathModelFolder = os.path.join(osDir, poseDetector, cameraSetup, 'Model')
     pathModelFolder = os.path.join(osDir, 'Model')
     suffix_MA = '_adjusted'
     outputModelFileName = (OpenSimModel + "_scaled" + suffix_MA)
-    pathOutputFiles = os.path.join(pathModelFolder, outputModelFileName)
-    pathOutputModel = pathOutputFiles + "_contacts.osim"
+    pathOutputFiles = os.path.join(pathModelFolder, outputModelFileName)    
+
+    # Return error is side is not None, 'right', or 'left'.
+    if contact_side not in ['all', 'right', 'left']:
+        raise ValueError('side must be "all", "right", or "left"')
+    
+    if contact_side == 'all':
+        pathOutputModel = pathOutputFiles + "_contacts.osim"
+    else:
+        pathOutputModel = pathOutputFiles + "_contacts_" + contact_side + ".osim"
     
     if overwrite is False and os.path.exists(pathOutputModel):
         return
@@ -567,7 +572,13 @@ def generate_model_with_contacts(
     model.addContactGeometry(contactHalfSpace)
     
     # ContactSpheres and SmoothSphereHalfSpaceForces.
-    for ref_contact_sphere in reference_contact_spheres:    
+    for ref_contact_sphere in reference_contact_spheres:
+
+        if contact_side == 'right' and '_l' in ref_contact_sphere:
+            continue
+        if contact_side == 'left' and '_r' in ref_contact_sphere:
+            continue
+
         # ContactSpheres.
         body = bodySet.get(reference_contact_spheres[ref_contact_sphere]["socket_frame"])
         # Scale location based on attached_geometry scale_factors.      
