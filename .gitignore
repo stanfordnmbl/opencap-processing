@@ -1,3 +1,8 @@
+## Logs 
+./Examples/*.txt
+./Examples/*.out
+./pdfs
+
 __pycache__
 .env
 *.log
