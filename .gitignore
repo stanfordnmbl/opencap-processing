@@ -1,0 +1,20 @@
+## Logs 
+Examples/*.txt
+Examples/*.out
+pdfs
+
+__pycache__
+.env
+*.log
+*.ipynb_checkpoints
+Data/*
+**/Data/
+
+*DS_Store
+
+.vscode/*
+
+UtilsDynamicSimulations/OpenSimAD/build-ExpressionGraphF*
+UtilsDynamicSimulations/OpenSimAD/build-ExternalFunctionF*
+UtilsDynamicSimulations/OpenSimAD/install-ExternalFunctionF*
+UtilsDynamicSimulations/OpenSimAD/opensimAD-install/*

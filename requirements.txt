@@ -1,0 +1,12 @@
+scipy==1.10.0
+pandas
+matplotlib
+ipython
+python-decouple
+maskpass==0.3.6
+requests
+casadi
+pyyaml
+joblib
+cmake
+seaborn
