@@ -191,7 +191,7 @@ def get_motion_data(trial_id, session_path):
     resultTags = [res['tag'] for res in trial['results']]
 
     # Marker data.
-    if 'ik_results' in resultTags:
+    if 'marker_data' in resultTags:
         markerFolder = os.path.join(session_path, 'MarkerData')
         markerPath = os.path.join(markerFolder, trial_name + '.trc')
         os.makedirs(markerFolder, exist_ok=True)
