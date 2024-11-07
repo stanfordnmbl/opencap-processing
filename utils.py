@@ -34,7 +34,7 @@ import opensim
 from utilsAPI import get_api_url
 from utilsAuthentication import get_token
 import matplotlib.pyplot as plt
-from scipy.signal import gaussian
+from scipy.signal.windows import gaussian
 
 
 API_URL = get_api_url()
