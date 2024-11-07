@@ -39,6 +39,3 @@ RUN /opt/conda/bin/conda run -n opencap-processing pip install --no-cache-dir -r
 
 # Expose ports if needed (uncomment if your application uses networking)
 # EXPOSE 8000
-
-# Set the command to activate the environment and start the application
-CMD ["conda", "run", "--no-capture-output", "-n", "opencap-processing", "python", "Examples/example_walking_opensimAD.py"]
