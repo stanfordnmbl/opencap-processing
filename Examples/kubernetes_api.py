@@ -119,18 +119,20 @@ for mot_file in tqdm(segments_data):
         trial_name = f'{mot_file}_segment_{i+1}'
         print("Running on session:", session_id, "trial:",trial_name, "segment:", segment)
         
-        orig_path = os.path.join(mot_dir,mot_file + '.mot')
-        new_path = os.path.join(baseDir,'Data',session_id,'OpenSimData','Kinematics',f'{trial_name}.mot')
-        os.system(f"cp {orig_path} {new_path}")    
-        
-        print("Running command:", f"cp {orig_path} {new_path}")
-        
         try:
         
-            folder_path = os.path.join(baseDir,'Data',session_id,'OpenSimData','Dynamics_new',trial_name)
+            folder_path = os.path.join(baseDir,'Data',session_id,'OpenSimData','Dynamics',trial_name)
             
-            # if os.path.exists(folder_path, 'optimaltrajectories.npy'):
-                # continue
+            if os.path.exists(os.path.join(folder_path, 'optimaltrajectories.npy')):
+                
+                continue
+
+
+            orig_path = os.path.join(mot_dir,mot_file + '.mot')
+            new_path = os.path.join(baseDir,'Data',session_id,'OpenSimData','Kinematics',f'{trial_name}.mot')
+            os.system(f"cp {orig_path} {new_path}")    
+            
+            print("Running command:", f"cp {orig_path} {new_path}")
 
             # session_id = "f78f774c-a705-4875-8e36-9c7184cc95ef" #"4d5c3eb1-1a59-4ea1-9178-d3634610561c"
 
